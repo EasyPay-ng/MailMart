@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account | MailMart</title>
+<meta name="theme-color" content="#020812">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    min-height:100vh;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+    background:
+        radial-gradient(circle at 15% 10%,rgba(0,123,255,.18),transparent 30%),
+        radial-gradient(circle at 90% 85%,rgba(0,215,255,.12),transparent 30%),
+        #020812;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow-x:hidden;
+}
+
+body:before{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.35;
+    background-image:
+        linear-gradient(rgba(0,190,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,190,255,.035) 1px,transparent 1px);
+    background-size:55px 55px;
+}
+
+.container{
+    width:100%;
+    max-width:1100px;
+    min-height:680px;
+    padding:30px;
+    display:grid;
+    grid-template-columns:1fr 430px;
+    gap:70px;
+    align-items:center;
+    position:relative;
+    z-index:1;
+}
+
+.left{
+    padding:20px;
+}
+
+.logo{
+    width:72px;
+    height:72px;
+    border-radius:20px;
+    object-fit:cover;
+    margin-bottom:25px;
+    box-shadow:0 15px 45px rgba(0,160,255,.25);
+}
+
+.left h1{
+    font-size:clamp(45px,6vw,72px);
+    line-height:1;
+    letter-spacing:-4px;
+    margin-bottom:22px;
+}
+
+.gradient{
+    background:linear-gradient(90deg,#fff,#39dfff,#087cff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.left p{
+    max-width:550px;
+    color:#8ea6bf;
+    line-height:1.8;
+    font-size:14px;
+}
+
+.services{
+    margin-top:30px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.service{
+    padding:10px 13px;
+    border-radius:12px;
+    border:1px solid rgba(0,205,255,.14);
+    background:rgba(0,120,255,.06);
+    color:#9cb4ce;
+    font-size:11px;
+}
+
+.card{
+    padding:32px;
+    border-radius:27px;
+    background:linear-gradient(145deg,rgba(9,35,68,.95),rgba(3,13,27,.98));
+    border:1px solid rgba(0,205,255,.18);
+    box-shadow:0 30px 100px rgba(0,0,0,.45);
+}
+
+.card h2{
+    text-align:center;
+    font-size:26px;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#829ab4;
+    font-size:12px;
+    line-height:1.6;
+    margin-bottom:23px;
+}
+
+.error,
+.success{
+    display:none;
+    padding:12px;
+    border-radius:10px;
+    font-size:11px;
+    line-height:1.5;
+    margin-bottom:15px;
+}
+
+.error{
+    color:#ff9bab;
+    background:rgba(255,50,80,.08);
+    border:1px solid rgba(255,50,80,.2);
+}
+
+.success{
+    color:#70f0bd;
+    background:rgba(0,220,150,.07);
+    border:1px solid rgba(0,220,150,.18);
+}
+
+.field{
+    margin-bottom:14px;
+}
+
+.field label{
+    display:block;
+    color:#b8cbe0;
+    font-size:11px;
+    font-weight:700;
+    margin-bottom:7px;
+}
+
+.input-wrap{
+    position:relative;
+}
+
+.input-wrap input{
+    width:100%;
+    height:48px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:12px;
+    background:rgba(0,0,0,.2);
+    color:#fff;
+    outline:none;
+    padding:0 45px 0 15px;
+    font:inherit;
+    font-size:13px;
+}
+
+.input-wrap input:focus{
+    border-color:#08bfff;
+    box-shadow:0 0 0 3px rgba(0,180,255,.08);
+}
+
+.input-wrap input::placeholder{
+    color:#58718c;
+}
+
+.eye{
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#68819b;
+    font-size:13px;
+    cursor:pointer;
+}
+
+.eye:hover{
+    color:#25d9ff;
+}
+
+.password-strength{
+    height:3px;
+    width:100%;
+    border-radius:10px;
+    background:rgba(255,255,255,.07);
+    margin-top:7px;
+    overflow:hidden;
+}
+
+.strength-bar{
+    width:0;
+    height:100%;
+    transition:.3s;
+}
+
+.strength-text{
+    display:block;
+    font-size:9px;
+    color:#657d96;
+    margin-top:5px;
+}
+
+.options{
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    margin:17px 0 19px;
+    color:#8097af;
+    font-size:10px;
+    line-height:1.5;
+}
+
+.options input{
+    margin-top:2px;
+    accent-color:#078cff;
+}
+
+.options a{
+    color:#28d9ff;
+    text-decoration:none;
+}
+
+.register-btn{
+    width:100%;
+    height:50px;
+    border:0;
+    border-radius:12px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:white;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.25s;
+}
+
+.register-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 15px 35px rgba(0,150,255,.25);
+}
+
+.register-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+}
+
+.divider{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:21px 0;
+    color:#607991;
+    font-size:9px;
+}
+
+.divider:before,
+.divider:after{
+    content:"";
+    height:1px;
+    flex:1;
+    background:rgba(255,255,255,.08);
+}
+
+.google-btn{
+    width:100%;
+    height:48px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.035);
+    color:#e2edf8;
+    cursor:pointer;
+    font-size:12px;
+    font-weight:700;
+    transition:.25s;
+}
+
+.google-btn:hover{
+    background:rgba(255,255,255,.08);
+}
+
+.login{
+    text-align:center;
+    color:#7288a1;
+    font-size:11px;
+    margin-top:21px;
+}
+
+.login a{
+    color:#28d9ff;
+    font-weight:700;
+    text-decoration:none;
+}
+
+.home{
+    display:block;
+    text-align:center;
+    margin-top:16px;
+    color:#627b94;
+    font-size:10px;
+    text-decoration:none;
+}
+
+.home:hover{
+    color:#fff;
+}
+
+.loading{
+    display:none;
+}
+
+@media(max-width:850px){
+
+    body{
+        align-items:flex-start;
+    }
+
+    .container{
+        grid-template-columns:1fr;
+        gap:25px;
+        max-width:550px;
+        padding:35px 18px;
+    }
+
+    .left{
+        text-align:center;
+        padding:10px;
+    }
+
+    .left p{
+        margin:auto;
+    }
+
+    .services{
+        justify-content:center;
+    }
+
+    .logo{
+        width:60px;
+        height:60px;
+        border-radius:17px;
+    }
+}
+
+@media(max-width:500px){
+
+    .container{
+        padding:25px 13px;
+    }
+
+    .left{
+        padding:5px;
+    }
+
+    .left h1{
+        font-size:43px;
+        letter-spacing:-3px;
+    }
+
+    .left p{
+        font-size:12px;
+    }
+
+    .card{
+        padding:24px 18px;
+        border-radius:21px;
+    }
+
+    .card h2{
+        font-size:22px;
+    }
+}
+
+@media(max-width:360px){
+
+    .left h1{
+        font-size:37px;
+    }
+
+    .card{
+        padding:22px 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <section class="left">
+
+        <img
+            class="logo"
+            src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+            alt="MailMart"
+        >
+
+        <h1>
+            Join<br>
+            <span class="gradient">MailMart.</span>
+        </h1>
+
+        <p>
+            Create your account and access MailMart's
+            digital marketplace and services.
+        </p>
+
+        <div class="services">
+            <span class="service">Social Media</span>
+            <span class="service">Digital Services</span>
+            <span class="service">Email Purchasing</span>
+            <span class="service">Fast Delivery</span>
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <h2>Create Account</h2>
+
+        <p class="subtitle">
+            Register to get started with MailMart.
+        </p>
+
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
+
+        <form id="registerForm">
+
+            <div class="field">
+                <label>Email Address</label>
+
+                <div class="input-wrap">
+
+                    <input
+                        id="email"
+                        type="email"
+                        placeholder="Enter your email"
+                        autocomplete="email"
+                        required
+                    >
+
+                </div>
+            </div>
+
+            <div class="field">
+
+                <label>Password</label>
+
+                <div class="input-wrap">
+
+                    <input
+                        id="password"
+                        type="password"
+                        placeholder="Create a password"
+                        autocomplete="new-password"
+                        minlength="6"
+                        required
+                    >
+
+                    <span
+                        class="eye"
+                        id="passwordEye"
+                    >Show</span>
+
+                </div>
+
+                <div class="password-strength">
+                    <div
+                        id="strengthBar"
+                        class="strength-bar"
+                    ></div>
+                </div>
+
+                <span
+                    id="strengthText"
+                    class="strength-text"
+                ></span>
+
+            </div>
+
+            <div class="field">
+
+                <label>Confirm Password</label>
+
+                <div class="input-wrap">
+
+                    <input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Confirm your password"
+                        autocomplete="new-password"
+                        minlength="6"
+                        required
+                    >
+
+                    <span
+                        class="eye"
+                        id="confirmEye"
+                    >Show</span>
+
+                </div>
+
+            </div>
+
+            <label class="options">
+
+                <input
+                    type="checkbox"
+                    id="terms"
+                    required
+                >
+
+                <span>
+                    I agree to the
+                    <a href="#">Terms of Service</a>
+                    and
+                    <a href="#">Privacy Policy</a>.
+                </span>
+
+            </label>
+
+            <button
+                type="submit"
+                class="register-btn"
+                id="registerBtn"
+            >
+                <span id="registerText">
+                    Create Account
+                </span>
+
+                <span
+                    id="registerLoading"
+                    class="loading"
+                >
+                    Creating account...
+                </span>
+
+            </button>
+
+        </form>
+
+        <div class="divider">
+            OR
+        </div>
+
+        <button
+            type="button"
+            class="google-btn"
+            id="googleBtn"
+        >
+            Continue with Google
+        </button>
+
+        <div class="login">
+            Already have an account?
+            <a href="login.html">Login</a>
+        </div>
+
+        <a
+            href="index.html"
+            class="home"
+        >
+            ← Back to home
+        </a>
+
+    </section>
+
+</div>
+
+<script type="module">
+
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+    setPersistence,
+    browserLocalPersistence,
+    browserSessionPersistence
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+
+const firebaseConfig = {
+
+    apiKey:
+        "AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+
+    authDomain:
+        "mailmartz.firebaseapp.com",
+
+    projectId:
+        "mailmartz",
+
+    storageBucket:
+        "mailmartz.firebasestorage.app",
+
+    messagingSenderId:
+        "802413654231",
+
+    appId:
+        "1:802413654231:web:4e5d87d23d6a2317724092",
+
+    measurementId:
+        "G-LKLEWS7RPF"
+
+};
+
+
+const app =
+    initializeApp(firebaseConfig);
+
+const auth =
+    getAuth(app);
+
+const googleProvider =
+    new GoogleAuthProvider();
+
+googleProvider.setCustomParameters({
+    prompt:"select_account"
+});
+
+
+const form =
+    document.getElementById("registerForm");
+
+const email =
+    document.getElementById("email");
+
+const password =
+    document.getElementById("password");
+
+const confirmPassword =
+    document.getElementById("confirmPassword");
+
+const terms =
+    document.getElementById("terms");
+
+const registerBtn =
+    document.getElementById("registerBtn");
+
+const registerText =
+    document.getElementById("registerText");
+
+const registerLoading =
+    document.getElementById("registerLoading");
+
+const googleBtn =
+    document.getElementById("googleBtn");
+
+const errorBox =
+    document.getElementById("error");
+
+const successBox =
+    document.getElementById("success");
+
+const passwordEye =
+    document.getElementById("passwordEye");
+
+const confirmEye =
+    document.getElementById("confirmEye");
+
+const strengthBar =
+    document.getElementById("strengthBar");
+
+const strengthText =
+    document.getElementById("strengthText");
+
+
+function showError(text){
+
+    errorBox.textContent = text;
+    errorBox.style.display = "block";
+    successBox.style.display = "none";
+
+}
+
+
+function showSuccess(text){
+
+    successBox.textContent = text;
+    successBox.style.display = "block";
+    errorBox.style.display = "none";
+
+}
+
+
+function clearMessages(){
+
+    errorBox.style.display = "none";
+    successBox.style.display = "none";
+
+}
+
+
+function firebaseError(error){
+
+    switch(error.code){
+
+        case "auth/email-already-in-use":
+            return "An account with this email already exists.";
+
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
+
+        case "auth/weak-password":
+            return "Your password is too weak. Use at least 6 characters.";
+
+        case "auth/network-request-failed":
+            return "Network error. Check your internet connection.";
+
+        case "auth/popup-closed-by-user":
+            return "Google registration was cancelled.";
+
+        case "auth/popup-blocked":
+            return "Your browser blocked the Google sign-in window.";
+
+        case "auth/operation-not-allowed":
+            return "This registration method is not enabled in Firebase.";
+
+        default:
+            return "Unable to create your account. Please try again.";
+
+    }
+
+}
+
+
+function loading(state){
+
+    registerBtn.disabled = state;
+    googleBtn.disabled = state;
+
+    if(state){
+
+        registerText.style.display = "none";
+        registerLoading.style.display = "inline";
+
+    }else{
+
+        registerText.style.display = "inline";
+        registerLoading.style.display = "none";
+
+    }
+
+}
+
+
+function checkStrength(value){
+
+    let score = 0;
+
+    if(value.length >= 6){
+        score++;
+    }
+
+    if(value.length >= 10){
+        score++;
+    }
+
+    if(/[A-Z]/.test(value)){
+        score++;
+    }
+
+    if(/[0-9]/.test(value)){
+        score++;
+    }
+
+    if(/[^A-Za-z0-9]/.test(value)){
+        score++;
+    }
+
+
+    if(!value){
+
+        strengthBar.style.width = "0";
+        strengthText.textContent = "";
+
+        return;
+
+    }
+
+
+    if(score <= 1){
+
+        strengthBar.style.width = "25%";
+        strengthText.textContent = "Weak password";
+
+    }else if(score <= 3){
+
+        strengthBar.style.width = "60%";
+        strengthText.textContent = "Moderate password";
+
+    }else{
+
+        strengthBar.style.width = "100%";
+        strengthText.textContent = "Strong password";
+
+    }
+
+}
+
+
+function togglePassword(input,eye){
+
+    if(input.type === "password"){
+
+        input.type = "text";
+        eye.textContent = "Hide";
+
+    }else{
+
+        input.type = "password";
+        eye.textContent = "Show";
+
+    }
+
+}
+
+
+passwordEye.addEventListener(
+    "click",
+    function(){
+
+        togglePassword(
+            password,
+            passwordEye
+        );
+
+    }
+);
+
+
+confirmEye.addEventListener(
+    "click",
+    function(){
+
+        togglePassword(
+            confirmPassword,
+            confirmEye
+        );
+
+    }
+);
+
+
+password.addEventListener(
+    "input",
+    function(){
+
+        checkStrength(
+            password.value
+        );
+
+    }
+);
+
+
+form.addEventListener(
+    "submit",
+    async function(event){
+
+        event.preventDefault();
+
+        clearMessages();
+
+        const emailValue =
+            email.value.trim();
+
+        const passwordValue =
+            password.value;
+
+        const confirmValue =
+            confirmPassword.value;
+
+
+        if(!emailValue){
+
+            showError(
+                "Please enter your email address."
+            );
+
+            return;
+
+        }
+
+
+        if(passwordValue.length < 6){
+
+            showError(
+                "Password must contain at least 6 characters."
+            );
+
+            return;
+
+        }
+
+
+        if(passwordValue !== confirmValue){
+
+            showError(
+                "The passwords do not match."
+            );
+
+            return;
+
+        }
+
+
+        if(!terms.checked){
+
+            showError(
+                "Please accept the Terms of Service and Privacy Policy."
+            );
+
+            return;
+
+        }
+
+
+        loading(true);
+
+
+        try{
+
+            await setPersistence(
+                auth,
+                browserLocalPersistence
+            );
+
+
+            await createUserWithEmailAndPassword(
+                auth,
+                emailValue,
+                passwordValue
+            );
+
+
+            showSuccess(
+                "Account created successfully. Redirecting..."
+            );
+
+
+            setTimeout(
+                function(){
+
+                    window.location.href =
+                        "dashboard.html";
+
+                },
+                800
+            );
+
+
+        }catch(error){
+
+            showError(
+                firebaseError(error)
+            );
+
+            loading(false);
+
+        }
+
+    }
+);
+
+
+googleBtn.addEventListener(
+    "click",
+    async function(){
+
+        clearMessages();
+
+        loading(true);
+
+        try{
+
+            await setPersistence(
+                auth,
+                browserLocalPersistence
+            );
+
+
+            await signInWithPopup(
+                auth,
+                googleProvider
+            );
+
+
+            showSuccess(
+                "Google registration successful. Redirecting..."
+            );
+
+
+            setTimeout(
+                function(){
+
+                    window.location.href =
+                        "dashboard.html";
+
+                },
+                800
+            );
+
+
+        }catch(error){
+
+            showError(
+                firebaseError(error)
+            );
+
+            loading(false);
+
+        }
+
+    }
+);
+
+</script>
+
+</body>
+</html>
