@@ -4,34 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>MailMart — Buy • Sell • Grow</title>
+<title>MailMart — Digital Marketplace</title>
 
-<meta name="description"
-content="MailMart — Your digital marketplace for emails, social media services, digital goods and online solutions.">
+<meta name="description" content="MailMart provides digital and social media services and buys emails from users.">
+<meta name="theme-color" content="#020812">
 
-<meta name="theme-color" content="#020b1c">
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 
 <style>
-
 :root{
     --bg:#020812;
-    --bg2:#06152d;
     --blue:#087cff;
-    --blue2:#1267ff;
     --cyan:#00d9ff;
-    --cyan2:#45e7ff;
-    --white:#ffffff;
+    --white:#fff;
     --muted:#9cafc7;
     --border:rgba(0,195,255,.18);
-    --glass:rgba(7,27,58,.68);
 }
 
 *{
@@ -46,7 +39,7 @@ html{
 
 body{
     font-family:Inter,Arial,sans-serif;
-    color:white;
+    color:#fff;
     background:
         radial-gradient(circle at 10% 10%,rgba(0,115,255,.13),transparent 30%),
         radial-gradient(circle at 90% 20%,rgba(0,220,255,.09),transparent 30%),
@@ -56,36 +49,24 @@ body{
 }
 
 a{
-    text-decoration:none;
     color:inherit;
+    text-decoration:none;
 }
 
 img{
     max-width:100%;
-    display:block;
 }
-
-/* =====================================
-   BACKGROUND
-===================================== */
 
 .background-grid{
     position:fixed;
     inset:0;
     z-index:-5;
     pointer-events:none;
-
     background-image:
         linear-gradient(rgba(0,170,255,.035) 1px,transparent 1px),
         linear-gradient(90deg,rgba(0,170,255,.035) 1px,transparent 1px);
-
     background-size:55px 55px;
-
-    mask-image:linear-gradient(
-        to bottom,
-        black,
-        transparent 90%
-    );
+    mask-image:linear-gradient(to bottom,black,transparent 90%);
 }
 
 .orb{
@@ -121,11 +102,6 @@ img{
     left:35%;
 }
 
-
-/* =====================================
-   PARTICLES
-===================================== */
-
 .particles{
     position:fixed;
     inset:0;
@@ -144,14 +120,14 @@ img{
     animation:particleFloat linear infinite;
 }
 
-.p1{left:8%;top:25%;animation-duration:12s;}
-.p2{left:18%;top:70%;animation-duration:16s;}
-.p3{left:35%;top:20%;animation-duration:14s;}
-.p4{left:48%;top:80%;animation-duration:18s;}
-.p5{left:62%;top:30%;animation-duration:13s;}
-.p6{left:75%;top:65%;animation-duration:15s;}
-.p7{left:88%;top:25%;animation-duration:17s;}
-.p8{left:93%;top:80%;animation-duration:11s;}
+.p1{left:8%;top:25%;animation-duration:12s}
+.p2{left:18%;top:70%;animation-duration:16s}
+.p3{left:35%;top:20%;animation-duration:14s}
+.p4{left:48%;top:80%;animation-duration:18s}
+.p5{left:62%;top:30%;animation-duration:13s}
+.p6{left:75%;top:65%;animation-duration:15s}
+.p7{left:88%;top:25%;animation-duration:17s}
+.p8{left:93%;top:80%;animation-duration:11s}
 
 @keyframes particleFloat{
     0%{
@@ -170,21 +146,15 @@ img{
     }
 }
 
-
-/* =====================================
-   NAVIGATION
-===================================== */
-
 header{
     position:fixed;
     top:0;
+    left:0;
     width:100%;
     z-index:1000;
-
-    background:rgba(2,8,18,.72);
+    background:rgba(2,8,18,.78);
     backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);
-
     border-bottom:1px solid rgba(255,255,255,.06);
 }
 
@@ -192,11 +162,9 @@ header{
     max-width:1250px;
     height:78px;
     margin:auto;
-
     display:flex;
     align-items:center;
     justify-content:space-between;
-
     padding:0 24px;
 }
 
@@ -204,9 +172,9 @@ header{
     display:flex;
     align-items:center;
     gap:11px;
-
     font-size:21px;
     font-weight:900;
+    white-space:nowrap;
 }
 
 .brand img{
@@ -214,19 +182,11 @@ header{
     height:46px;
     border-radius:50%;
     object-fit:cover;
-
-    filter:drop-shadow(
-        0 0 14px rgba(0,190,255,.45)
-    );
+    filter:drop-shadow(0 0 14px rgba(0,190,255,.45));
 }
 
 .brand span{
-    background:linear-gradient(
-        90deg,
-        #fff,
-        #35dfff
-    );
-
+    background:linear-gradient(90deg,#fff,#35dfff);
     -webkit-background-clip:text;
     color:transparent;
 }
@@ -244,7 +204,7 @@ nav a{
 }
 
 nav a:hover{
-    color:white;
+    color:#fff;
 }
 
 .nav-buttons{
@@ -255,45 +215,30 @@ nav a:hover{
 .btn{
     border:0;
     cursor:pointer;
-
     display:inline-flex;
     align-items:center;
     justify-content:center;
     gap:9px;
-
     padding:13px 20px;
     border-radius:13px;
-
     font-size:14px;
     font-weight:700;
-
     transition:.3s;
 }
 
 .btn-primary{
-    color:white;
-
-    background:
-        linear-gradient(
-            135deg,
-            #0577ff,
-            #00d4ff
-        );
-
-    box-shadow:
-        0 12px 35px rgba(0,150,255,.25);
+    color:#fff;
+    background:linear-gradient(135deg,#0577ff,#00d4ff);
+    box-shadow:0 12px 35px rgba(0,150,255,.25);
 }
 
 .btn-primary:hover{
     transform:translateY(-3px);
-
-    box-shadow:
-        0 18px 45px rgba(0,190,255,.38);
+    box-shadow:0 18px 45px rgba(0,190,255,.38);
 }
 
 .btn-login{
-    color:white;
-
+    color:#fff;
     background:rgba(255,255,255,.045);
     border:1px solid rgba(255,255,255,.11);
 }
@@ -308,24 +253,52 @@ nav a:hover{
     cursor:pointer;
 }
 
+.mobile-nav{
+    position:fixed;
+    top:78px;
+    left:0;
+    right:0;
+    z-index:999;
+    display:none;
+    padding:15px 20px 22px;
+    background:rgba(2,9,20,.98);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
 
-/* =====================================
-   HERO
-===================================== */
+.mobile-nav.active{
+    display:block;
+}
+
+.mobile-nav a{
+    display:block;
+    padding:14px 5px;
+    color:#c4d4e9;
+    border-bottom:1px solid rgba(255,255,255,.05);
+    font-size:14px;
+    font-weight:600;
+}
+
+.mobile-buttons{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    padding-top:15px;
+}
+
+.mobile-buttons a{
+    border:0;
+    text-align:center;
+}
 
 .hero{
     min-height:100vh;
     max-width:1250px;
     margin:auto;
-
-    padding:
-        145px 24px
-        75px;
-
+    padding:145px 24px 75px;
     display:grid;
     grid-template-columns:1.05fr .95fr;
     align-items:center;
-
     gap:40px;
 }
 
@@ -348,36 +321,24 @@ nav a:hover{
     display:inline-flex;
     align-items:center;
     gap:9px;
-
     padding:8px 13px;
-
     border-radius:100px;
-
     color:#73ddff;
-
     background:rgba(0,145,255,.08);
     border:1px solid rgba(0,195,255,.2);
-
     font-size:11px;
     font-weight:800;
-
     text-transform:uppercase;
     letter-spacing:1.4px;
-
     margin-bottom:23px;
 }
 
 .live-dot{
     width:7px;
     height:7px;
-
     border-radius:50%;
-
     background:#00e1ff;
-
-    box-shadow:
-        0 0 15px #00e1ff;
-
+    box-shadow:0 0 15px #00e1ff;
     animation:pulse 1.5s infinite;
 }
 
@@ -385,7 +346,6 @@ nav a:hover{
     0%,100%{
         transform:scale(1);
     }
-
     50%{
         transform:scale(1.7);
         opacity:.5;
@@ -395,35 +355,22 @@ nav a:hover{
 .hero h1{
     font-size:clamp(45px,6vw,78px);
     line-height:.98;
-
     font-weight:900;
-
     letter-spacing:-4px;
-
     margin-bottom:25px;
 }
 
 .gradient-text{
-    background:
-        linear-gradient(
-            100deg,
-            #fff,
-            #36e0ff,
-            #087cff
-        );
-
+    background:linear-gradient(100deg,#fff,#36e0ff,#087cff);
     -webkit-background-clip:text;
     color:transparent;
 }
 
 .hero p{
     max-width:620px;
-
     color:var(--muted);
-
     font-size:17px;
     line-height:1.8;
-
     margin-bottom:31px;
 }
 
@@ -437,11 +384,8 @@ nav a:hover{
     display:flex;
     flex-wrap:wrap;
     gap:20px;
-
     margin-top:32px;
-
     color:#91a7c0;
-
     font-size:12px;
     font-weight:600;
 }
@@ -456,27 +400,18 @@ nav a:hover{
     color:#13d9ff;
 }
 
-
-/* =====================================
-   HERO VISUAL
-===================================== */
-
 .hero-visual{
     display:flex;
     justify-content:center;
     align-items:center;
-
     position:relative;
-
     min-height:520px;
 }
 
 .logo-orbit{
     width:min(480px,90vw);
     aspect-ratio:1;
-
     position:relative;
-
     display:flex;
     align-items:center;
     justify-content:center;
@@ -484,32 +419,20 @@ nav a:hover{
 
 .logo-orbit::before{
     content:"";
-
     position:absolute;
     inset:3%;
-
     border-radius:50%;
-
-    border:
-        1px solid rgba(0,200,255,.28);
-
-    box-shadow:
-        0 0 60px rgba(0,150,255,.08);
-
+    border:1px solid rgba(0,200,255,.28);
+    box-shadow:0 0 60px rgba(0,150,255,.08);
     animation:rotate 22s linear infinite;
 }
 
 .logo-orbit::after{
     content:"";
-
     position:absolute;
     inset:12%;
-
     border-radius:50%;
-
-    border:
-        1px dashed rgba(0,220,255,.25);
-
+    border:1px dashed rgba(0,220,255,.25);
     animation:rotateReverse 30s linear infinite;
 }
 
@@ -525,41 +448,21 @@ nav a:hover{
     }
 }
 
-
-/* =====================================
-   LOGO CARD
-===================================== */
-
 .logo-card{
     width:70%;
     aspect-ratio:1;
-
     padding:24px;
-
     border-radius:40px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(10,45,95,.8),
-            rgba(2,12,30,.9)
-        );
-
-    border:
-        1px solid rgba(0,195,255,.3);
-
+    background:linear-gradient(145deg,rgba(10,45,95,.8),rgba(2,12,30,.9));
+    border:1px solid rgba(0,195,255,.3);
     box-shadow:
         0 0 100px rgba(0,125,255,.18),
         inset 0 0 70px rgba(0,180,255,.06);
-
     backdrop-filter:blur(15px);
-
     animation:floatingLogo 5s ease-in-out infinite;
-
     position:relative;
     z-index:3;
 }
@@ -568,7 +471,6 @@ nav a:hover{
     0%,100%{
         transform:translateY(0);
     }
-
     50%{
         transform:translateY(-13px);
     }
@@ -577,105 +479,54 @@ nav a:hover{
 .logo-card img{
     width:100%;
     height:100%;
-
     object-fit:contain;
-
     border-radius:30px;
-
-    filter:
-        drop-shadow(
-            0 20px 40px rgba(0,150,255,.3)
-        );
+    filter:drop-shadow(0 20px 40px rgba(0,150,255,.3));
 }
-
-
-/* =====================================
-   FLOATING ORBIT ICONS
-===================================== */
 
 .orbit-icon{
     position:absolute;
-
     width:58px;
     height:58px;
-
     border-radius:19px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(8,39,79,.92),
-            rgba(3,15,34,.92)
-        );
-
-    border:
-        1px solid rgba(0,205,255,.3);
-
+    background:linear-gradient(145deg,rgba(8,39,79,.92),rgba(3,15,34,.92));
+    border:1px solid rgba(0,205,255,.3);
     box-shadow:
         0 15px 45px rgba(0,0,0,.35),
         0 0 25px rgba(0,180,255,.08);
-
     backdrop-filter:blur(12px);
-
     z-index:5;
-
     animation:iconFloat 4s ease-in-out infinite;
-
     cursor:pointer;
-
     transition:.3s;
 }
 
 .orbit-icon i{
     color:#39ddff;
     font-size:20px;
-
-    filter:
-        drop-shadow(
-            0 0 8px rgba(0,220,255,.6)
-        );
 }
 
 .orbit-icon:hover{
     transform:scale(1.15);
-
     border-color:#00d9ff;
-
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.4),
-        0 0 30px rgba(0,210,255,.3);
 }
 
 .orbit-icon .tooltip{
     position:absolute;
-
     white-space:nowrap;
-
     padding:7px 11px;
-
     border-radius:8px;
-
     background:#071a38;
-
     border:1px solid rgba(0,210,255,.2);
-
     color:#dff8ff;
-
     font-size:10px;
     font-weight:700;
-
     opacity:0;
-
     pointer-events:none;
-
     transition:.25s;
-
-    box-shadow:
-        0 10px 30px rgba(0,0,0,.35);
 }
 
 .orbit-icon:hover .tooltip{
@@ -685,44 +536,37 @@ nav a:hover{
 .icon-email{
     top:6%;
     left:12%;
-    animation-delay:0s;
 }
 
 .icon-social{
     top:13%;
     right:8%;
-    animation-delay:.8s;
 }
 
 .icon-market{
     bottom:18%;
     left:3%;
-    animation-delay:1.5s;
 }
 
 .icon-fast{
     bottom:7%;
     right:13%;
-    animation-delay:2.2s;
 }
 
 .icon-security{
     top:45%;
     left:-2%;
-    animation-delay:1.1s;
 }
 
 .icon-globe{
     top:45%;
     right:-2%;
-    animation-delay:2.8s;
 }
 
 @keyframes iconFloat{
     0%,100%{
         transform:translateY(0);
     }
-
     50%{
         transform:translateY(-12px);
     }
@@ -744,11 +588,6 @@ nav a:hover{
     transform:translateY(-50%);
 }
 
-
-/* =====================================
-   SECTIONS
-===================================== */
-
 section{
     max-width:1250px;
     margin:auto;
@@ -763,39 +602,25 @@ section{
 
 .section-label{
     color:#2bdcff;
-
     font-size:11px;
     text-transform:uppercase;
-
     letter-spacing:2px;
-
     font-weight:800;
-
     margin-bottom:13px;
 }
 
 .section-heading h2{
     font-size:clamp(32px,4vw,50px);
-
     line-height:1.05;
-
     letter-spacing:-2px;
-
     margin-bottom:17px;
 }
 
 .section-heading p{
     color:var(--muted);
-
     line-height:1.8;
-
     font-size:15px;
 }
-
-
-/* =====================================
-   SERVICES
-===================================== */
 
 .services-grid{
     display:grid;
@@ -805,83 +630,32 @@ section{
 
 .service-card{
     position:relative;
-
     padding:30px;
-
     min-height:260px;
-
     overflow:hidden;
-
     border-radius:24px;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(12,39,79,.65),
-            rgba(3,15,34,.75)
-        );
-
-    border:
-        1px solid var(--border);
-
+    background:linear-gradient(145deg,rgba(12,39,79,.65),rgba(3,15,34,.75));
+    border:1px solid var(--border);
     transition:.3s;
-}
-
-.service-card::before{
-    content:"";
-
-    position:absolute;
-
-    width:180px;
-    height:180px;
-
-    right:-100px;
-    bottom:-100px;
-
-    border-radius:50%;
-
-    background:
-        radial-gradient(
-            circle,
-            rgba(0,210,255,.16),
-            transparent 70%
-        );
 }
 
 .service-card:hover{
     transform:translateY(-8px);
-
-    border-color:
-        rgba(0,210,255,.4);
-
-    box-shadow:
-        0 25px 65px rgba(0,90,255,.12);
+    border-color:rgba(0,210,255,.4);
+    box-shadow:0 25px 65px rgba(0,90,255,.12);
 }
 
 .service-icon{
     width:55px;
     height:55px;
-
     border-radius:17px;
-
     display:flex;
     align-items:center;
     justify-content:center;
-
     color:#35dcff;
-
-    background:
-        linear-gradient(
-            135deg,
-            rgba(0,128,255,.25),
-            rgba(0,220,255,.08)
-        );
-
-    border:
-        1px solid rgba(0,190,255,.2);
-
+    background:linear-gradient(135deg,rgba(0,128,255,.25),rgba(0,220,255,.08));
+    border:1px solid rgba(0,190,255,.2);
     margin-bottom:24px;
-
     font-size:21px;
 }
 
@@ -892,93 +666,56 @@ section{
 
 .service-card p{
     color:var(--muted);
-
     line-height:1.7;
-
     font-size:14px;
 }
 
-
-/* =====================================
-   ABOUT
-===================================== */
-
 .about-wrapper{
     display:grid;
-
     grid-template-columns:.9fr 1.1fr;
-
     gap:70px;
-
     align-items:center;
 }
 
 .about-box{
     padding:38px;
-
     border-radius:30px;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(8,39,82,.8),
-            rgba(2,12,28,.9)
-        );
-
-    border:
-        1px solid var(--border);
-
-    box-shadow:
-        0 30px 80px rgba(0,60,150,.12);
+    background:linear-gradient(145deg,rgba(8,39,82,.8),rgba(2,12,28,.9));
+    border:1px solid var(--border);
+    box-shadow:0 30px 80px rgba(0,60,150,.12);
 }
 
 .about-logo{
     width:170px;
-
     margin:0 auto 25px;
-
-    filter:
-        drop-shadow(
-            0 15px 35px rgba(0,148,255,.3)
-        );
+    border-radius:30px;
+    filter:drop-shadow(0 15px 35px rgba(0,148,255,.3));
 }
 
 .mini-stats{
     display:grid;
-
     grid-template-columns:repeat(3,1fr);
-
     gap:10px;
 }
 
 .mini-stat{
     text-align:center;
-
     padding:17px 8px;
-
     border-radius:15px;
-
     background:rgba(255,255,255,.035);
-
-    border:
-        1px solid rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.07);
 }
 
 .mini-stat strong{
     display:block;
-
     color:#42dcff;
-
     font-size:19px;
 }
 
 .mini-stat span{
     display:block;
-
     color:#849bb7;
-
     font-size:10px;
-
     margin-top:5px;
 }
 
@@ -988,41 +725,29 @@ section{
 
 .about-content h2{
     font-size:clamp(32px,4vw,48px);
-
     letter-spacing:-2px;
-
     margin-bottom:20px;
 }
 
 .about-content p{
     color:var(--muted);
-
     line-height:1.85;
-
     margin-bottom:18px;
-
     font-size:15px;
 }
 
 .check-list{
     margin-top:25px;
-
     display:grid;
-
     gap:13px;
 }
 
 .check{
     display:flex;
-
     align-items:center;
-
     gap:12px;
-
     color:#d8e7f8;
-
     font-size:14px;
-
     font-weight:600;
 }
 
@@ -1030,56 +755,32 @@ section{
     color:#00dcff;
 }
 
-
-/* =====================================
-   PLATFORMS
-===================================== */
-
 .platforms{
     display:flex;
-
     flex-wrap:wrap;
-
     justify-content:center;
-
     gap:14px;
 }
 
 .platform{
     min-width:125px;
-
     padding:18px 22px;
-
     border-radius:18px;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     gap:10px;
-
     color:#bcd0e7;
-
     background:rgba(255,255,255,.035);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
+    border:1px solid rgba(255,255,255,.08);
     transition:.3s;
 }
 
 .platform:hover{
-    color:white;
-
+    color:#fff;
     transform:translateY(-5px);
-
-    border-color:
-        rgba(0,210,255,.35);
-
-    background:
-        rgba(0,125,255,.09);
+    border-color:rgba(0,210,255,.35);
+    background:rgba(0,125,255,.09);
 }
 
 .platform i{
@@ -1087,381 +788,202 @@ section{
     font-size:20px;
 }
 
-
-/* =====================================
-   FEATURES
-===================================== */
-
 .feature-grid{
     display:grid;
-
-    grid-template-columns:
-        repeat(4,1fr);
-
+    grid-template-columns:repeat(4,1fr);
     gap:15px;
 }
 
 .feature{
     text-align:center;
-
     padding:28px 18px;
-
     border-radius:21px;
-
-    background:
-        rgba(255,255,255,.025);
-
-    border:
-        1px solid rgba(255,255,255,.07);
-
+    background:rgba(255,255,255,.025);
+    border:1px solid rgba(255,255,255,.07);
     transition:.3s;
 }
 
 .feature:hover{
     transform:translateY(-5px);
-
-    border-color:
-        rgba(0,210,255,.3);
+    border-color:rgba(0,210,255,.3);
 }
 
 .feature i{
     color:#22d9ff;
-
     font-size:25px;
-
     margin-bottom:16px;
 }
 
 .feature h3{
     font-size:15px;
-
     margin-bottom:8px;
 }
 
 .feature p{
     color:#8298b2;
-
     font-size:12px;
-
     line-height:1.6;
 }
 
-
-/* =====================================
-   CTA
-===================================== */
-
 .cta{
     max-width:1200px;
-
     margin:30px auto 100px;
-
     padding:75px 35px;
-
     text-align:center;
-
     position:relative;
-
     overflow:hidden;
-
     border-radius:35px;
-
     background:
-        radial-gradient(
-            circle at center,
-            rgba(0,194,255,.18),
-            transparent 55%
-        ),
-        linear-gradient(
-            135deg,
-            #071b3d,
-            #041126
-        );
-
-    border:
-        1px solid rgba(0,190,255,.2);
+        radial-gradient(circle at center,rgba(0,194,255,.18),transparent 55%),
+        linear-gradient(135deg,#071b3d,#041126);
+    border:1px solid rgba(0,190,255,.2);
 }
 
 .cta h2{
     font-size:clamp(32px,5vw,55px);
-
     letter-spacing:-2px;
-
     margin-bottom:15px;
 }
 
 .cta p{
     max-width:620px;
-
     margin:0 auto 28px;
-
     color:var(--muted);
-
     line-height:1.8;
 }
 
-
-/* =====================================
-   FOOTER
-===================================== */
-
 footer{
-    border-top:
-        1px solid rgba(255,255,255,.07);
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(3,14,31,.6),
-            #010711
-        );
+    border-top:1px solid rgba(255,255,255,.07);
+    background:linear-gradient(180deg,rgba(3,14,31,.6),#010711);
 }
 
 .footer-inner{
     max-width:1250px;
-
     margin:auto;
-
     padding:65px 24px 25px;
 }
 
 .footer-grid{
     display:grid;
-
-    grid-template-columns:
-        1.5fr repeat(3,1fr);
-
+    grid-template-columns:1.5fr repeat(3,1fr);
     gap:45px;
-
     padding-bottom:50px;
 }
 
 .footer-brand p{
     max-width:310px;
-
     margin-top:18px;
-
     color:#8297b1;
-
     font-size:13px;
-
     line-height:1.8;
 }
 
 .footer-column h4{
     font-size:14px;
-
     margin-bottom:18px;
 }
 
 .footer-column a{
     display:block;
-
     color:#8297b1;
-
     font-size:13px;
-
     margin-bottom:12px;
-
     transition:.2s;
 }
 
 .footer-column a:hover{
     color:#35ddff;
-
     transform:translateX(3px);
 }
 
 .socials{
     display:flex;
-
     flex-wrap:wrap;
-
     gap:9px;
-
     margin-top:22px;
 }
 
 .social{
     width:40px;
     height:40px;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     border-radius:12px;
-
     color:#a8bdd5;
-
-    background:
-        rgba(255,255,255,.04);
-
-    border:
-        1px solid rgba(255,255,255,.08);
-
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
     transition:.3s;
 }
 
 .social:hover{
-    color:white;
-
-    background:
-        rgba(0,138,255,.15);
-
-    border-color:
-        rgba(0,210,255,.35);
-
+    color:#fff;
+    background:rgba(0,138,255,.15);
+    border-color:rgba(0,210,255,.35);
     transform:translateY(-3px);
 }
 
 .copyright{
     padding-top:22px;
-
-    border-top:
-        1px solid rgba(255,255,255,.06);
-
+    border-top:1px solid rgba(255,255,255,.06);
     display:flex;
-
     justify-content:space-between;
-
     gap:15px;
-
     color:#647b96;
-
     font-size:12px;
 }
 
-
-/* =====================================
-   FLOATING CONTACT BUTTONS
-===================================== */
-
 .floating-socials{
     position:fixed;
-
     right:20px;
     bottom:25px;
-
     z-index:900;
-
     display:flex;
-
     flex-direction:column;
-
     gap:10px;
 }
 
 .float-btn{
     width:48px;
     height:48px;
-
     border-radius:50%;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
-    color:white;
-
-    background:
-        rgba(5,26,58,.9);
-
-    border:
-        1px solid rgba(0,201,255,.25);
-
+    color:#fff;
+    background:rgba(5,26,58,.94);
+    border:1px solid rgba(0,201,255,.25);
     backdrop-filter:blur(15px);
-
-    box-shadow:
-        0 10px 35px rgba(0,0,0,.35);
-
+    box-shadow:0 10px 35px rgba(0,0,0,.35);
     transition:.3s;
-
     position:relative;
 }
 
-.float-btn::before{
-    content:"";
-
-    position:absolute;
-
-    inset:-4px;
-
-    border-radius:50%;
-
-    border:
-        1px solid rgba(0,210,255,.12);
-
-    animation:floatRing 2.5s infinite;
-}
-
-@keyframes floatRing{
-    0%{
-        transform:scale(.9);
-        opacity:.8;
-    }
-
-    100%{
-        transform:scale(1.25);
-        opacity:0;
-    }
-}
-
 .float-btn:hover{
-    transform:
-        translateX(-6px)
-        scale(1.08);
-
+    transform:translateX(-6px) scale(1.08);
     color:#35ddff;
-
     border-color:#00d9ff;
-
-    box-shadow:
-        0 0 30px rgba(0,210,255,.2);
 }
-
-
-/* =====================================
-   SCROLL TO TOP
-===================================== */
 
 .scroll-top{
     position:fixed;
-
     right:20px;
-    bottom:230px;
-
-    width:42px;
-    height:42px;
-
+    bottom:240px;
+    width:45px;
+    height:45px;
     border-radius:50%;
-
     display:flex;
-
     align-items:center;
-
     justify-content:center;
-
     color:#30dcff;
-
-    background:
-        rgba(5,26,58,.85);
-
-    border:
-        1px solid rgba(0,200,255,.2);
-
+    background:rgba(5,26,58,.94);
+    border:1px solid rgba(0,200,255,.25);
     cursor:pointer;
-
     opacity:0;
     visibility:hidden;
-
     transition:.3s;
-
-    z-index:800;
+    z-index:850;
+    box-shadow:0 10px 35px rgba(0,0,0,.3);
 }
 
 .scroll-top.show{
@@ -1469,12 +991,41 @@ footer{
     visibility:visible;
 }
 
+.reveal{
+    opacity:0;
+    transform:translateY(25px);
+    transition:opacity .7s ease,transform .7s ease;
+}
 
-/* =====================================
-   RESPONSIVE
-===================================== */
+.reveal.visible{
+    opacity:1;
+    transform:translateY(0);
+}
 
-@media(max-width:950px){
+@media(max-width:1100px){
+
+    nav{
+        gap:17px;
+    }
+
+    .hero{
+        gap:15px;
+    }
+
+    .hero h1{
+        font-size:clamp(42px,6vw,65px);
+    }
+
+    .services-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .footer-grid{
+        grid-template-columns:1.4fr 1fr 1fr;
+    }
+}
+
+@media(max-width:900px){
 
     nav,
     .nav-buttons{
@@ -1487,10 +1038,8 @@ footer{
 
     .hero{
         grid-template-columns:1fr;
-
         text-align:center;
-
-        padding-top:125px;
+        padding-top:120px;
     }
 
     .hero p{
@@ -1504,12 +1053,8 @@ footer{
     }
 
     .hero-visual{
-        margin-top:20px;
-    }
-
-    .services-grid{
-        grid-template-columns:
-            repeat(2,1fr);
+        min-height:460px;
+        margin-top:10px;
     }
 
     .about-wrapper{
@@ -1526,261 +1071,438 @@ footer{
 
     .check-list{
         justify-content:center;
+        text-align:left;
     }
 
     .feature-grid{
-        grid-template-columns:
-            repeat(2,1fr);
+        grid-template-columns:repeat(2,1fr);
     }
 
     .footer-grid{
-        grid-template-columns:
-            1fr 1fr;
+        grid-template-columns:1fr 1fr;
     }
 }
 
-
-/* =====================================
-   MOBILE
-===================================== */
-
 @media(max-width:600px){
+
+    body{
+        width:100%;
+        overflow-x:hidden;
+    }
+
+    header{
+        height:68px;
+    }
 
     .nav{
         height:68px;
-        padding:0 17px;
+        padding:0 15px;
     }
 
     .brand{
         font-size:18px;
+        gap:8px;
     }
 
     .brand img{
-        width:40px;
-        height:40px;
+        width:39px;
+        height:39px;
+    }
+
+    .mobile-nav{
+        top:68px;
+        max-height:calc(100vh - 68px);
+        overflow-y:auto;
     }
 
     .hero{
-        padding:
-            110px 17px 60px;
+        width:100%;
+        min-height:auto;
+        padding:105px 16px 45px;
+        gap:5px;
+    }
+
+    .eyebrow{
+        font-size:9px;
+        letter-spacing:1px;
+        padding:7px 11px;
+        margin-bottom:17px;
     }
 
     .hero h1{
-        letter-spacing:-2.5px;
+        font-size:clamp(42px,14vw,58px);
+        letter-spacing:-3px;
+        line-height:.96;
+        margin-bottom:18px;
     }
 
     .hero p{
         font-size:14px;
+        line-height:1.7;
+        margin-bottom:23px;
+    }
+
+    .hero-actions{
+        width:100%;
+        flex-direction:column;
+        gap:10px;
     }
 
     .hero-actions .btn{
         width:100%;
+        min-height:49px;
     }
 
     .hero-trust{
-        flex-direction:column;
+        margin-top:23px;
+        display:grid;
+        grid-template-columns:1fr;
         gap:9px;
+        justify-items:center;
+    }
+
+    .hero-visual{
+        width:100%;
+        min-height:350px;
+        margin-top:5px;
+    }
+
+    .logo-orbit{
+        width:min(320px,92vw);
+    }
+
+    .logo-orbit::before{
+        inset:2%;
+    }
+
+    .logo-orbit::after{
+        inset:10%;
+    }
+
+    .logo-card{
+        width:65%;
+        padding:13px;
+        border-radius:25px;
+    }
+
+    .logo-card img{
+        border-radius:19px;
+    }
+
+    .orbit-icon{
+        width:43px;
+        height:43px;
+        border-radius:13px;
+    }
+
+    .orbit-icon i{
+        font-size:15px;
+    }
+
+    .icon-email{
+        top:4%;
+        left:7%;
+    }
+
+    .icon-social{
+        top:8%;
+        right:5%;
+    }
+
+    .icon-market{
+        bottom:12%;
+        left:2%;
+    }
+
+    .icon-fast{
+        bottom:5%;
+        right:7%;
+    }
+
+    .icon-security{
+        top:44%;
+        left:-2%;
+    }
+
+    .icon-globe{
+        top:44%;
+        right:-2%;
+    }
+
+    .orbit-icon .tooltip{
+        display:none;
     }
 
     section{
-        padding:
-            75px 17px;
+        width:100%;
+        padding:65px 16px;
+    }
+
+    .section-heading{
+        margin-bottom:35px;
+    }
+
+    .section-label{
+        font-size:10px;
+        letter-spacing:1.5px;
+    }
+
+    .section-heading h2{
+        font-size:32px;
+        letter-spacing:-1.5px;
+    }
+
+    .section-heading p{
+        font-size:13px;
+        line-height:1.7;
     }
 
     .services-grid{
         grid-template-columns:1fr;
+        gap:13px;
     }
 
     .service-card{
         min-height:auto;
+        padding:23px;
+        border-radius:20px;
     }
 
-    .feature-grid{
-        grid-template-columns:
-            1fr 1fr;
+    .service-icon{
+        width:48px;
+        height:48px;
+        margin-bottom:18px;
     }
 
-    .platform{
-        min-width:105px;
-        padding:15px 10px;
-        font-size:12px;
+    .service-card h3{
+        font-size:17px;
+    }
+
+    .service-card p{
+        font-size:13px;
+    }
+
+    .about-wrapper{
+        gap:35px;
     }
 
     .about-box{
-        padding:23px;
+        padding:22px;
+        border-radius:23px;
+    }
+
+    .about-logo{
+        width:135px;
+        border-radius:24px;
+    }
+
+    .mini-stats{
+        grid-template-columns:repeat(3,1fr);
+        gap:6px;
+    }
+
+    .mini-stat{
+        padding:13px 4px;
+    }
+
+    .mini-stat strong{
+        font-size:15px;
+    }
+
+    .mini-stat span{
+        font-size:8px;
+    }
+
+    .about-content h2{
+        font-size:32px;
+    }
+
+    .about-content p{
+        font-size:13px;
+        line-height:1.75;
+    }
+
+    .check-list{
+        gap:11px;
+    }
+
+    .check{
+        font-size:12px;
+        align-items:flex-start;
+    }
+
+    .check i{
+        margin-top:2px;
+    }
+
+    .platforms{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+    }
+
+    .platform{
+        min-width:0;
+        width:100%;
+        padding:15px 8px;
+        border-radius:15px;
+        font-size:12px;
+    }
+
+    .platform i{
+        font-size:17px;
+    }
+
+    .feature-grid{
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+
+    .feature{
+        padding:21px 10px;
+        border-radius:17px;
+    }
+
+    .feature i{
+        font-size:21px;
+    }
+
+    .feature h3{
+        font-size:13px;
+    }
+
+    .feature p{
+        font-size:10px;
+    }
+
+    .cta{
+        width:calc(100% - 28px);
+        margin:10px auto 65px;
+        padding:55px 18px;
+        border-radius:25px;
+    }
+
+    .cta h2{
+        font-size:32px;
+        letter-spacing:-1.5px;
+    }
+
+    .cta p{
+        font-size:13px;
+        line-height:1.7;
+    }
+
+    .cta .hero-actions{
+        width:100%;
+    }
+
+    footer{
+        width:100%;
+    }
+
+    .footer-inner{
+        padding:45px 16px 20px;
+    }
+
+    .footer-grid{
+        grid-template-columns:1fr 1fr;
+        gap:30px 20px;
+        padding-bottom:35px;
+    }
+
+    .footer-brand{
+        grid-column:1 / -1;
+    }
+
+    .footer-brand p{
+        font-size:12px;
+        max-width:100%;
+    }
+
+    .footer-column h4{
+        font-size:13px;
+    }
+
+    .footer-column a{
+        font-size:11px;
+        margin-bottom:10px;
+    }
+
+    .social{
+        width:37px;
+        height:37px;
+    }
+
+    .copyright{
+        flex-direction:column;
+        text-align:center;
+        line-height:1.6;
+        font-size:10px;
+    }
+
+    .floating-socials{
+        right:12px;
+        bottom:15px;
+        gap:8px;
+    }
+
+    .float-btn{
+        width:42px;
+        height:42px;
+    }
+
+    .scroll-top{
+        right:12px;
+        bottom:225px;
+        width:42px;
+        height:42px;
+    }
+}
+
+@media(max-width:360px){
+
+    .brand{
+        font-size:16px;
+    }
+
+    .brand img{
+        width:36px;
+        height:36px;
+    }
+
+    .hero h1{
+        font-size:40px;
+    }
+
+    .hero-visual{
+        min-height:315px;
+    }
+
+    .logo-orbit{
+        width:285px;
+    }
+
+    .orbit-icon{
+        width:39px;
+        height:39px;
+    }
+
+    .feature-grid{
+        grid-template-columns:1fr;
     }
 
     .mini-stats{
         grid-template-columns:1fr;
     }
 
-    .footer-grid{
-        grid-template-columns:1fr;
+    .platforms{
+        grid-template-columns:1fr 1fr;
     }
-
-    .copyright{
-        flex-direction:column;
-        text-align:center;
-    }
-
-    .floating-socials{
-        right:12px;
-        bottom:13px;
-    }
-
-    .float-btn{
-        width:43px;
-        height:43px;
-    }
-
-    .scroll-top{
-        right:13px;
-        bottom:225px;
-    }
-
-    /*
-       Make decorative hero icons slightly smaller
-       on phones.
-    */
-
-    .orbit-icon{
-        width:45px;
-        height:45px;
-        border-radius:15px;
-    }
-
-    .orbit-icon i{
-        font-size:16px;
-    }
-
-    .icon-email{
-        left:5%;
-    }
-
-    .icon-social{
-        right:3%;
-    }
-
-    .icon-market{
-        left:-2%;
-    }
-
-    .icon-fast{
-        right:4%;
-    }
-
-    .icon-security{
-        left:-5%;
-    }
-
-    .icon-globe{
-        right:-5%;
-    }
-
-    /*
-       Tooltips are hidden on small screens
-       because there is no hover.
-    */
-
-    .orbit-icon .tooltip{
-        display:none;
-    }
-
-    .logo-card{
-        width:68%;
-        padding:15px;
-        border-radius:28px;
-    }
-
 }
-
-
-/* =====================================
-   MOBILE MENU
-===================================== */
-
-.mobile-nav{
-    position:fixed;
-
-    top:68px;
-    left:0;
-    right:0;
-
-    z-index:999;
-
-    display:none;
-
-    padding:20px;
-
-    background:
-        rgba(2,9,20,.97);
-
-    backdrop-filter:blur(20px);
-
-    border-bottom:
-        1px solid rgba(255,255,255,.08);
-}
-
-.mobile-nav.active{
-    display:block;
-}
-
-.mobile-nav a{
-    display:block;
-
-    padding:15px;
-
-    color:#c4d4e9;
-
-    border-bottom:
-        1px solid rgba(255,255,255,.05);
-
-    font-size:14px;
-
-    font-weight:600;
-}
-
-.mobile-nav .mobile-buttons{
-    display:flex;
-
-    gap:10px;
-
-    padding-top:15px;
-}
-
-.mobile-nav .mobile-buttons a{
-    border:0;
-}
-
-
-/* =====================================
-   REVEAL ANIMATION
-===================================== */
-
-.reveal{
-    opacity:0;
-
-    transform:translateY(25px);
-
-    transition:
-        opacity .7s ease,
-        transform .7s ease;
-}
-
-.reveal.visible{
-    opacity:1;
-
-    transform:translateY(0);
-}
-
 </style>
 </head>
 
-
 <body>
-
-
-<!-- BACKGROUND -->
 
 <div class="background-grid"></div>
 
@@ -1788,350 +1510,163 @@ footer{
 <div class="orb two"></div>
 <div class="orb three"></div>
 
-
-<!-- PARTICLES -->
-
 <div class="particles">
-
-    <span class="particle p1"></span>
-    <span class="particle p2"></span>
-    <span class="particle p3"></span>
-    <span class="particle p4"></span>
-    <span class="particle p5"></span>
-    <span class="particle p6"></span>
-    <span class="particle p7"></span>
-    <span class="particle p8"></span>
-
+<span class="particle p1"></span>
+<span class="particle p2"></span>
+<span class="particle p3"></span>
+<span class="particle p4"></span>
+<span class="particle p5"></span>
+<span class="particle p6"></span>
+<span class="particle p7"></span>
+<span class="particle p8"></span>
 </div>
 
-
-<!-- =====================================
-     HEADER
-===================================== -->
-
 <header>
-
 <div class="nav">
 
 <a href="#home" class="brand">
-
-<img
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart Logo">
-
+<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart Logo">
 <span>MailMart</span>
-
 </a>
-
 
 <nav>
-
 <a href="#home">Home</a>
-
 <a href="#services">Services</a>
-
 <a href="#about">About Us</a>
-
 <a href="#platforms">Platforms</a>
-
 <a href="#contact">Contact</a>
-
 </nav>
 
-
 <div class="nav-buttons">
-
-<a href="login.html"
-class="btn btn-login">
-
+<a href="login.html" class="btn btn-login">
 <i class="fa-solid fa-right-to-bracket"></i>
-
 Login
-
 </a>
 
-
-<a href="register.html"
-class="btn btn-primary">
-
+<a href="register.html" class="btn btn-primary">
 <i class="fa-solid fa-user-plus"></i>
-
 Register
-
 </a>
-
 </div>
 
-
-<div
-class="mobile-menu"
-onclick="toggleMobileMenu()">
-
+<div class="mobile-menu" onclick="toggleMobileMenu()">
 <i class="fa-solid fa-bars"></i>
-
 </div>
 
 </div>
-
 </header>
-
-
-<!-- MOBILE NAV -->
 
 <div class="mobile-nav" id="mobileNav">
 
-<a href="#home"
-onclick="closeMobileMenu()">
-
-Home
-
-</a>
-
-<a href="#services"
-onclick="closeMobileMenu()">
-
-Services
-
-</a>
-
-<a href="#about"
-onclick="closeMobileMenu()">
-
-About Us
-
-</a>
-
-<a href="#platforms"
-onclick="closeMobileMenu()">
-
-Platforms
-
-</a>
-
-<a href="#contact"
-onclick="closeMobileMenu()">
-
-Contact
-
-</a>
-
+<a href="#home" onclick="closeMobileMenu()">Home</a>
+<a href="#services" onclick="closeMobileMenu()">Services</a>
+<a href="#about" onclick="closeMobileMenu()">About Us</a>
+<a href="#platforms" onclick="closeMobileMenu()">Platforms</a>
+<a href="#contact" onclick="closeMobileMenu()">Contact</a>
 
 <div class="mobile-buttons">
-
-<a href="login.html"
-class="btn btn-login">
-
-Login
-
-</a>
-
-<a href="register.html"
-class="btn btn-primary">
-
-Register
-
-</a>
-
+<a href="login.html" class="btn btn-login">Login</a>
+<a href="register.html" class="btn btn-primary">Register</a>
 </div>
 
 </div>
-
-
-<!-- =====================================
-     HERO
-===================================== -->
 
 <main id="home">
 
 <section class="hero">
 
-
 <div class="hero-content">
 
 <div class="eyebrow">
-
 <span class="live-dot"></span>
-
-Digital Marketplace • Built to Grow
-
+Digital Marketplace
 </div>
 
-
 <h1>
-
 Buy.
-
-<span class="gradient-text">
-Sell.
-</span>
-
+<span class="gradient-text">Sell.</span>
 Grow.
-
 </h1>
 
-
 <p>
-
 Welcome to MailMart — your modern digital marketplace
-for emails, social media services, digital goods and
-online solutions. Everything you need to build,
+for email purchasing, social media services, digital
+goods and online solutions. Everything you need to
 connect and grow in one place.
-
 </p>
-
 
 <div class="hero-actions">
 
-<a href="register.html"
-class="btn btn-primary">
-
+<a href="register.html" class="btn btn-primary">
 Get Started
-
 <i class="fa-solid fa-arrow-right"></i>
-
 </a>
 
-
-<a href="#services"
-class="btn btn-login">
-
+<a href="#services" class="btn btn-login">
 Explore Services
-
 <i class="fa-solid fa-compass"></i>
-
 </a>
 
 </div>
-
 
 <div class="hero-trust">
 
 <div class="trust-item">
-
-<i class="fa-solid fa-shield-halved"></i>
-
-Trusted Platform
-
+<i class="fa-solid fa-envelope"></i>
+We Buy Emails
 </div>
 
-
 <div class="trust-item">
-
 <i class="fa-solid fa-bolt"></i>
-
-Fast Delivery
-
+Fast Service
 </div>
-
 
 <div class="trust-item">
-
 <i class="fa-solid fa-headset"></i>
-
 Support Available
-
 </div>
 
 </div>
 
 </div>
-
-
-<!-- =====================================
-     FLOATING HERO ICON SYSTEM
-===================================== -->
 
 <div class="hero-visual">
 
-
 <div class="logo-orbit">
 
-
-<!-- EMAIL -->
-
 <div class="orbit-icon icon-email">
-
 <i class="fa-solid fa-envelope"></i>
-
-<span class="tooltip">
-Email Services
-</span>
-
+<span class="tooltip">We Buy Emails</span>
 </div>
-
-
-<!-- SOCIAL MEDIA -->
 
 <div class="orbit-icon icon-social">
-
 <i class="fa-solid fa-share-nodes"></i>
-
-<span class="tooltip">
-Social Media
-</span>
-
+<span class="tooltip">Social Media</span>
 </div>
-
-
-<!-- DIGITAL MARKETPLACE -->
 
 <div class="orbit-icon icon-market">
-
 <i class="fa-solid fa-cart-shopping"></i>
-
-<span class="tooltip">
-Digital Goods
-</span>
-
+<span class="tooltip">Digital Goods</span>
 </div>
-
-
-<!-- FAST DELIVERY -->
 
 <div class="orbit-icon icon-fast">
-
 <i class="fa-solid fa-bolt"></i>
-
-<span class="tooltip">
-Fast Delivery
-</span>
-
+<span class="tooltip">Fast Service</span>
 </div>
-
-
-<!-- SECURITY -->
 
 <div class="orbit-icon icon-security">
-
 <i class="fa-solid fa-shield-halved"></i>
-
-<span class="tooltip">
-Secure Platform
-</span>
-
+<span class="tooltip">Secure Platform</span>
 </div>
-
-
-<!-- GLOBAL -->
 
 <div class="orbit-icon icon-globe">
-
 <i class="fa-solid fa-globe"></i>
-
-<span class="tooltip">
-Global Digital Services
-</span>
-
+<span class="tooltip">Digital Services</span>
 </div>
-
-
-<!-- LOGO -->
 
 <div class="logo-card">
 
-<img
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_900/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart">
+<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_900/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
 
 </div>
 
@@ -2140,231 +1675,148 @@ alt="MailMart">
 </div>
 
 </section>
-
-
-<!-- =====================================
-     SERVICES
-===================================== -->
 
 <section id="services">
 
 <div class="section-heading">
 
-<div class="section-label">
-What We Offer
-</div>
+<div class="section-label">Our Services</div>
 
 <h2>
-
-Everything digital,
-
-<span class="gradient-text">
-in one place.
-</span>
-
+Digital services
+<span class="gradient-text">made simple.</span>
 </h2>
 
 <p>
-
-MailMart brings useful digital products and services
-together for individuals, creators, entrepreneurs
-and online businesses.
-
+Explore the services and digital solutions available
+through MailMart.
 </p>
 
 </div>
-
 
 <div class="services-grid">
 
-
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-envelope"></i>
-
 </div>
 
-<h3>
-Email & Mail Services
-</h3>
+<h3>We Buy Emails</h3>
 
 <p>
-
-Purchase legitimate email and mailbox solutions,
-business mail services and other email-related
-digital products.
-
+We purchase eligible email accounts from users
+according to our requirements and applicable
+terms.
 </p>
 
 </div>
 
-
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-share-nodes"></i>
-
 </div>
 
-<h3>
-Social Media Services
-</h3>
+<h3>Social Media Services</h3>
 
 <p>
-
-Digital solutions for major social platforms,
-helping individuals and brands build their
-online presence.
-
+Digital solutions for social platforms to help
+individuals and brands improve their online
+presence.
 </p>
 
 </div>
 
-
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-cart-shopping"></i>
-
 </div>
 
-<h3>
-Digital Goods
-</h3>
+<h3>Digital Goods</h3>
 
 <p>
-
-Discover useful digital products, resources,
-tools and online-ready assets in one convenient
-marketplace.
-
+Useful digital products, resources, tools and
+online-ready assets for different digital needs.
 </p>
 
 </div>
 
-
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-bullhorn"></i>
-
 </div>
 
-<h3>
-Digital Marketing
-</h3>
+<h3>Digital Marketing</h3>
 
 <p>
-
 Digital promotion solutions designed to help
-businesses improve visibility, reach customers
-and build stronger brands.
-
+businesses improve visibility and reach.
 </p>
 
 </div>
 
-
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-user-group"></i>
-
 </div>
 
-<h3>
-Social Account Solutions
-</h3>
+<h3>Social Account Services</h3>
 
 <p>
-
-A marketplace for compliant digital account
-services and social-media-related solutions.
-
+Social-media-related digital solutions for
+individuals, creators and online businesses.
 </p>
 
 </div>
-
 
 <div class="service-card reveal">
 
 <div class="service-icon">
-
 <i class="fa-solid fa-headset"></i>
-
 </div>
 
-<h3>
-Customer Support
-</h3>
+<h3>Customer Support</h3>
 
 <p>
-
-Responsive service, clear communication and
-support designed around the needs of our
-customers.
-
+Helpful customer service designed around clear
+communication and a smooth experience.
 </p>
 
 </div>
-
 
 </div>
 
 </section>
-
-
-<!-- =====================================
-     ABOUT
-===================================== -->
 
 <section id="about">
 
 <div class="about-wrapper">
 
-
 <div class="about-visual reveal">
 
 <div class="about-box">
 
-<img
-class="about-logo"
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_400/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart Logo">
-
+<img class="about-logo" src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_400/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart Logo">
 
 <div class="mini-stats">
 
 <div class="mini-stat">
-
 <strong>24/7</strong>
-
 <span>Support</span>
-
 </div>
 
-
 <div class="mini-stat">
-
 <strong>Fast</strong>
-
-<span>Delivery</span>
-
+<span>Service</span>
 </div>
-
 
 <div class="mini-stat">
-
 <strong>Digital</strong>
-
-<span>Marketplace</span>
-
+<span>Solutions</span>
 </div>
 
 </div>
@@ -2372,90 +1824,55 @@ alt="MailMart Logo">
 </div>
 
 </div>
-
 
 <div class="about-content reveal">
 
-<div class="section-label">
-About MailMart
-</div>
-
+<div class="section-label">About MailMart</div>
 
 <h2>
-
 Your digital marketplace
 for
-
-<span class="gradient-text">
-growth.
-</span>
-
+<span class="gradient-text">growth.</span>
 </h2>
 
-
 <p>
-
 MailMart was created to make accessing digital
 products and services simpler, faster and more
 convenient.
-
 </p>
-
 
 <p>
-
-From email and social-media solutions to digital
-goods and online services, our goal is to create
-one reliable destination where customers can
-discover useful digital products.
-
+We provide digital and social-media-related services
+while also purchasing eligible emails from users.
+Our goal is to create a convenient platform for
+people looking for practical digital solutions.
 </p>
-
 
 <div class="check-list">
 
 <div class="check">
-
 <i class="fa-solid fa-circle-check"></i>
-
-Simple and convenient digital marketplace
-
+Simple digital marketplace
 </div>
 
-
 <div class="check">
-
 <i class="fa-solid fa-circle-check"></i>
-
-Fast digital delivery
-
+We buy eligible emails
 </div>
 
-
 <div class="check">
-
 <i class="fa-solid fa-circle-check"></i>
-
 Multiple digital service categories
-
 </div>
 
+<div class="check">
+<i class="fa-solid fa-circle-check"></i>
+Fast and convenient service
+</div>
 
 <div class="check">
-
 <i class="fa-solid fa-circle-check"></i>
-
 Customer-focused support
-
-</div>
-
-
-<div class="check">
-
-<i class="fa-solid fa-circle-check"></i>
-
-Built for creators, businesses and individuals
-
 </div>
 
 </div>
@@ -2465,261 +1882,138 @@ Built for creators, businesses and individuals
 </div>
 
 </section>
-
-
-<!-- =====================================
-     PLATFORMS
-===================================== -->
 
 <section id="platforms">
 
 <div class="section-heading">
 
-<div class="section-label">
-Digital Ecosystem
-</div>
+<div class="section-label">Social & Digital</div>
 
 <h2>
-
-Built around the platforms
-you use.
-
+Connected to the
+<span class="gradient-text">digital world.</span>
 </h2>
 
 <p>
-
-MailMart focuses on the digital ecosystem where
-people communicate, create, market and build
-communities.
-
+MailMart provides services connected to the platforms
+people use every day.
 </p>
 
 </div>
 
-
 <div class="platforms">
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-google"></i>
-
 Google
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-microsoft"></i>
-
 Microsoft
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-facebook"></i>
-
 Facebook
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-instagram"></i>
-
 Instagram
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-tiktok"></i>
-
 TikTok
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-telegram"></i>
-
 Telegram
-
 </div>
 
-
 <div class="platform reveal">
-
 <i class="fa-brands fa-discord"></i>
-
 Discord
-
 </div>
-
 
 <div class="platform reveal">
-
 <i class="fa-brands fa-x-twitter"></i>
-
 X
-
 </div>
-
 
 </div>
 
 </section>
-
-
-<!-- =====================================
-     WHY MAILMART
-===================================== -->
 
 <section>
 
 <div class="section-heading">
 
-<div class="section-label">
-Why MailMart
-</div>
+<div class="section-label">MailMart</div>
 
 <h2>
-
-Designed for a
-<span class="gradient-text">
-better experience.
-</span>
-
+A better way to access
+<span class="gradient-text">digital services.</span>
 </h2>
 
 </div>
 
-
 <div class="feature-grid">
 
-
 <div class="feature reveal">
-
-<i class="fa-solid fa-shield-halved"></i>
-
-<h3>
-Trusted
-</h3>
-
-<p>
-Built with customer trust and service quality
-at the center.
-</p>
-
+<i class="fa-solid fa-envelope"></i>
+<h3>Email Buying</h3>
+<p>Submit eligible emails for purchase through MailMart.</p>
 </div>
 
-
 <div class="feature reveal">
-
 <i class="fa-solid fa-bolt"></i>
-
-<h3>
-Fast
-</h3>
-
-<p>
-Digital products can be delivered quickly and
-conveniently.
-</p>
-
+<h3>Fast Service</h3>
+<p>Quick and convenient digital service experience.</p>
 </div>
 
-
 <div class="feature reveal">
-
 <i class="fa-solid fa-mobile-screen"></i>
-
-<h3>
-Mobile Ready
-</h3>
-
-<p>
-A responsive experience across phones,
-tablets and computers.
-</p>
-
+<h3>Mobile Ready</h3>
+<p>Designed to work smoothly across modern devices.</p>
 </div>
-
 
 <div class="feature reveal">
-
 <i class="fa-solid fa-headset"></i>
-
-<h3>
-Support
-</h3>
-
-<p>
-Customer support designed around clear,
-helpful communication.
-</p>
-
+<h3>Support</h3>
+<p>Customer-focused assistance when you need it.</p>
 </div>
-
 
 </div>
 
 </section>
 
-
-<!-- =====================================
-     CTA
-===================================== -->
-
 <div class="cta" id="contact">
 
-<div class="section-label">
-Ready to Get Started?
-</div>
+<div class="section-label">Get Started</div>
 
 <h2>
-
-Enter the world of
-<span class="gradient-text">
-MailMart.
-</span>
-
+Welcome to
+<span class="gradient-text">MailMart.</span>
 </h2>
 
 <p>
-
-Create your account and explore our growing collection
-of digital products and services.
-
+Create your account and explore our digital services
+or learn more about submitting emails for purchase.
 </p>
 
+<div class="hero-actions" style="justify-content:center">
 
-<div class="hero-actions"
-style="justify-content:center;">
-
-<a href="register.html"
-class="btn btn-primary">
-
+<a href="register.html" class="btn btn-primary">
 Create Account
-
 <i class="fa-solid fa-arrow-right"></i>
-
 </a>
 
-
-<a href="login.html"
-class="btn btn-login">
-
+<a href="login.html" class="btn btn-login">
 Login
-
 <i class="fa-solid fa-right-to-bracket"></i>
-
 </a>
 
 </div>
@@ -2728,172 +2022,90 @@ Login
 
 </main>
 
-
-<!-- =====================================
-     FOOTER
-===================================== -->
-
 <footer>
 
 <div class="footer-inner">
 
 <div class="footer-grid">
 
-
 <div class="footer-brand">
 
-<a href="#home"
-class="brand">
+<a href="#home" class="brand">
 
-<img
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart">
+<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
 
-<span>
-MailMart
-</span>
+<span>MailMart</span>
 
 </a>
 
-
 <p>
-
-Emails • Social Accounts • Digital Goods.
-
-Buy, sell and grow with MailMart.
-
+Digital services, social media solutions and
+email purchasing.
 </p>
-
 
 <div class="socials">
 
-<!-- Replace # with your actual social handles -->
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="Facebook">
 <i class="fa-brands fa-facebook-f"></i>
-
 </a>
 
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="Instagram">
 <i class="fa-brands fa-instagram"></i>
-
 </a>
 
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="TikTok">
 <i class="fa-brands fa-tiktok"></i>
-
 </a>
 
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="Telegram">
 <i class="fa-brands fa-telegram"></i>
-
 </a>
 
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="Discord">
 <i class="fa-brands fa-discord"></i>
-
 </a>
 
-
-<a href="#"
-class="social">
-
+<a href="#" class="social" aria-label="X">
 <i class="fa-brands fa-x-twitter"></i>
-
 </a>
 
 </div>
 
 </div>
-
 
 <div class="footer-column">
 
-<h4>
-Explore
-</h4>
+<h4>Explore</h4>
 
-<a href="#home">
-Home
-</a>
-
-<a href="#services">
-Services
-</a>
-
-<a href="#about">
-About Us
-</a>
-
-<a href="#platforms">
-Platforms
-</a>
+<a href="#home">Home</a>
+<a href="#services">Services</a>
+<a href="#about">About Us</a>
+<a href="#platforms">Platforms</a>
 
 </div>
-
 
 <div class="footer-column">
 
-<h4>
-Services
-</h4>
+<h4>Services</h4>
 
-<a href="#services">
-Email & Mail
-</a>
-
-<a href="#services">
-Social Media
-</a>
-
-<a href="#services">
-Digital Goods
-</a>
-
-<a href="#services">
-Digital Marketing
-</a>
+<a href="#services">We Buy Emails</a>
+<a href="#services">Social Media</a>
+<a href="#services">Digital Goods</a>
+<a href="#services">Digital Marketing</a>
 
 </div>
-
 
 <div class="footer-column">
 
-<h4>
-Account
-</h4>
+<h4>Account</h4>
 
-<a href="register.html">
-Create Account
-</a>
-
-<a href="login.html">
-Login
-</a>
-
-<a href="#contact">
-Contact Us
-</a>
+<a href="register.html">Create Account</a>
+<a href="login.html">Login</a>
+<a href="#contact">Contact</a>
 
 </div>
 
-
 </div>
-
 
 <div class="copyright">
 
@@ -2902,7 +2114,7 @@ Contact Us
 </div>
 
 <div>
-Emails • Social Accounts • Digital Goods
+We Buy Emails • Digital Services • Social Media
 </div>
 
 </div>
@@ -2911,238 +2123,104 @@ Emails • Social Accounts • Digital Goods
 
 </footer>
 
-
-<!-- =====================================
-     FLOATING CONTACT ICONS
-===================================== -->
-
 <div class="floating-socials">
 
-
-<a href="#"
-class="float-btn"
-title="Telegram">
-
+<a href="#" class="float-btn" title="Telegram" aria-label="Telegram">
 <i class="fa-brands fa-telegram"></i>
-
 </a>
 
-
-<a href="#"
-class="float-btn"
-title="WhatsApp">
-
+<a href="#" class="float-btn" title="WhatsApp" aria-label="WhatsApp">
 <i class="fa-brands fa-whatsapp"></i>
-
 </a>
 
-
-<a href="#"
-class="float-btn"
-title="Instagram">
-
+<a href="#" class="float-btn" title="Instagram" aria-label="Instagram">
 <i class="fa-brands fa-instagram"></i>
-
 </a>
 
-
-<a href="register.html"
-class="float-btn"
-title="Create Account">
-
+<a href="register.html" class="float-btn" title="Create Account" aria-label="Create Account">
 <i class="fa-solid fa-user-plus"></i>
-
 </a>
 
-
 </div>
 
-
-<!-- SCROLL TOP -->
-
-<div
-class="scroll-top"
-id="scrollTop"
-onclick="window.scrollTo({top:0,behavior:'smooth'})">
-
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
 <i class="fa-solid fa-arrow-up"></i>
-
-</div>
-
-
-<!-- =====================================
-     JAVASCRIPT
-===================================== -->
+</button>
 
 <script>
-
-
-/* =====================================
-   MOBILE MENU
-===================================== */
-
 function toggleMobileMenu(){
-
-    const menu =
-        document.getElementById("mobileNav");
-
-    menu.classList.toggle("active");
-
+    document.getElementById("mobileNav").classList.toggle("active");
 }
-
 
 function closeMobileMenu(){
-
-    const menu =
-        document.getElementById("mobileNav");
-
-    menu.classList.remove("active");
-
+    document.getElementById("mobileNav").classList.remove("active");
 }
 
-
-/* =====================================
-   SCROLL TOP BUTTON
-===================================== */
-
-const scrollTop =
-    document.getElementById("scrollTop");
+const scrollTop=document.getElementById("scrollTop");
 
 window.addEventListener("scroll",()=>{
-
-    if(window.scrollY > 500){
-
+    if(window.scrollY>500){
         scrollTop.classList.add("show");
-
     }else{
-
         scrollTop.classList.remove("show");
-
     }
-
 });
 
-
-/* =====================================
-   REVEAL ANIMATIONS
-===================================== */
-
-const observer =
-    new IntersectionObserver(
-
-        entries => {
-
-            entries.forEach(entry=>{
-
-                if(entry.isIntersecting){
-
-                    entry.target.classList.add(
-                        "visible"
-                    );
-
-                    observer.unobserve(
-                        entry.target
-                    );
-
-                }
-
-            });
-
-        },
-
-        {
-            threshold:.12
+const observer=new IntersectionObserver(entries=>{
+    entries.forEach(entry=>{
+        if(entry.isIntersecting){
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target);
         }
+    });
+},{threshold:.1});
 
-    );
-
-
-document
-.querySelectorAll(".reveal")
-.forEach(element=>{
-
+document.querySelectorAll(".reveal").forEach(element=>{
     observer.observe(element);
-
 });
-
-
-/* =====================================
-   CLOSE MOBILE MENU WHEN RESIZING
-===================================== */
 
 window.addEventListener("resize",()=>{
-
-    if(window.innerWidth > 950){
-
-        document
-        .getElementById("mobileNav")
-        .classList.remove("active");
-
+    if(window.innerWidth>900){
+        document.getElementById("mobileNav").classList.remove("active");
     }
-
 });
 
-const hero =
-    document.querySelector(".hero");
+const hero=document.querySelector(".hero");
+const icons=document.querySelectorAll(".orbit-icon");
 
-const icons =
-    document.querySelectorAll(".orbit-icon");
+if(hero && window.innerWidth>700){
 
+    hero.addEventListener("mousemove",event=>{
 
-if(hero && window.innerWidth > 700){
+        const rect=hero.getBoundingClientRect();
 
-    hero.addEventListener("mousemove",(event)=>{
-
-        const rect =
-            hero.getBoundingClientRect();
-
-        const x =
-            (event.clientX - rect.left)
-            / rect.width - .5;
-
-        const y =
-            (event.clientY - rect.top)
-            / rect.height - .5;
-
+        const x=(event.clientX-rect.left)/rect.width-.5;
+        const y=(event.clientY-rect.top)/rect.height-.5;
 
         icons.forEach((icon,index)=>{
 
-            const strength =
-                (index + 1) * 2;
+            const strength=(index+1)*1.5;
 
-            icon.style.marginLeft =
-                `${x * strength}px`;
-
-            icon.style.marginTop =
-                `${y * strength}px`;
+            icon.style.marginLeft=`${x*strength}px`;
+            icon.style.marginTop=`${y*strength}px`;
 
         });
 
     });
-
 
     hero.addEventListener("mouseleave",()=>{
 
         icons.forEach(icon=>{
-
-            icon.style.marginLeft = "";
-            icon.style.marginTop = "";
-
+            icon.style.marginLeft="";
+            icon.style.marginTop="";
         });
 
     });
-
 }
-document
-.querySelectorAll(".particle")
-.forEach((particle,index)=>{
 
-    particle.style.animationDelay =
-        `${index * 1.3}s`;
-
+document.querySelectorAll(".particle").forEach((particle,index)=>{
+    particle.style.animationDelay=`${index*1.3}s`;
 });
-
-
 </script>
 
 </body>
