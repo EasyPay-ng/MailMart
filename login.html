@@ -3,369 +3,155 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Login — MailMart</title>
-
+<title>Login | MailMart</title>
 <meta name="theme-color" content="#020812">
-
-<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
 <style>
-:root{
-    --bg:#020812;
-    --card:#071426;
-    --blue:#087cff;
-    --cyan:#00d9ff;
-    --white:#fff;
-    --muted:#8ea5bf;
-    --border:rgba(0,195,255,.18);
-    --danger:#ff5470;
-    --success:#20d99a;
-}
-
 *{
+    box-sizing:border-box;
     margin:0;
     padding:0;
-    box-sizing:border-box;
-}
-
-html,body{
-    min-height:100%;
 }
 
 body{
+    min-height:100vh;
     font-family:Inter,Arial,sans-serif;
     color:#fff;
     background:
-        radial-gradient(circle at 10% 10%,rgba(0,115,255,.16),transparent 30%),
-        radial-gradient(circle at 90% 80%,rgba(0,220,255,.1),transparent 30%),
+        radial-gradient(circle at 15% 10%,rgba(0,123,255,.18),transparent 30%),
+        radial-gradient(circle at 90% 85%,rgba(0,215,255,.12),transparent 30%),
         #020812;
+    display:flex;
+    justify-content:center;
+    align-items:center;
     overflow-x:hidden;
 }
 
-a{
-    text-decoration:none;
-    color:inherit;
-}
-
-.background-grid{
+body:before{
+    content:"";
     position:fixed;
     inset:0;
     pointer-events:none;
+    opacity:.35;
     background-image:
-        linear-gradient(rgba(0,170,255,.035) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(0,170,255,.035) 1px,transparent 1px);
+        linear-gradient(rgba(0,190,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,190,255,.035) 1px,transparent 1px);
     background-size:55px 55px;
 }
 
-.orb{
-    position:fixed;
-    border-radius:50%;
-    filter:blur(100px);
-    pointer-events:none;
-    opacity:.3;
-}
-
-.orb.one{
-    width:350px;
-    height:350px;
-    background:#006cff;
-    top:-130px;
-    left:-150px;
-}
-
-.orb.two{
-    width:320px;
-    height:320px;
-    background:#00d9ff;
-    bottom:-150px;
-    right:-130px;
-}
-
-.particles{
-    position:fixed;
-    inset:0;
-    pointer-events:none;
-}
-
-.particle{
-    position:absolute;
-    width:3px;
-    height:3px;
-    border-radius:50%;
-    background:#28ddff;
-    box-shadow:0 0 15px #00cfff;
-    opacity:.45;
-    animation:floatParticle 12s linear infinite;
-}
-
-.p1{left:8%;top:30%}
-.p2{left:20%;top:70%;animation-delay:2s}
-.p3{left:37%;top:18%;animation-delay:4s}
-.p4{left:62%;top:75%;animation-delay:1s}
-.p5{left:78%;top:25%;animation-delay:5s}
-.p6{left:91%;top:60%;animation-delay:3s}
-
-@keyframes floatParticle{
-    0%{
-        transform:translateY(40px);
-        opacity:0;
-    }
-    30%{
-        opacity:.5;
-    }
-    80%{
-        opacity:.5;
-    }
-    100%{
-        transform:translateY(-100px);
-        opacity:0;
-    }
-}
-
-header{
-    position:fixed;
-    top:0;
-    left:0;
+.container{
     width:100%;
-    height:76px;
-    display:flex;
-    align-items:center;
-    z-index:100;
-    background:rgba(2,8,18,.72);
-    backdrop-filter:blur(18px);
-    border-bottom:1px solid rgba(255,255,255,.06);
-}
-
-.nav{
-    width:100%;
-    max-width:1250px;
-    margin:auto;
-    padding:0 24px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-}
-
-.brand{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:21px;
-    font-weight:900;
-}
-
-.brand img{
-    width:45px;
-    height:45px;
-    border-radius:50%;
-    object-fit:cover;
-    filter:drop-shadow(0 0 15px rgba(0,190,255,.4));
-}
-
-.brand span{
-    background:linear-gradient(90deg,#fff,#35dfff);
-    -webkit-background-clip:text;
-    color:transparent;
-}
-
-.back-link{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    color:#9bb0c9;
-    font-size:13px;
-    font-weight:600;
-    transition:.25s;
-}
-
-.back-link:hover{
-    color:#fff;
-}
-
-.login-page{
-    min-height:100vh;
-    padding:115px 20px 45px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.login-layout{
-    width:100%;
-    max-width:1050px;
+    max-width:1100px;
+    min-height:650px;
+    padding:30px;
     display:grid;
-    grid-template-columns:1fr 440px;
+    grid-template-columns:1fr 430px;
     gap:70px;
     align-items:center;
+    position:relative;
+    z-index:1;
 }
 
-.intro{
-    animation:slideIn .7s ease both;
+.left{
+    padding:20px;
 }
 
-@keyframes slideIn{
-    from{
-        opacity:0;
-        transform:translateX(-25px);
-    }
-    to{
-        opacity:1;
-        transform:translateX(0);
-    }
+.logo{
+    width:72px;
+    height:72px;
+    border-radius:20px;
+    object-fit:cover;
+    margin-bottom:25px;
+    box-shadow:0 15px 45px rgba(0,160,255,.25);
 }
 
-.badge{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 13px;
-    border-radius:50px;
-    color:#67ddff;
-    background:rgba(0,145,255,.08);
-    border:1px solid rgba(0,195,255,.2);
-    font-size:10px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:1.5px;
-    margin-bottom:22px;
-}
-
-.badge i{
-    font-size:8px;
-}
-
-.intro h1{
-    font-size:clamp(45px,6vw,70px);
+.left h1{
+    font-size:clamp(45px,6vw,72px);
     line-height:1;
     letter-spacing:-4px;
     margin-bottom:22px;
 }
 
 .gradient{
-    background:linear-gradient(100deg,#fff,#35e0ff,#087cff);
+    background:linear-gradient(90deg,#fff,#39dfff,#087cff);
     -webkit-background-clip:text;
+    background-clip:text;
     color:transparent;
 }
 
-.intro p{
+.left p{
     max-width:550px;
-    color:var(--muted);
-    font-size:15px;
+    color:#8ea6bf;
     line-height:1.8;
+    font-size:14px;
 }
 
-.intro-features{
+.services{
     margin-top:30px;
-    display:grid;
-    gap:13px;
-}
-
-.intro-feature{
     display:flex;
-    align-items:center;
-    gap:12px;
-    color:#b7cbe1;
-    font-size:13px;
-    font-weight:600;
+    flex-wrap:wrap;
+    gap:10px;
 }
 
-.intro-feature i{
-    width:31px;
-    height:31px;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#36ddff;
-    background:rgba(0,150,255,.1);
-    border:1px solid rgba(0,200,255,.15);
+.service{
+    padding:10px 13px;
+    border-radius:12px;
+    border:1px solid rgba(0,205,255,.14);
+    background:rgba(0,120,255,.06);
+    color:#9cb4ce;
+    font-size:11px;
 }
 
-.login-card{
-    width:100%;
+.card{
     padding:34px;
-    border-radius:28px;
-    background:
-        linear-gradient(145deg,rgba(10,38,75,.92),rgba(3,13,29,.96));
-    border:1px solid rgba(0,195,255,.2);
-    box-shadow:
-        0 30px 100px rgba(0,0,0,.4),
-        0 0 70px rgba(0,100,255,.08);
-    backdrop-filter:blur(20px);
-    animation:cardIn .7s ease both;
+    border-radius:27px;
+    background:linear-gradient(145deg,rgba(9,35,68,.95),rgba(3,13,27,.98));
+    border:1px solid rgba(0,205,255,.18);
+    box-shadow:0 30px 100px rgba(0,0,0,.45);
 }
 
-@keyframes cardIn{
-    from{
-        opacity:0;
-        transform:translateY(25px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
-
-.card-logo{
-    display:flex;
-    justify-content:center;
-    margin-bottom:22px;
-}
-
-.card-logo img{
-    width:75px;
-    height:75px;
-    border-radius:23px;
-    object-fit:cover;
-    filter:drop-shadow(0 12px 30px rgba(0,150,255,.3));
-}
-
-.login-card h2{
+.card h2{
     text-align:center;
-    font-size:25px;
+    font-size:26px;
     margin-bottom:8px;
 }
 
 .subtitle{
     text-align:center;
-    color:#829ab5;
+    color:#829ab4;
     font-size:12px;
     line-height:1.6;
-    margin-bottom:27px;
+    margin-bottom:25px;
 }
 
-.message{
+.error,
+.success{
     display:none;
-    padding:12px 13px;
-    border-radius:11px;
+    padding:12px;
+    border-radius:10px;
     font-size:11px;
     line-height:1.5;
-    margin-bottom:16px;
+    margin-bottom:15px;
 }
 
-.message.error{
-    display:block;
+.error{
     color:#ff9bab;
-    background:rgba(255,60,90,.08);
-    border:1px solid rgba(255,60,90,.2);
+    background:rgba(255,50,80,.08);
+    border:1px solid rgba(255,50,80,.2);
 }
 
-.message.success{
-    display:block;
-    color:#6df0be;
+.success{
+    color:#70f0bd;
     background:rgba(0,220,150,.07);
     border:1px solid rgba(0,220,150,.18);
 }
 
 .field{
-    margin-bottom:17px;
+    margin-bottom:16px;
 }
 
 .field label{
@@ -376,110 +162,77 @@ header{
     margin-bottom:8px;
 }
 
-.input-wrap{
-    position:relative;
-}
-
-.input-wrap>i{
-    position:absolute;
-    left:14px;
-    top:50%;
-    transform:translateY(-50%);
-    color:#64829f;
-    font-size:14px;
-    pointer-events:none;
-}
-
-.input-wrap input{
+.field input{
     width:100%;
-    height:49px;
-    padding:0 44px 0 42px;
-    border-radius:12px;
+    height:50px;
     border:1px solid rgba(255,255,255,.09);
-    outline:none;
-    color:#fff;
+    border-radius:12px;
     background:rgba(0,0,0,.2);
-    font-family:inherit;
+    color:#fff;
+    outline:none;
+    padding:0 15px;
+    font:inherit;
     font-size:13px;
-    transition:.25s;
 }
 
-.input-wrap input::placeholder{
-    color:#58708c;
+.field input:focus{
+    border-color:#08bfff;
+    box-shadow:0 0 0 3px rgba(0,180,255,.08);
 }
 
-.input-wrap input:focus{
-    border-color:rgba(0,205,255,.55);
-    box-shadow:0 0 0 3px rgba(0,175,255,.08);
-    background:rgba(0,20,45,.4);
+.field input::placeholder{
+    color:#58718c;
 }
 
-.password-toggle{
-    position:absolute;
-    right:13px;
-    top:50%;
-    transform:translateY(-50%);
-    color:#66829f;
-    cursor:pointer;
-    font-size:14px;
-    transition:.2s;
-}
-
-.password-toggle:hover{
-    color:#2cddff;
-}
-
-.form-options{
+.options{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    gap:10px;
-    margin:4px 0 21px;
+    margin:3px 0 20px;
+    font-size:11px;
 }
 
 .remember{
+    color:#8197af;
     display:flex;
-    align-items:center;
     gap:7px;
-    color:#8097b1;
-    font-size:11px;
-    cursor:pointer;
+    align-items:center;
 }
 
 .remember input{
-    accent-color:#008cff;
+    accent-color:#078cff;
 }
 
 .forgot{
-    color:#2fdcff;
-    font-size:11px;
-    font-weight:600;
+    color:#28d9ff;
     cursor:pointer;
 }
 
-.login-button{
+button{
+    font-family:inherit;
+}
+
+.login-btn{
     width:100%;
     height:50px;
     border:0;
-    border-radius:13px;
-    cursor:pointer;
-    color:#fff;
-    background:linear-gradient(135deg,#0577ff,#00d4ff);
-    font-family:inherit;
+    border-radius:12px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:white;
     font-size:13px;
     font-weight:800;
-    box-shadow:0 12px 30px rgba(0,145,255,.2);
-    transition:.3s;
+    cursor:pointer;
+    transition:.25s;
 }
 
-.login-button:hover{
+.login-btn:hover{
     transform:translateY(-2px);
-    box-shadow:0 17px 40px rgba(0,180,255,.3);
+    box-shadow:0 15px 35px rgba(0,150,255,.25);
 }
 
-.login-button:disabled{
-    cursor:not-allowed;
+.login-btn:disabled{
     opacity:.6;
+    cursor:not-allowed;
     transform:none;
 }
 
@@ -488,220 +241,137 @@ header{
     align-items:center;
     gap:12px;
     margin:22px 0;
-    color:#5f7893;
-    font-size:10px;
+    color:#607991;
+    font-size:9px;
 }
 
-.divider::before,
-.divider::after{
+.divider:before,
+.divider:after{
     content:"";
-    flex:1;
     height:1px;
+    flex:1;
     background:rgba(255,255,255,.08);
 }
 
-.google-button{
+.google-btn{
     width:100%;
     height:49px;
     border-radius:12px;
-    cursor:pointer;
     border:1px solid rgba(255,255,255,.1);
-    color:#dce9f7;
-    background:rgba(255,255,255,.04);
-    font-family:inherit;
+    background:rgba(255,255,255,.035);
+    color:#e2edf8;
+    cursor:pointer;
     font-size:12px;
     font-weight:700;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    transition:.3s;
+    transition:.25s;
 }
 
-.google-button:hover{
+.google-btn:hover{
     background:rgba(255,255,255,.08);
-    border-color:rgba(255,255,255,.18);
-    transform:translateY(-2px);
 }
 
-.google-button i{
-    font-size:16px;
-}
-
-.register-text{
+.register{
     text-align:center;
-    color:#7289a4;
+    color:#7288a1;
     font-size:11px;
     margin-top:23px;
 }
 
-.register-text a{
-    color:#2bdcff;
+.register a{
+    color:#28d9ff;
     font-weight:700;
+    text-decoration:none;
 }
 
-.security{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:7px;
-    color:#617992;
-    font-size:9px;
+.home{
+    display:block;
+    text-align:center;
     margin-top:18px;
+    color:#627b94;
+    font-size:10px;
+    text-decoration:none;
 }
 
-.security i{
-    color:#1dd99b;
+.home:hover{
+    color:#fff;
 }
 
 .loading{
     display:none;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
 }
 
-.loading.show{
-    display:flex;
-}
+@media(max-width:850px){
 
-.spinner{
-    width:15px;
-    height:15px;
-    border:2px solid rgba(255,255,255,.3);
-    border-top-color:#fff;
-    border-radius:50%;
-    animation:spin .7s linear infinite;
-}
-
-@keyframes spin{
-    to{
-        transform:rotate(360deg);
-    }
-}
-
-.button-text.hidden{
-    display:none;
-}
-
-@media(max-width:900px){
-
-    .login-layout{
-        grid-template-columns:1fr;
-        max-width:520px;
-        gap:35px;
-    }
-
-    .intro{
-        text-align:center;
-    }
-
-    .intro p{
-        margin:auto;
-    }
-
-    .intro-features{
-        display:flex;
-        justify-content:center;
-        flex-wrap:wrap;
-    }
-
-    .intro-feature{
-        font-size:11px;
-    }
-
-    .intro-feature i{
-        width:27px;
-        height:27px;
-    }
-}
-
-@media(max-width:600px){
-
-    header{
-        height:67px;
-    }
-
-    .nav{
-        padding:0 15px;
-    }
-
-    .brand{
-        font-size:18px;
-    }
-
-    .brand img{
-        width:39px;
-        height:39px;
-    }
-
-    .back-link{
-        font-size:11px;
-    }
-
-    .login-page{
-        padding:92px 15px 30px;
+    body{
         align-items:flex-start;
     }
 
-    .login-layout{
-        gap:28px;
+    .container{
+        grid-template-columns:1fr;
+        gap:25px;
+        max-width:550px;
+        padding:35px 18px;
     }
 
-    .intro h1{
+    .left{
+        text-align:center;
+        padding:10px;
+    }
+
+    .left p{
+        margin:auto;
+    }
+
+    .services{
+        justify-content:center;
+    }
+
+    .logo{
+        width:60px;
+        height:60px;
+        border-radius:17px;
+    }
+
+}
+
+@media(max-width:500px){
+
+    .container{
+        padding:25px 13px;
+    }
+
+    .left{
+        padding:5px;
+    }
+
+    .left h1{
         font-size:43px;
         letter-spacing:-3px;
     }
 
-    .intro p{
-        font-size:13px;
-        line-height:1.7;
+    .left p{
+        font-size:12px;
     }
 
-    .intro-features{
-        gap:8px;
+    .card{
+        padding:24px 18px;
+        border-radius:21px;
     }
 
-    .intro-feature{
-        font-size:10px;
-    }
-
-    .login-card{
-        padding:25px 19px;
-        border-radius:22px;
-    }
-
-    .card-logo img{
-        width:65px;
-        height:65px;
-        border-radius:19px;
-    }
-
-    .login-card h2{
+    .card h2{
         font-size:22px;
     }
 
-    .subtitle{
-        font-size:11px;
-    }
-
-    .form-options{
-        align-items:flex-start;
-    }
 }
 
 @media(max-width:360px){
 
-    .intro h1{
-        font-size:38px;
+    .left h1{
+        font-size:37px;
     }
 
-    .login-card{
+    .card{
         padding:22px 15px;
-    }
-
-    .back-link span{
-        display:none;
     }
 }
 </style>
@@ -709,197 +379,126 @@ header{
 
 <body>
 
-<div class="background-grid"></div>
+<div class="container">
 
-<div class="orb one"></div>
-<div class="orb two"></div>
+    <section class="left">
 
-<div class="particles">
-<span class="particle p1"></span>
-<span class="particle p2"></span>
-<span class="particle p3"></span>
-<span class="particle p4"></span>
-<span class="particle p5"></span>
-<span class="particle p6"></span>
-</div>
+        <img
+            class="logo"
+            src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+            alt="MailMart"
+        >
 
-<header>
+        <h1>
+            Welcome to<br>
+            <span class="gradient">MailMart.</span>
+        </h1>
 
-<div class="nav">
+        <p>
+            Your digital marketplace for social media services,
+            digital solutions and email purchasing.
+        </p>
 
-<a href="index.html" class="brand">
-<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
-<span>MailMart</span>
-</a>
+        <div class="services">
+            <span class="service">Social Media</span>
+            <span class="service">Digital Services</span>
+            <span class="service">Email Purchasing</span>
+            <span class="service">Fast Delivery</span>
+        </div>
 
-<a href="index.html" class="back-link">
-<i class="fa-solid fa-arrow-left"></i>
-<span>Back to Home</span>
-</a>
+    </section>
 
-</div>
+    <section class="card">
 
-</header>
+        <h2>Sign In</h2>
 
-<main class="login-page">
+        <p class="subtitle">
+            Login to your MailMart account.
+        </p>
 
-<div class="login-layout">
+        <div id="error" class="error"></div>
+        <div id="success" class="success"></div>
 
-<div class="intro">
+        <form id="loginForm">
 
-<div class="badge">
-<i class="fa-solid fa-circle"></i>
-Welcome Back
-</div>
+            <div class="field">
+                <label>Email Address</label>
+                <input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+            </div>
 
-<h1>
-Login to
-<span class="gradient">MailMart.</span>
-</h1>
+            <div class="field">
+                <label>Password</label>
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+            </div>
 
-<p>
-Access your MailMart account and continue using
-our digital marketplace and services.
-</p>
+            <div class="options">
 
-<div class="intro-features">
+                <label class="remember">
+                    <input type="checkbox" id="remember">
+                    Remember me
+                </label>
 
-<div class="intro-feature">
-<i class="fa-solid fa-envelope"></i>
-We Buy Emails
-</div>
+                <span class="forgot" id="forgot">
+                    Forgot password?
+                </span>
 
-<div class="intro-feature">
-<i class="fa-solid fa-share-nodes"></i>
-Social Services
-</div>
+            </div>
 
-<div class="intro-feature">
-<i class="fa-solid fa-bolt"></i>
-Fast Service
-</div>
+            <button
+                class="login-btn"
+                id="loginBtn"
+                type="submit"
+            >
+                <span id="loginText">Login</span>
+                <span id="loginLoading" class="loading">
+                    Signing in...
+                </span>
+            </button>
 
-</div>
+        </form>
 
-</div>
+        <div class="divider">
+            OR
+        </div>
 
-<div class="login-card">
+        <button
+            class="google-btn"
+            id="googleBtn"
+            type="button"
+        >
+            Continue with Google
+        </button>
 
-<div class="card-logo">
-<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
-</div>
+        <div class="register">
+            Don't have an account?
+            <a href="register.html">Create an account</a>
+        </div>
 
-<h2>Welcome Back</h2>
+        <a href="index.html" class="home">
+            ← Back to home
+        </a>
 
-<p class="subtitle">
-Login to continue to your MailMart account.
-</p>
-
-<div id="message" class="message"></div>
-
-<form id="loginForm">
-
-<div class="field">
-
-<label for="email">Email Address</label>
-
-<div class="input-wrap">
-
-<i class="fa-solid fa-envelope"></i>
-
-<input
-type="email"
-id="email"
-placeholder="Enter your email"
-autocomplete="email"
-required
->
-
-</div>
-
-</div>
-
-<div class="field">
-
-<label for="password">Password</label>
-
-<div class="input-wrap">
-
-<i class="fa-solid fa-lock"></i>
-
-<input
-type="password"
-id="password"
-placeholder="Enter your password"
-autocomplete="current-password"
-required
->
-
-<i class="fa-solid fa-eye password-toggle" id="passwordToggle"></i>
+    </section>
 
 </div>
-
-</div>
-
-<div class="form-options">
-
-<label class="remember">
-<input type="checkbox" id="remember">
-Remember me
-</label>
-
-<span class="forgot" id="forgotPassword">
-Forgot password?
-</span>
-
-</div>
-
-<button type="submit" class="login-button" id="loginButton">
-
-<span class="button-text" id="buttonText">
-Login
-</span>
-
-<span class="loading" id="loading">
-<span class="spinner"></span>
-Signing in...
-</span>
-
-</button>
-
-</form>
-
-<div class="divider">
-OR CONTINUE WITH
-</div>
-
-<button class="google-button" id="googleButton" type="button">
-
-<i class="fa-brands fa-google"></i>
-
-Continue with Google
-
-</button>
-
-<p class="register-text">
-Don't have an account?
-<a href="register.html">Create one</a>
-</p>
-
-<div class="security">
-<i class="fa-solid fa-shield-halved"></i>
-Secure authentication powered by Firebase
-</div>
-
-</div>
-
-</div>
-
-</main>
 
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
 import {
     getAuth,
@@ -912,73 +511,107 @@ import {
     browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+
 const firebaseConfig = {
-    apiKey: "AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-    authDomain: "mailmartz.firebaseapp.com",
-    projectId: "mailmartz",
-    storageBucket: "mailmartz.firebasestorage.app",
-    messagingSenderId: "802413654231",
-    appId: "1:802413654231:web:4e5d87d23d6a2317724092",
-    measurementId: "G-LKLEWS7RPF"
+
+    apiKey:
+        "AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+
+    authDomain:
+        "mailmartz.firebaseapp.com",
+
+    projectId:
+        "mailmartz",
+
+    storageBucket:
+        "mailmartz.firebasestorage.app",
+
+    messagingSenderId:
+        "802413654231",
+
+    appId:
+        "1:802413654231:web:4e5d87d23d6a2317724092",
+
+    measurementId:
+        "G-LKLEWS7RPF"
+
 };
+
 
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-const googleProvider = new GoogleAuthProvider();
+const provider = new GoogleAuthProvider();
 
-googleProvider.setCustomParameters({
+provider.setCustomParameters({
     prompt:"select_account"
 });
 
-const loginForm = document.getElementById("loginForm");
-const emailInput = document.getElementById("email");
-const passwordInput = document.getElementById("password");
-const rememberInput = document.getElementById("remember");
-const passwordToggle = document.getElementById("passwordToggle");
-const googleButton = document.getElementById("googleButton");
-const loginButton = document.getElementById("loginButton");
-const buttonText = document.getElementById("buttonText");
-const loading = document.getElementById("loading");
-const message = document.getElementById("message");
-const forgotPassword = document.getElementById("forgotPassword");
 
-function showMessage(text,type="error"){
+const form =
+    document.getElementById("loginForm");
 
-    message.textContent = text;
+const email =
+    document.getElementById("email");
 
-    message.className = "message " + type;
+const password =
+    document.getElementById("password");
 
-}
+const remember =
+    document.getElementById("remember");
 
-function clearMessage(){
+const loginBtn =
+    document.getElementById("loginBtn");
 
-    message.textContent = "";
-    message.className = "message";
+const loginText =
+    document.getElementById("loginText");
 
-}
+const loginLoading =
+    document.getElementById("loginLoading");
 
-function setLoading(state){
+const googleBtn =
+    document.getElementById("googleBtn");
 
-    loginButton.disabled = state;
-    googleButton.disabled = state;
+const errorBox =
+    document.getElementById("error");
 
-    if(state){
+const successBox =
+    document.getElementById("success");
 
-        buttonText.classList.add("hidden");
-        loading.classList.add("show");
+const forgot =
+    document.getElementById("forgot");
 
-    }else{
 
-        buttonText.classList.remove("hidden");
-        loading.classList.remove("show");
+function showError(text){
 
-    }
+    errorBox.textContent = text;
+    errorBox.style.display = "block";
+
+    successBox.style.display = "none";
 
 }
 
-function getFirebaseError(error){
+
+function showSuccess(text){
+
+    successBox.textContent = text;
+    successBox.style.display = "block";
+
+    errorBox.style.display = "none";
+
+}
+
+
+function clearMessages(){
+
+    errorBox.style.display = "none";
+    successBox.style.display = "none";
+
+}
+
+
+function firebaseError(error){
 
     switch(error.code){
 
@@ -986,7 +619,7 @@ function getFirebaseError(error){
             return "Please enter a valid email address.";
 
         case "auth/user-not-found":
-            return "No account was found with this email address.";
+            return "No account exists with this email.";
 
         case "auth/wrong-password":
             return "Incorrect email or password.";
@@ -998,171 +631,211 @@ function getFirebaseError(error){
             return "This account has been disabled.";
 
         case "auth/too-many-requests":
-            return "Too many login attempts. Please try again later.";
+            return "Too many attempts. Please try again later.";
 
         case "auth/network-request-failed":
-            return "Network error. Please check your internet connection.";
+            return "Network error. Check your internet connection.";
 
         case "auth/popup-closed-by-user":
             return "Google sign-in was cancelled.";
 
         case "auth/popup-blocked":
-            return "Your browser blocked the Google sign-in popup.";
+            return "Your browser blocked the Google sign-in window.";
 
-        case "auth/account-exists-with-different-credential":
-            return "An account already exists with this email using another sign-in method.";
+        case "auth/operation-not-allowed":
+            return "This sign-in method is not enabled in Firebase.";
 
         default:
-            return error.message || "Unable to sign in. Please try again.";
+            return "Unable to sign in. Please try again.";
 
     }
 
 }
 
-loginForm.addEventListener("submit",async(event)=>{
 
-    event.preventDefault();
+function loading(state){
 
-    clearMessage();
+    loginBtn.disabled = state;
+    googleBtn.disabled = state;
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value;
+    if(state){
 
-    if(!email || !password){
-
-        showMessage("Please enter your email and password.");
-
-        return;
-
-    }
-
-    setLoading(true);
-
-    try{
-
-        const persistence = rememberInput.checked
-            ? browserLocalPersistence
-            : browserSessionPersistence;
-
-        await setPersistence(auth,persistence);
-
-        await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
-        showMessage("Login successful. Redirecting...","success");
-
-        setTimeout(()=>{
-
-            window.location.href="dashboard.html";
-
-        },700);
-
-    }catch(error){
-
-        showMessage(getFirebaseError(error));
-
-        setLoading(false);
-
-    }
-
-});
-
-googleButton.addEventListener("click",async()=>{
-
-    clearMessage();
-
-    setLoading(true);
-
-    try{
-
-        await setPersistence(
-            auth,
-            rememberInput.checked
-                ? browserLocalPersistence
-                : browserSessionPersistence
-        );
-
-        await signInWithPopup(
-            auth,
-            googleProvider
-        );
-
-        showMessage("Google sign-in successful. Redirecting...","success");
-
-        setTimeout(()=>{
-
-            window.location.href="dashboard.html";
-
-        },700);
-
-    }catch(error){
-
-        showMessage(getFirebaseError(error));
-
-        setLoading(false);
-
-    }
-
-});
-
-passwordToggle.addEventListener("click",()=>{
-
-    if(passwordInput.type==="password"){
-
-        passwordInput.type="text";
-
-        passwordToggle.classList.remove("fa-eye");
-        passwordToggle.classList.add("fa-eye-slash");
+        loginText.style.display = "none";
+        loginLoading.style.display = "inline";
 
     }else{
 
-        passwordInput.type="password";
-
-        passwordToggle.classList.remove("fa-eye-slash");
-        passwordToggle.classList.add("fa-eye");
+        loginText.style.display = "inline";
+        loginLoading.style.display = "none";
 
     }
 
-});
+}
 
-forgotPassword.addEventListener("click",async()=>{
 
-    clearMessage();
+async function setLoginPersistence(){
 
-    const email=emailInput.value.trim();
+    await setPersistence(
+        auth,
+        remember.checked
+            ? browserLocalPersistence
+            : browserSessionPersistence
+    );
 
-    if(!email){
+}
 
-        showMessage("Enter your email address first, then click Forgot password.");
 
-        emailInput.focus();
+form.addEventListener(
+    "submit",
+    async function(event){
 
-        return;
+        event.preventDefault();
+
+        clearMessages();
+
+        const emailValue =
+            email.value.trim();
+
+        const passwordValue =
+            password.value;
+
+        if(!emailValue || !passwordValue){
+
+            showError(
+                "Please enter your email and password."
+            );
+
+            return;
+
+        }
+
+        loading(true);
+
+        try{
+
+            await setLoginPersistence();
+
+            await signInWithEmailAndPassword(
+                auth,
+                emailValue,
+                passwordValue
+            );
+
+            showSuccess(
+                "Login successful. Redirecting..."
+            );
+
+            setTimeout(
+                function(){
+
+                    window.location.href =
+                        "dashboard.html";
+
+                },
+                700
+            );
+
+        }catch(error){
+
+            showError(
+                firebaseError(error)
+            );
+
+            loading(false);
+
+        }
 
     }
+);
 
-    try{
 
-        await sendPasswordResetEmail(
-            auth,
-            email
-        );
+googleBtn.addEventListener(
+    "click",
+    async function(){
 
-        showMessage(
-            "Password reset instructions have been sent to your email.",
-            "success"
-        );
+        clearMessages();
 
-    }catch(error){
+        loading(true);
 
-        showMessage(getFirebaseError(error));
+        try{
+
+            await setLoginPersistence();
+
+            await signInWithPopup(
+                auth,
+                provider
+            );
+
+            showSuccess(
+                "Google login successful. Redirecting..."
+            );
+
+            setTimeout(
+                function(){
+
+                    window.location.href =
+                        "dashboard.html";
+
+                },
+                700
+            );
+
+        }catch(error){
+
+            showError(
+                firebaseError(error)
+            );
+
+            loading(false);
+
+        }
 
     }
+);
 
-});
+
+forgot.addEventListener(
+    "click",
+    async function(){
+
+        clearMessages();
+
+        const emailValue =
+            email.value.trim();
+
+        if(!emailValue){
+
+            showError(
+                "Enter your email address first."
+            );
+
+            email.focus();
+
+            return;
+
+        }
+
+        try{
+
+            await sendPasswordResetEmail(
+                auth,
+                emailValue
+            );
+
+            showSuccess(
+                "Password reset instructions have been sent to your email."
+            );
+
+        }catch(error){
+
+            showError(
+                firebaseError(error)
+            );
+
+        }
+
+    }
+);
 
 </script>
 
