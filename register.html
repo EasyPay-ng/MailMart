@@ -300,9 +300,7 @@ body::before{
 
     height:46px;
 
-    padding:
-        0
-        14px;
+    padding:0 14px;
 
     border:
         1px solid
@@ -378,6 +376,8 @@ body::before{
     width:0;
 
     height:100%;
+
+    background:#00cfff;
 
     transition:.25s;
 }
@@ -576,7 +576,6 @@ body::before{
     display:none;
 }
 
-
 @media(max-width:850px){
 
     .page{
@@ -651,7 +650,6 @@ body::before{
         margin:0 auto;
     }
 }
-
 
 @media(max-width:500px){
 
@@ -789,12 +787,10 @@ body::before{
     }
 }
 
-
 @media(max-width:360px){
 
     .page{
         padding-left:8px;
-
         padding-right:8px;
     }
 
@@ -825,7 +821,6 @@ body::before{
 <main class="page">
 
 <div class="wrapper">
-
 
 <section class="brand-section">
 
@@ -872,9 +867,7 @@ Fast Service
 
 </section>
 
-
 <section class="card">
-
 
 <div class="card-header">
 
@@ -894,20 +887,11 @@ Register your MailMart account.
 
 </div>
 
+<div id="error" class="message error"></div>
 
-<div
-id="error"
-class="message error"
-></div>
-
-<div
-id="success"
-class="message success"
-></div>
-
+<div id="success" class="message success"></div>
 
 <form id="registerForm">
-
 
 <div class="field">
 
@@ -931,7 +915,6 @@ required
 
 </div>
 
-
 <div class="field">
 
 <label>
@@ -953,7 +936,6 @@ required
 
 </div>
 
-
 <div class="field">
 
 <label>
@@ -973,7 +955,6 @@ required
 </div>
 
 </div>
-
 
 <div class="field">
 
@@ -1002,7 +983,6 @@ Show
 
 </div>
 
-
 <div class="password-strength">
 
 <div
@@ -1018,7 +998,6 @@ class="strength-text"
 ></span>
 
 </div>
-
 
 <div class="field">
 
@@ -1049,7 +1028,6 @@ Show
 
 </div>
 
-
 <label class="terms">
 
 <input
@@ -1073,7 +1051,6 @@ Privacy Policy
 
 </label>
 
-
 <button
 type="submit"
 class="register-btn"
@@ -1095,11 +1072,9 @@ Creating account...
 
 </form>
 
-
 <div class="divider">
 OR
 </div>
-
 
 <button
 type="button"
@@ -1108,7 +1083,6 @@ id="googleBtn"
 >
 Continue with Google
 </button>
-
 
 <div class="login">
 
@@ -1120,7 +1094,6 @@ Login
 
 </div>
 
-
 <a
 href="index.html"
 class="home"
@@ -1128,728 +1101,595 @@ class="home"
 ← Back to home
 </a>
 
-
 </section>
 
 </div>
 
 </main>
 
-
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
+import { auth, db } from "./firebase.js";
 
 import {
-getAuth,
-createUserWithEmailAndPassword,
-GoogleAuthProvider,
-signInWithPopup,
-setPersistence,
-browserLocalPersistence
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
+    createUserWithEmailAndPassword,
+    GoogleAuthProvider,
+    signInWithPopup,
+    setPersistence,
+    browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-getFirestore,
-doc,
-setDoc,
-serverTimestamp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+    doc,
+    setDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 
-const firebaseConfig={
+const form =
+    document.getElementById("registerForm");
 
-apiKey:
-"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+const username =
+    document.getElementById("username");
 
-authDomain:
-"mailmartz.firebaseapp.com",
+const phone =
+    document.getElementById("phone");
 
-projectId:
-"mailmartz",
+const email =
+    document.getElementById("email");
 
-storageBucket:
-"mailmartz.firebasestorage.app",
+const password =
+    document.getElementById("password");
 
-messagingSenderId:
-"802413654231",
+const confirmPassword =
+    document.getElementById("confirmPassword");
 
-appId:
-"1:802413654231:web:4e5d87d23d6a2317724092",
+const terms =
+    document.getElementById("terms");
 
-measurementId:
-"G-LKLEWS7RPF"
+const registerBtn =
+    document.getElementById("registerBtn");
 
-};
+const registerText =
+    document.getElementById("registerText");
 
+const registerLoading =
+    document.getElementById("registerLoading");
 
-const app=
-initializeApp(firebaseConfig);
+const googleBtn =
+    document.getElementById("googleBtn");
 
+const errorBox =
+    document.getElementById("error");
 
-const auth=
-getAuth(app);
+const successBox =
+    document.getElementById("success");
 
+const passwordEye =
+    document.getElementById("passwordEye");
 
-const db=
-getFirestore(app);
+const confirmEye =
+    document.getElementById("confirmEye");
 
+const strengthBar =
+    document.getElementById("strengthBar");
 
-const provider=
-new GoogleAuthProvider();
-
-
-provider.setCustomParameters({
-prompt:"select_account"
-});
-
-
-const form=
-document.getElementById(
-"registerForm"
-);
-
-
-const username=
-document.getElementById(
-"username"
-);
+const strengthText =
+    document.getElementById("strengthText");
 
 
-const phone=
-document.getElementById(
-"phone"
-);
+function showError(message){
 
+    errorBox.textContent = message;
 
-const email=
-document.getElementById(
-"email"
-);
+    errorBox.style.display = "block";
 
-
-const password=
-document.getElementById(
-"password"
-);
-
-
-const confirmPassword=
-document.getElementById(
-"confirmPassword"
-);
-
-
-const terms=
-document.getElementById(
-"terms"
-);
-
-
-const registerBtn=
-document.getElementById(
-"registerBtn"
-);
-
-
-const registerText=
-document.getElementById(
-"registerText"
-);
-
-
-const registerLoading=
-document.getElementById(
-"registerLoading"
-);
-
-
-const googleBtn=
-document.getElementById(
-"googleBtn"
-);
-
-
-const errorBox=
-document.getElementById(
-"error"
-);
-
-
-const successBox=
-document.getElementById(
-"success"
-);
-
-
-const passwordEye=
-document.getElementById(
-"passwordEye"
-);
-
-
-const confirmEye=
-document.getElementById(
-"confirmEye"
-);
-
-
-const strengthBar=
-document.getElementById(
-"strengthBar"
-);
-
-
-const strengthText=
-document.getElementById(
-"strengthText"
-);
-
-
-function showError(text){
-
-errorBox.textContent=
-text;
-
-errorBox.style.display=
-"block";
-
-successBox.style.display=
-"none";
+    successBox.style.display = "none";
 
 }
 
 
-function showSuccess(text){
+function showSuccess(message){
 
-successBox.textContent=
-text;
+    successBox.textContent = message;
 
-successBox.style.display=
-"block";
+    successBox.style.display = "block";
 
-errorBox.style.display=
-"none";
+    errorBox.style.display = "none";
 
 }
 
 
-function loading(state){
+function setLoading(state){
 
-registerBtn.disabled=
-state;
+    registerBtn.disabled = state;
 
-googleBtn.disabled=
-state;
+    googleBtn.disabled = state;
 
+    if(state){
 
-if(state){
+        registerText.style.display = "none";
 
-registerText.style.display=
-"none";
+        registerLoading.style.display = "inline";
 
-registerLoading.style.display=
-"inline";
+    }else{
 
-}else{
+        registerText.style.display = "inline";
 
-registerText.style.display=
-"inline";
+        registerLoading.style.display = "none";
 
-registerLoading.style.display=
-"none";
-
-}
+    }
 
 }
 
 
-function firebaseError(error){
+function getFirebaseError(error){
 
-switch(error.code){
+    console.error("Firebase error:", error);
 
-case"auth/email-already-in-use":
+    switch(error.code){
 
-return"An account with this email already exists.";
+        case "auth/email-already-in-use":
+            return "This email is already registered. Please login instead.";
 
-case"auth/invalid-email":
+        case "auth/invalid-email":
+            return "Please enter a valid email address.";
 
-return"Please enter a valid email address.";
+        case "auth/weak-password":
+            return "Password must contain at least 6 characters.";
 
-case"auth/weak-password":
+        case "auth/network-request-failed":
+            return "Network error. Please check your internet connection.";
 
-return"Password must contain at least 6 characters.";
+        case "auth/operation-not-allowed":
+            return "Email/password registration is not enabled in Firebase Authentication.";
 
-case"auth/network-request-failed":
+        case "auth/popup-closed-by-user":
+            return "Google registration was cancelled.";
 
-return"Network error. Check your internet connection.";
+        case "auth/popup-blocked":
+            return "Your browser blocked the Google sign-in window.";
 
-case"auth/popup-closed-by-user":
+        case "permission-denied":
+            return "Your account was created, but Firestore rejected the profile. Please check your Firestore rules.";
 
-return"Google registration was cancelled.";
+        case "failed-precondition":
+            return "Firestore is not configured correctly for this project.";
 
-case"auth/popup-blocked":
+        case "unavailable":
+            return "Firebase is temporarily unavailable. Please try again.";
 
-return"Your browser blocked the Google registration window.";
+        default:
+            return error.message || "Registration failed. Please try again.";
 
-case"auth/operation-not-allowed":
-
-return"This registration method is not enabled in Firebase.";
-
-default:
-
-return"Unable to create your account. Please try again.";
+    }
 
 }
+
+
+function togglePassword(input, eye){
+
+    if(input.type === "password"){
+
+        input.type = "text";
+
+        eye.textContent = "Hide";
+
+    }else{
+
+        input.type = "password";
+
+        eye.textContent = "Show";
+
+    }
 
 }
 
 
 function checkStrength(value){
 
-let score=0;
+    let score = 0;
+
+    if(value.length >= 6)
+        score++;
+
+    if(value.length >= 10)
+        score++;
+
+    if(/[A-Z]/.test(value))
+        score++;
+
+    if(/[0-9]/.test(value))
+        score++;
+
+    if(/[^A-Za-z0-9]/.test(value))
+        score++;
 
 
-if(value.length>=6)
-score++;
+    if(!value){
+
+        strengthBar.style.width = "0";
+
+        strengthText.textContent = "";
+
+        return;
+
+    }
 
 
-if(value.length>=10)
-score++;
+    if(score <= 1){
 
+        strengthBar.style.width = "25%";
 
-if(/[A-Z]/.test(value))
-score++;
+        strengthText.textContent =
+            "Weak password";
 
+    }else if(score <= 3){
 
-if(/[0-9]/.test(value))
-score++;
+        strengthBar.style.width = "60%";
 
+        strengthText.textContent =
+            "Moderate password";
 
-if(/[^A-Za-z0-9]/.test(value))
-score++;
+    }else{
 
+        strengthBar.style.width = "100%";
 
-if(!value){
+        strengthText.textContent =
+            "Strong password";
 
-strengthBar.style.width="0";
-
-strengthText.textContent="";
-
-return;
-
-}
-
-
-if(score<=1){
-
-strengthBar.style.width="25%";
-
-strengthText.textContent=
-"Weak password";
-
-}else if(score<=3){
-
-strengthBar.style.width="60%";
-
-strengthText.textContent=
-"Moderate password";
-
-}else{
-
-strengthBar.style.width="100%";
-
-strengthText.textContent=
-"Strong password";
-
-}
+    }
 
 }
 
 
-function togglePassword(
-input,
-eye
-){
+password.addEventListener("input", () => {
 
-if(input.type==="password"){
+    checkStrength(password.value);
 
-input.type="text";
+});
 
-eye.textContent="Hide";
 
-}else{
+passwordEye.addEventListener("click", () => {
 
-input.type="password";
+    togglePassword(
+        password,
+        passwordEye
+    );
 
-eye.textContent="Show";
+});
 
-}
 
-}
+confirmEye.addEventListener("click", () => {
 
+    togglePassword(
+        confirmPassword,
+        confirmEye
+    );
 
-password.addEventListener(
-"input",
-()=>{
+});
 
-checkStrength(
-password.value
-);
 
-}
-);
+form.addEventListener("submit", async(event) => {
 
+    event.preventDefault();
 
-passwordEye.addEventListener(
-"click",
-()=>{
+    errorBox.style.display = "none";
 
-togglePassword(
-password,
-passwordEye
-);
+    successBox.style.display = "none";
 
-}
-);
 
+    const usernameValue =
+        username.value.trim();
 
-confirmEye.addEventListener(
-"click",
-()=>{
+    const phoneValue =
+        phone.value.trim();
 
-togglePassword(
-confirmPassword,
-confirmEye
-);
+    const emailValue =
+        email.value.trim().toLowerCase();
 
-}
-);
+    const passwordValue =
+        password.value;
 
+    const confirmValue =
+        confirmPassword.value;
 
-form.addEventListener(
-"submit",
-async(event)=>{
 
-event.preventDefault();
+    if(usernameValue.length < 3){
 
+        showError(
+            "Username must contain at least 3 characters."
+        );
 
-errorBox.style.display=
-"none";
+        username.focus();
 
-successBox.style.display=
-"none";
+        return;
 
+    }
 
-const usernameValue=
-username.value.trim();
 
+    if(!/^[a-zA-Z0-9_.-]+$/.test(usernameValue)){
 
-const phoneValue=
-phone.value.trim();
+        showError(
+            "Username can only contain letters, numbers, dots, underscores and hyphens."
+        );
 
+        username.focus();
 
-const emailValue=
-email.value.trim();
+        return;
 
+    }
 
-const passwordValue=
-password.value;
 
+    if(phoneValue.length < 7){
 
-const confirmValue=
-confirmPassword.value;
+        showError(
+            "Please enter a valid phone number."
+        );
 
+        phone.focus();
 
-if(usernameValue.length<3){
+        return;
 
-showError(
-"Username must contain at least 3 characters."
-);
+    }
 
-username.focus();
 
-return;
+    if(passwordValue.length < 6){
 
-}
+        showError(
+            "Password must contain at least 6 characters."
+        );
 
+        password.focus();
 
-if(!/^[a-zA-Z0-9_.-]+$/.test(usernameValue)){
+        return;
 
-showError(
-"Username can only contain letters, numbers, dots, underscores and hyphens."
-);
+    }
 
-username.focus();
 
-return;
+    if(passwordValue !== confirmValue){
 
-}
+        showError(
+            "Passwords do not match."
+        );
 
+        confirmPassword.focus();
 
-if(phoneValue.length<7){
+        return;
 
-showError(
-"Please enter a valid phone number."
-);
+    }
 
-phone.focus();
 
-return;
+    if(!terms.checked){
 
-}
+        showError(
+            "Please accept the Terms of Service and Privacy Policy."
+        );
 
+        return;
 
-if(passwordValue.length<6){
+    }
 
-showError(
-"Password must contain at least 6 characters."
-);
 
-password.focus();
+    setLoading(true);
 
-return;
 
-}
+    try{
 
+        await setPersistence(
+            auth,
+            browserLocalPersistence
+        );
 
-if(passwordValue!==confirmValue){
 
-showError(
-"Passwords do not match."
-);
+        const credential =
+            await createUserWithEmailAndPassword(
+                auth,
+                emailValue,
+                passwordValue
+            );
 
-confirmPassword.focus();
 
-return;
+        const user =
+            credential.user;
 
-}
 
+        const userData = {
 
-if(!terms.checked){
+            uid: user.uid,
 
-showError(
-"Please accept the Terms of Service and Privacy Policy."
-);
+            username: usernameValue,
 
-return;
+            phone: phoneValue,
 
-}
+            email: emailValue,
 
+            displayName: usernameValue,
 
-loading(true);
+            photoURL: "",
 
+            balance: 0,
 
-try{
+            totalEarned: 0,
 
+            totalWithdrawn: 0,
 
-await setPersistence(
-auth,
-browserLocalPersistence
-);
+            emailPurchases: 0,
 
+            status: "active",
 
-const credential=
-await createUserWithEmailAndPassword(
-auth,
-emailValue,
-passwordValue
-);
+            createdAt: serverTimestamp(),
 
+            updatedAt: serverTimestamp()
 
-const user=
-credential.user;
+        };
 
 
-await setDoc(
-doc(
-db,
-"users",
-user.uid
-),
-{
+        await setDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
+            userData
+        );
 
-uid:user.uid,
 
-username:usernameValue,
+        showSuccess(
+            "Account created successfully. Redirecting..."
+        );
 
-phone:phoneValue,
 
-email:emailValue,
+        setTimeout(() => {
 
-displayName:usernameValue,
+            window.location.href =
+                "dashboard.html";
 
-photoURL:"",
+        },1000);
 
-balance:0,
 
-status:"active",
+    }catch(error){
 
-createdAt:serverTimestamp(),
+        console.error(
+            "Registration failed:",
+            error
+        );
 
-updatedAt:serverTimestamp()
+        showError(
+            getFirebaseError(error)
+        );
 
-}
-);
+        setLoading(false);
 
+    }
 
-showSuccess(
-"Account created successfully. Redirecting..."
-);
+});
 
 
-setTimeout(
-()=>{
+googleBtn.addEventListener("click", async() => {
 
-window.location.href=
-"dashboard.html";
+    errorBox.style.display = "none";
 
-},
-900
-);
+    successBox.style.display = "none";
 
 
-}catch(error){
+    const usernameValue =
+        username.value.trim();
 
-showError(
-firebaseError(error)
-);
+    const phoneValue =
+        phone.value.trim();
 
-loading(false);
 
-}
+    setLoading(true);
 
-}
-);
 
+    try{
 
-googleBtn.addEventListener(
-"click",
-async()=>{
+        await setPersistence(
+            auth,
+            browserLocalPersistence
+        );
 
-errorBox.style.display=
-"none";
 
-successBox.style.display=
-"none";
+        const provider =
+            new GoogleAuthProvider();
 
 
-const usernameValue=
-username.value.trim();
+        provider.setCustomParameters({
+            prompt:"select_account"
+        });
 
 
-const phoneValue=
-phone.value.trim();
+        const result =
+            await signInWithPopup(
+                auth,
+                provider
+            );
 
 
-loading(true);
+        const user =
+            result.user;
 
 
-try{
+        const finalUsername =
+            usernameValue ||
+            user.displayName ||
+            user.email.split("@")[0];
 
 
-await setPersistence(
-auth,
-browserLocalPersistence
-);
+        await setDoc(
+            doc(
+                db,
+                "users",
+                user.uid
+            ),
+            {
 
+                uid:user.uid,
 
-const result=
-await signInWithPopup(
-auth,
-provider
-);
+                username:finalUsername,
 
+                phone:phoneValue,
 
-const user=
-result.user;
+                email:user.email || "",
 
+                displayName:
+                    user.displayName ||
+                    finalUsername,
 
-await setDoc(
-doc(
-db,
-"users",
-user.uid
-),
-{
+                photoURL:
+                    user.photoURL || "",
 
-uid:user.uid,
+                balance:0,
 
-username:
-usernameValue ||
-user.displayName ||
-"",
+                totalEarned:0,
 
-phone:
-phoneValue ||
-"",
+                totalWithdrawn:0,
 
-email:
-user.email ||
-"",
+                emailPurchases:0,
 
-displayName:
-user.displayName ||
-usernameValue ||
-"",
+                status:"active",
 
-photoURL:
-user.photoURL ||
-"",
+                createdAt:serverTimestamp(),
 
-balance:0,
+                updatedAt:serverTimestamp()
 
-status:"active",
+            },
+            {
+                merge:true
+            }
+        );
 
-createdAt:serverTimestamp(),
 
-updatedAt:serverTimestamp()
+        showSuccess(
+            "Google registration successful. Redirecting..."
+        );
 
-},
-{
-merge:true
-}
-);
 
+        setTimeout(() => {
 
-showSuccess(
-"Google registration successful. Redirecting..."
-);
+            window.location.href =
+                "dashboard.html";
 
+        },1000);
 
-setTimeout(
-()=>{
 
-window.location.href=
-"dashboard.html";
+    }catch(error){
 
-},
-900
-);
+        console.error(
+            "Google registration failed:",
+            error
+        );
 
+        showError(
+            getFirebaseError(error)
+        );
 
-}catch(error){
+        setLoading(false);
 
-showError(
-firebaseError(error)
-);
+    }
 
-loading(false);
-
-}
-
-}
-);
+});
 
 </script>
 
