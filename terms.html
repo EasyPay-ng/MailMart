@@ -1,5 +1,4 @@
-```html
-<!DOCTYPE html>
+here<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -131,20 +130,10 @@ img{
 .p8{left:93%;top:80%;animation-duration:11s}
 
 @keyframes particleFloat{
-    0%{
-        transform:translateY(40px);
-        opacity:0;
-    }
-    20%{
-        opacity:.7;
-    }
-    80%{
-        opacity:.7;
-    }
-    100%{
-        transform:translateY(-80px);
-        opacity:0;
-    }
+    0%{transform:translateY(40px);opacity:0}
+    20%{opacity:.7}
+    80%{opacity:.7}
+    100%{transform:translateY(-80px);opacity:0}
 }
 
 header{
@@ -292,30 +281,12 @@ nav a:hover{
     text-align:center;
 }
 
-.hero{
-    min-height:100vh;
+/* ===== HERO ===== */
+.terms-hero{
     max-width:1250px;
-    margin:auto;
-    padding:145px 24px 75px;
-    display:grid;
-    grid-template-columns:1.05fr .95fr;
-    align-items:center;
-    gap:40px;
-}
-
-.hero-content{
-    animation:heroIn 1s ease both;
-}
-
-@keyframes heroIn{
-    from{
-        opacity:0;
-        transform:translateY(30px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
+    margin:0 auto;
+    padding:140px 24px 60px;
+    text-align:center;
 }
 
 .eyebrow{
@@ -331,7 +302,7 @@ nav a:hover{
     font-weight:800;
     text-transform:uppercase;
     letter-spacing:1.4px;
-    margin-bottom:23px;
+    margin-bottom:22px;
 }
 
 .live-dot{
@@ -341,12 +312,12 @@ nav a:hover{
     background:#00e1ff;
 }
 
-.hero h1{
-    font-size:clamp(45px,6vw,78px);
-    line-height:.98;
+.terms-hero h1{
+    font-size:clamp(42px,6vw,68px);
+    line-height:1.05;
     font-weight:900;
-    letter-spacing:-4px;
-    margin-bottom:25px;
+    letter-spacing:-3px;
+    margin-bottom:18px;
 }
 
 .gradient-text{
@@ -355,465 +326,184 @@ nav a:hover{
     color:transparent;
 }
 
-.hero p{
+.terms-hero p{
     max-width:620px;
+    margin:0 auto 28px;
     color:var(--muted);
-    font-size:17px;
+    font-size:16px;
     line-height:1.8;
-    margin-bottom:31px;
 }
 
-.hero-actions{
-    display:flex;
-    flex-wrap:wrap;
-    gap:12px;
-}
-
-.hero-trust{
-    display:flex;
-    flex-wrap:wrap;
-    gap:20px;
-    margin-top:32px;
-    color:#91a7c0;
-    font-size:12px;
+.updated-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 18px;
+    border-radius:12px;
+    background:rgba(0,145,255,.1);
+    border:1px solid rgba(0,195,255,.25);
+    color:#7de6ff;
+    font-size:13px;
     font-weight:600;
 }
 
-.trust-item{
-    display:flex;
-    align-items:center;
-    gap:7px;
+/* ===== TERMS LAYOUT ===== */
+.terms-layout{
+    max-width:1250px;
+    margin:0 auto 80px;
+    padding:0 24px;
+    display:grid;
+    grid-template-columns:280px 1fr;
+    gap:40px;
+    align-items:start;
 }
 
-.trust-item i{
-    color:#13d9ff;
+.terms-sidebar{
+    position:sticky;
+    top:100px;
+    padding:28px 22px;
+    border-radius:22px;
+    background:linear-gradient(145deg,rgba(10,40,85,.7),rgba(3,14,32,.85));
+    border:1px solid var(--border);
+    box-shadow:0 20px 50px rgba(0,60,150,.12);
 }
 
-.hero-visual{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    position:relative;
-    min-height:520px;
-}
-
-.logo-orbit{
-    width:min(480px,90vw);
-    aspect-ratio:1;
-    position:relative;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-
-.logo-orbit::before{
-    content:"";
-    position:absolute;
-    inset:3%;
-    border-radius:50%;
-    border:1px solid rgba(0,200,255,.28);
-    box-shadow:0 0 60px rgba(0,150,255,.08);
-    animation:rotate 22s linear infinite;
-}
-
-.logo-orbit::after{
-    content:"";
-    position:absolute;
-    inset:12%;
-    border-radius:50%;
-    border:1px dashed rgba(0,220,255,.25);
-    animation:rotateReverse 30s linear infinite;
-}
-
-@keyframes rotate{
-    to{
-        transform:rotate(360deg);
-    }
-}
-
-@keyframes rotateReverse{
-    to{
-        transform:rotate(-360deg);
-    }
-}
-
-.logo-card{
-    width:70%;
-    aspect-ratio:1;
-    padding:24px;
-    border-radius:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(145deg,rgba(10,45,95,.8),rgba(2,12,30,.9));
-    border:1px solid rgba(0,195,255,.3);
-    box-shadow:
-        0 0 100px rgba(0,125,255,.18),
-        inset 0 0 70px rgba(0,180,255,.06);
-    backdrop-filter:blur(15px);
-    animation:floatingLogo 5s ease-in-out infinite;
-    position:relative;
-    z-index:3;
-}
-
-@keyframes floatingLogo{
-    0%,100%{
-        transform:translateY(0);
-    }
-    50%{
-        transform:translateY(-13px);
-    }
-}
-
-.logo-card img{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    border-radius:30px;
-    filter:drop-shadow(0 20px 40px rgba(0,150,255,.3));
-}
-
-.orbit-icon{
-    position:absolute;
-    width:58px;
-    height:58px;
-    border-radius:19px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(145deg,rgba(8,39,79,.92),rgba(3,15,34,.92));
-    border:1px solid rgba(0,205,255,.3);
-    box-shadow:
-        0 15px 45px rgba(0,0,0,.35),
-        0 0 25px rgba(0,180,255,.08);
-    backdrop-filter:blur(12px);
-    z-index:5;
-    animation:iconFloat 4s ease-in-out infinite;
-    cursor:pointer;
-    transition:.3s;
-}
-
-.orbit-icon i{
-    color:#39ddff;
-    font-size:20px;
-}
-
-.orbit-icon:hover{
-    transform:scale(1.15);
-    border-color:#00d9ff;
-}
-
-.orbit-icon .tooltip{
-    position:absolute;
-    white-space:nowrap;
-    padding:7px 11px;
-    border-radius:8px;
-    background:#071a38;
-    border:1px solid rgba(0,210,255,.2);
-    color:#dff8ff;
-    font-size:10px;
+.terms-sidebar h3{
+    font-size:14px;
     font-weight:700;
-    opacity:0;
-    pointer-events:none;
+    color:#7de6ff;
+    margin-bottom:18px;
+    letter-spacing:.5px;
+    text-transform:uppercase;
+}
+
+.terms-nav{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+}
+
+.terms-nav a{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 14px;
+    border-radius:12px;
+    color:#a8bdd5;
+    font-size:13px;
+    font-weight:600;
     transition:.25s;
 }
 
-.orbit-icon:hover .tooltip{
-    opacity:1;
+.terms-nav a:hover,
+.terms-nav a.active{
+    background:rgba(0,145,255,.12);
+    color:#fff;
+    border-left:3px solid #00d9ff;
 }
 
-.icon-email{
-    top:6%;
-    left:12%;
-}
-
-.icon-social{
-    top:13%;
-    right:8%;
-}
-
-.icon-market{
-    bottom:18%;
-    left:3%;
-}
-
-.icon-fast{
-    bottom:7%;
-    right:13%;
-}
-
-.icon-security{
-    top:45%;
-    left:-2%;
-}
-
-.icon-globe{
-    top:45%;
-    right:-2%;
-}
-
-@keyframes iconFloat{
-    0%,100%{
-        transform:translateY(0);
-    }
-    50%{
-        transform:translateY(-12px);
-    }
-}
-
-.icon-email .tooltip,
-.icon-security .tooltip,
-.icon-market .tooltip{
-    left:65px;
-    top:50%;
-    transform:translateY(-50%);
-}
-
-.icon-social .tooltip,
-.icon-fast .tooltip,
-.icon-globe .tooltip{
-    right:65px;
-    top:50%;
-    transform:translateY(-50%);
-}
-
-section{
-    max-width:1250px;
-    margin:auto;
-    padding:105px 24px;
-}
-
-.section-heading{
-    text-align:center;
-    max-width:720px;
-    margin:0 auto 55px;
-}
-
-.section-label{
-    color:#2bdcff;
+.terms-nav a span{
+    width:22px;
+    height:22px;
+    border-radius:7px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,145,255,.15);
+    color:#35dcff;
     font-size:11px;
-    text-transform:uppercase;
-    letter-spacing:2px;
     font-weight:800;
-    margin-bottom:13px;
 }
 
-.section-heading h2{
-    font-size:clamp(32px,4vw,50px);
-    line-height:1.05;
-    letter-spacing:-2px;
-    margin-bottom:17px;
+/* ===== CONTENT ===== */
+.terms-content{
+    display:flex;
+    flex-direction:column;
+    gap:28px;
 }
 
-.section-heading p{
-    color:var(--muted);
-    line-height:1.8;
-    font-size:15px;
-}
-
-.services-grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:18px;
-}
-
-.service-card{
-    position:relative;
-    padding:30px;
-    min-height:260px;
-    overflow:hidden;
+.term-card{
+    padding:36px 38px;
     border-radius:24px;
-    background:linear-gradient(145deg,rgba(12,39,79,.65),rgba(3,15,34,.75));
+    background:linear-gradient(145deg,rgba(12,39,79,.55),rgba(3,15,34,.7));
     border:1px solid var(--border);
     transition:.3s;
 }
 
-.service-card:hover{
-    transform:translateY(-8px);
-    border-color:rgba(0,210,255,.4);
-    box-shadow:0 25px 65px rgba(0,90,255,.12);
+.term-card:hover{
+    border-color:rgba(0,210,255,.35);
+    box-shadow:0 20px 50px rgba(0,90,255,.1);
 }
 
-.service-icon{
-    width:55px;
-    height:55px;
-    border-radius:17px;
+.term-header{
     display:flex;
     align-items:center;
-    justify-content:center;
-    color:#35dcff;
-    background:linear-gradient(135deg,rgba(0,128,255,.25),rgba(0,220,255,.08));
-    border:1px solid rgba(0,190,255,.2);
-    margin-bottom:24px;
-    font-size:21px;
-}
-
-.service-card h3{
-    font-size:19px;
-    margin-bottom:12px;
-}
-
-.service-card p{
-    color:var(--muted);
-    line-height:1.7;
-    font-size:14px;
-}
-
-.about-wrapper{
-    display:grid;
-    grid-template-columns:.9fr 1.1fr;
-    gap:70px;
-    align-items:center;
-}
-
-.about-box{
-    padding:38px;
-    border-radius:30px;
-    background:linear-gradient(145deg,rgba(8,39,82,.8),rgba(2,12,28,.9));
-    border:1px solid var(--border);
-    box-shadow:0 30px 80px rgba(0,60,150,.12);
-}
-
-.about-logo{
-    width:170px;
-    margin:0 auto 25px;
-    border-radius:30px;
-    filter:drop-shadow(0 15px 35px rgba(0,148,255,.3));
-}
-
-.mini-stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}
-
-.mini-stat{
-    text-align:center;
-    padding:17px 8px;
-    border-radius:15px;
-    background:rgba(255,255,255,.035);
-    border:1px solid rgba(255,255,255,.07);
-}
-
-.mini-stat strong{
-    display:block;
-    color:#42dcff;
-    font-size:19px;
-}
-
-.mini-stat span{
-    display:block;
-    color:#849bb7;
-    font-size:10px;
-    margin-top:5px;
-}
-
-.about-content .section-label{
-    text-align:left;
-}
-
-.about-content h2{
-    font-size:clamp(32px,4vw,48px);
-    letter-spacing:-2px;
+    gap:16px;
     margin-bottom:20px;
 }
 
-.about-content p{
+.term-number{
+    width:48px;
+    height:48px;
+    border-radius:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,rgba(0,128,255,.3),rgba(0,220,255,.12));
+    border:1px solid rgba(0,190,255,.25);
+    color:#35dcff;
+    font-size:18px;
+    font-weight:800;
+}
+
+.term-header h2{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-.5px;
+}
+
+.term-card p{
     color:var(--muted);
+    font-size:15px;
     line-height:1.85;
-    margin-bottom:18px;
-    font-size:15px;
+    margin-bottom:14px;
 }
 
-.check-list{
-    margin-top:25px;
-    display:grid;
-    gap:13px;
+.term-card p:last-child{
+    margin-bottom:0;
 }
 
-.check{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    color:#d8e7f8;
-    font-size:14px;
-    font-weight:600;
+.term-card ul{
+    margin:16px 0 8px 22px;
+    color:var(--muted);
+    font-size:14.5px;
+    line-height:1.8;
 }
 
-.check i{
-    color:#00dcff;
-}
-
-.platforms{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:14px;
-}
-
-.platform{
-    min-width:125px;
-    padding:18px 22px;
-    border-radius:18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:10px;
-    color:#bcd0e7;
-    background:rgba(255,255,255,.035);
-    border:1px solid rgba(255,255,255,.08);
-    transition:.3s;
-}
-
-.platform:hover{
-    color:#fff;
-    transform:translateY(-5px);
-    border-color:rgba(0,210,255,.35);
-    background:rgba(0,125,255,.09);
-}
-
-.platform i{
-    color:#31d9ff;
-    font-size:20px;
-}
-
-.feature-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:15px;
-}
-
-.feature{
-    text-align:center;
-    padding:28px 18px;
-    border-radius:21px;
-    background:rgba(255,255,255,.025);
-    border:1px solid rgba(255,255,255,.07);
-    transition:.3s;
-}
-
-.feature:hover{
-    transform:translateY(-5px);
-    border-color:rgba(0,210,255,.3);
-}
-
-.feature i{
-    color:#22d9ff;
-    font-size:25px;
-    margin-bottom:16px;
-}
-
-.feature h3{
-    font-size:15px;
+.term-card li{
     margin-bottom:8px;
 }
 
-.feature p{
-    color:#8298b2;
-    font-size:12px;
-    line-height:1.6;
+.term-card a{
+    color:#00d9ff;
 }
 
+.term-card a:hover{
+    text-decoration:underline;
+}
+
+.highlight-box{
+    margin-top:18px;
+    padding:16px 20px;
+    border-radius:14px;
+    background:rgba(0,145,255,.08);
+    border:1px solid rgba(0,195,255,.18);
+    color:#b8d4f0;
+    font-size:14px;
+    line-height:1.7;
+}
+
+/* ===== CTA ===== */
 .cta{
     max-width:1200px;
     margin:30px auto 100px;
@@ -829,7 +519,7 @@ section{
 }
 
 .cta h2{
-    font-size:clamp(32px,5vw,55px);
+    font-size:clamp(32px,5vw,52px);
     letter-spacing:-2px;
     margin-bottom:15px;
 }
@@ -841,6 +531,14 @@ section{
     line-height:1.8;
 }
 
+.hero-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:center;
+}
+
+/* ===== FOOTER ===== */
 footer{
     border-top:1px solid rgba(255,255,255,.07);
     background:linear-gradient(180deg,rgba(3,14,31,.6),#010711);
@@ -945,7 +643,6 @@ footer{
     backdrop-filter:blur(15px);
     box-shadow:0 10px 35px rgba(0,0,0,.35);
     transition:.3s;
-    position:relative;
 }
 
 .float-btn:hover{
@@ -980,520 +677,95 @@ footer{
     visibility:visible;
 }
 
-.reveal{
-    opacity:0;
-    transform:translateY(25px);
-    transition:opacity .7s ease,transform .7s ease;
-}
-
-.reveal.visible{
-    opacity:1;
-    transform:translateY(0);
-}
-
+/* ===== RESPONSIVE ===== */
 @media(max-width:1100px){
-
-    nav{
-        gap:17px;
-    }
-
-    .hero{
-        gap:15px;
-    }
-
-    .hero h1{
-        font-size:clamp(42px,6vw,65px);
-    }
-
-    .services-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
-
-    .footer-grid{
-        grid-template-columns:1.4fr 1fr 1fr;
+    .terms-layout{
+        grid-template-columns:240px 1fr;
+        gap:30px;
     }
 }
 
 @media(max-width:900px){
-
-    nav,
-    .nav-buttons{
+    nav, .nav-buttons{
         display:none;
     }
-
     .mobile-menu{
         display:block;
     }
-
-    .hero{
-        grid-template-columns:1fr;
-        text-align:center;
-        padding-top:120px;
-    }
-
-    .hero p{
-        margin-left:auto;
-        margin-right:auto;
-    }
-
-    .hero-actions,
-    .hero-trust{
-        justify-content:center;
-    }
-
-    .hero-visual{
-        min-height:460px;
-        margin-top:10px;
-    }
-
-    .about-wrapper{
+    .terms-layout{
         grid-template-columns:1fr;
     }
-
-    .about-content{
-        text-align:center;
+    .terms-sidebar{
+        position:static;
+        margin-bottom:10px;
     }
-
-    .about-content .section-label{
-        text-align:center;
+    .terms-nav{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:8px;
     }
-
-    .check-list{
-        justify-content:center;
-        text-align:left;
-    }
-
-    .feature-grid{
-        grid-template-columns:repeat(2,1fr);
-    }
-
     .footer-grid{
         grid-template-columns:1fr 1fr;
     }
 }
 
 @media(max-width:600px){
+    header{height:68px}
+    .nav{height:68px;padding:0 15px}
+    .brand{font-size:18px;gap:8px}
+    .brand img{width:39px;height:39px}
+    .mobile-nav{top:68px}
 
-    body{
-        width:100%;
-        overflow-x:hidden;
+    .terms-hero{
+        padding:110px 16px 40px;
     }
-
-    header{
-        height:68px;
+    .terms-hero h1{
+        font-size:clamp(36px,12vw,48px);
+        letter-spacing:-2px;
     }
-
-    .nav{
-        height:68px;
-        padding:0 15px;
+    .terms-layout{
+        padding:0 16px;
     }
-
-    .brand{
-        font-size:18px;
-        gap:8px;
-    }
-
-    .brand img{
-        width:39px;
-        height:39px;
-    }
-
-    .mobile-nav{
-        top:68px;
-        max-height:calc(100vh - 68px);
-        overflow-y:auto;
-    }
-
-    .hero{
-        width:100%;
-        min-height:auto;
-        padding:105px 16px 45px;
-        gap:5px;
-    }
-
-    .eyebrow{
-        font-size:9px;
-        letter-spacing:1px;
-        padding:7px 11px;
-        margin-bottom:17px;
-    }
-
-    .hero h1{
-        font-size:clamp(42px,14vw,58px);
-        letter-spacing:-3px;
-        line-height:.96;
-        margin-bottom:18px;
-    }
-
-    .hero p{
-        font-size:14px;
-        line-height:1.7;
-        margin-bottom:23px;
-    }
-
-    .hero-actions{
-        width:100%;
-        flex-direction:column;
-        gap:10px;
-    }
-
-    .hero-actions .btn{
-        width:100%;
-        min-height:49px;
-    }
-
-    .hero-trust{
-        margin-top:23px;
-        display:grid;
-        grid-template-columns:1fr;
-        gap:9px;
-        justify-items:center;
-    }
-
-    .hero-visual{
-        width:100%;
-        min-height:350px;
-        margin-top:5px;
-    }
-
-    .logo-orbit{
-        width:min(320px,92vw);
-    }
-
-    .logo-orbit::before{
-        inset:2%;
-    }
-
-    .logo-orbit::after{
-        inset:10%;
-    }
-
-    .logo-card{
-        width:65%;
-        padding:13px;
-        border-radius:25px;
-    }
-
-    .logo-card img{
-        border-radius:19px;
-    }
-
-    .orbit-icon{
-        width:43px;
-        height:43px;
-        border-radius:13px;
-    }
-
-    .orbit-icon i{
-        font-size:15px;
-    }
-
-    .icon-email{
-        top:4%;
-        left:7%;
-    }
-
-    .icon-social{
-        top:8%;
-        right:5%;
-    }
-
-    .icon-market{
-        bottom:12%;
-        left:2%;
-    }
-
-    .icon-fast{
-        bottom:5%;
-        right:7%;
-    }
-
-    .icon-security{
-        top:44%;
-        left:-2%;
-    }
-
-    .icon-globe{
-        top:44%;
-        right:-2%;
-    }
-
-    .orbit-icon .tooltip{
-        display:none;
-    }
-
-    section{
-        width:100%;
-        padding:65px 16px;
-    }
-
-    .section-heading{
-        margin-bottom:35px;
-    }
-
-    .section-label{
-        font-size:10px;
-        letter-spacing:1.5px;
-    }
-
-    .section-heading h2{
-        font-size:32px;
-        letter-spacing:-1.5px;
-    }
-
-    .section-heading p{
-        font-size:13px;
-        line-height:1.7;
-    }
-
-    .services-grid{
-        grid-template-columns:1fr;
-        gap:13px;
-    }
-
-    .service-card{
-        min-height:auto;
-        padding:23px;
+    .term-card{
+        padding:26px 22px;
         border-radius:20px;
     }
-
-    .service-icon{
-        width:48px;
-        height:48px;
-        margin-bottom:18px;
+    .term-header h2{
+        font-size:18px;
     }
-
-    .service-card h3{
-        font-size:17px;
+    .term-number{
+        width:42px;
+        height:42px;
+        font-size:16px;
     }
-
-    .service-card p{
-        font-size:13px;
+    .terms-nav{
+        grid-template-columns:1fr;
     }
-
-    .about-wrapper{
-        gap:35px;
-    }
-
-    .about-box{
-        padding:22px;
-        border-radius:23px;
-    }
-
-    .about-logo{
-        width:135px;
-        border-radius:24px;
-    }
-
-    .mini-stats{
-        grid-template-columns:repeat(3,1fr);
-        gap:6px;
-    }
-
-    .mini-stat{
-        padding:13px 4px;
-    }
-
-    .mini-stat strong{
-        font-size:15px;
-    }
-
-    .mini-stat span{
-        font-size:8px;
-    }
-
-    .about-content h2{
-        font-size:32px;
-    }
-
-    .about-content p{
-        font-size:13px;
-        line-height:1.75;
-    }
-
-    .check-list{
-        gap:11px;
-    }
-
-    .check{
-        font-size:12px;
-        align-items:flex-start;
-    }
-
-    .check i{
-        margin-top:2px;
-    }
-
-    .platforms{
-        display:grid;
-        grid-template-columns:repeat(2,1fr);
-        gap:10px;
-    }
-
-    .platform{
-        min-width:0;
-        width:100%;
-        padding:15px 8px;
-        border-radius:15px;
-        font-size:12px;
-    }
-
-    .platform i{
-        font-size:17px;
-    }
-
-    .feature-grid{
-        grid-template-columns:1fr 1fr;
-        gap:10px;
-    }
-
-    .feature{
-        padding:21px 10px;
-        border-radius:17px;
-    }
-
-    .feature i{
-        font-size:21px;
-    }
-
-    .feature h3{
-        font-size:13px;
-    }
-
-    .feature p{
-        font-size:10px;
-    }
-
     .cta{
         width:calc(100% - 28px);
         margin:10px auto 65px;
         padding:55px 18px;
         border-radius:25px;
     }
-
-    .cta h2{
-        font-size:32px;
-        letter-spacing:-1.5px;
-    }
-
-    .cta p{
-        font-size:13px;
-        line-height:1.7;
-    }
-
-    .cta .hero-actions{
-        width:100%;
-    }
-
-    footer{
-        width:100%;
-    }
-
-    .footer-inner{
-        padding:45px 16px 20px;
-    }
-
+    .footer-inner{padding:45px 16px 20px}
     .footer-grid{
         grid-template-columns:1fr 1fr;
         gap:30px 20px;
-        padding-bottom:35px;
     }
-
-    .footer-brand{
-        grid-column:1 / -1;
-    }
-
-    .footer-brand p{
-        font-size:12px;
-        max-width:100%;
-    }
-
-    .footer-column h4{
-        font-size:13px;
-    }
-
-    .footer-column a{
-        font-size:11px;
-        margin-bottom:10px;
-    }
-
-    .social{
-        width:37px;
-        height:37px;
-    }
-
+    .footer-brand{grid-column:1 / -1}
     .copyright{
         flex-direction:column;
         text-align:center;
-        line-height:1.6;
-        font-size:10px;
     }
-
-    .floating-socials{
-        right:12px;
-        bottom:15px;
-        gap:8px;
-    }
-
-    .float-btn{
-        width:42px;
-        height:42px;
-    }
-
-    .scroll-top{
-        right:12px;
-        bottom:225px;
-        width:42px;
-        height:42px;
-    }
-}
-
-@media(max-width:360px){
-
-    .brand{
-        font-size:16px;
-    }
-
-    .brand img{
-        width:36px;
-        height:36px;
-    }
-
-    .hero h1{
-        font-size:40px;
-    }
-
-    .hero-visual{
-        min-height:315px;
-    }
-
-    .logo-orbit{
-        width:285px;
-    }
-
-    .orbit-icon{
-        width:39px;
-        height:39px;
-    }
-
-    .feature-grid{
-        grid-template-columns:1fr;
-    }
-
-    .mini-stats{
-        grid-template-columns:1fr;
-    }
-
-    .platforms{
-        grid-template-columns:1fr 1fr;
-    }
+    .floating-socials{right:12px;bottom:15px}
+    .float-btn{width:42px;height:42px}
+    .scroll-top{right:12px;bottom:225px;width:42px;height:42px}
 }
 </style>
 </head>
 <body>
 
 <div class="background-grid"></div>
-
 <div class="orb one"></div>
 <div class="orb two"></div>
 <div class="orb three"></div>
@@ -1511,7 +783,6 @@ footer{
 
 <header>
 <div class="nav">
-
 <a href="index.html" class="brand">
 <img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart Logo">
 <span>MailMart</span>
@@ -1527,573 +798,307 @@ footer{
 
 <div class="nav-buttons">
 <a href="login.html" class="btn btn-login">
-<i class="fa-solid fa-right-to-bracket"></i>
-Login
+<i class="fa-solid fa-right-to-bracket"></i> Login
 </a>
-
 <a href="register.html" class="btn btn-primary">
-<i class="fa-solid fa-user-plus"></i>
-Register
+<i class="fa-solid fa-user-plus"></i> Register
 </a>
 </div>
 
 <div class="mobile-menu" onclick="toggleMobileMenu()">
 <i class="fa-solid fa-bars"></i>
 </div>
-
 </div>
 </header>
 
 <div class="mobile-nav" id="mobileNav">
-
 <a href="index.html" onclick="closeMobileMenu()">Home</a>
 <a href="index.html#services" onclick="closeMobileMenu()">Services</a>
 <a href="index.html#about" onclick="closeMobileMenu()">About Us</a>
 <a href="index.html#platforms" onclick="closeMobileMenu()">Platforms</a>
 <a href="#terms" onclick="closeMobileMenu()">Terms of Service</a>
-
 <div class="mobile-buttons">
 <a href="login.html" class="btn btn-login">Login</a>
 <a href="register.html" class="btn btn-primary">Register</a>
 </div>
-
 </div>
 
-<main id="terms">
-
-<section class="hero">
-
-<div class="hero-content">
-
+<!-- HERO -->
+<section class="terms-hero">
 <div class="eyebrow">
 <span class="live-dot"></span>
-Terms of Service
+Legal Documents
 </div>
 
-<h1>
-MailMart
-<span class="gradient-text">Terms</span>
-</h1>
+<h1>Terms of <span class="gradient-text">Service</span></h1>
 
 <p>
-Please read these Terms of Service carefully before using our platform. By accessing or using MailMart, you agree to be bound by these Terms and our Privacy Policy.
+Please read these Terms carefully before using MailMart. By accessing or using our platform, you agree to be bound by these Terms and our Privacy Policy.
 </p>
 
-<div class="hero-actions">
-
-<a href="register.html" class="btn btn-primary">
-Get Started
-<i class="fa-solid fa-arrow-right"></i>
-</a>
-
-<a href="#contact" class="btn btn-login">
-Contact Support
-<i class="fa-solid fa-headset"></i>
-</a>
-
+<div class="updated-badge">
+<i class="fa-regular fa-calendar"></i>
+Last Updated: August 18, 2026
 </div>
-
-<div class="hero-trust">
-
-<div class="trust-item">
-<i class="fa-solid fa-scale-balanced"></i>
-Fair for Everyone
-</div>
-
-<div class="trust-item">
-<i class="fa-solid fa-shield-halved"></i>
-Secure & Protected
-</div>
-
-<div class="trust-item">
-<i class="fa-solid fa-headset"></i>
-24/7 Support
-</div>
-
-</div>
-
-</div>
-
-<div class="hero-visual">
-
-<div class="logo-orbit">
-
-<div class="orbit-icon icon-email">
-<i class="fa-solid fa-envelope"></i>
-<span class="tooltip">We Buy Emails</span>
-</div>
-
-<div class="orbit-icon icon-social">
-<i class="fa-solid fa-share-nodes"></i>
-<span class="tooltip">Social Media</span>
-</div>
-
-<div class="orbit-icon icon-market">
-<i class="fa-solid fa-cart-shopping"></i>
-<span class="tooltip">Digital Goods</span>
-</div>
-
-<div class="orbit-icon icon-fast">
-<i class="fa-solid fa-bolt"></i>
-<span class="tooltip">Fast Service</span>
-</div>
-
-<div class="orbit-icon icon-security">
-<i class="fa-solid fa-shield-halved"></i>
-<span class="tooltip">Secure Platform</span>
-</div>
-
-<div class="orbit-icon icon-globe">
-<i class="fa-solid fa-globe"></i>
-<span class="tooltip">Digital Services</span>
-</div>
-
-<div class="logo-card">
-
-<img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_900/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
-
-</div>
-
-</div>
-
-</div>
-
 </section>
 
-<section id="terms" style="padding-top:40px;">
+<!-- MAIN TERMS LAYOUT -->
+<div class="terms-layout" id="terms">
 
-<div class="section-heading">
+<!-- SIDEBAR -->
+<aside class="terms-sidebar">
+<h3>Quick Navigation</h3>
+<div class="terms-nav">
+<a href="#section-1"><span>1</span> Acceptance</a>
+<a href="#section-2"><span>2</span> Eligibility</a>
+<a href="#section-3"><span>3</span> Account Security</a>
+<a href="#section-4"><span>4</span> Email Purchasing</a>
+<a href="#section-5"><span>5</span> User Conduct</a>
+<a href="#section-6"><span>6</span> Payment & Refunds</a>
+<a href="#section-7"><span>7</span> Intellectual Property</a>
+<a href="#section-8"><span>8</span> Digital Services</a>
+<a href="#section-9"><span>9</span> Limitation of Liability</a>
+<a href="#section-10"><span>10</span> Termination</a>
+<a href="#section-11"><span>11</span> Governing Law</a>
+<a href="#section-12"><span>12</span> Contact Us</a>
+</div>
+</aside>
 
-<div class="section-label">TERMS OF SERVICE</div>
+<!-- CONTENT -->
+<div class="terms-content">
 
-<h2>
-Last Updated: <span style="color:#00d9ff;">August 18, 2026</span>
-</h2>
-
-<p>
-Welcome to MailMart — the digital marketplace for email purchasing, social media services, digital goods, and online solutions.
-</p>
-
+<div class="term-card" id="section-1">
+<div class="term-header">
+<div class="term-number">01</div>
+<h2>Acceptance of Terms</h2>
+</div>
+<p>These Terms constitute a legal agreement between you and MailMart (the “Company”, “we”, “us”). By registering, purchasing, selling, or otherwise using the Platform, you agree to comply with these Terms.</p>
+<div class="highlight-box">
+We may update these Terms from time to time. Continued use after changes constitutes acceptance of the revised Terms.
+</div>
 </div>
 
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
-By accessing or using MailMart (the “Platform”), you agree to these Terms of Service (“Terms”). If you do not agree, do not use the Platform.
-</p>
+<div class="term-card" id="section-2">
+<div class="term-header">
+<div class="term-number">02</div>
+<h2>Eligibility</h2>
 </div>
-
-<div class="about-content reveal">
-
-<div class="section-label">1. Acceptance of Terms</div>
-
-<h2 style="margin-bottom:20px;">1. Acceptance of Terms</h2>
-
-<p>
-These Terms constitute a legal agreement between you and MailMart (the “Company”, “we”, “us”). By registering, purchasing, selling, or otherwise using the Platform, you agree to comply with these Terms.
-</p>
-
-</div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
-We may update these Terms from time to time. Continued use after changes constitutes acceptance.
-</p>
-</div>
-
-<div class="about-content reveal">
-
-<div class="section-label">2. Eligibility</div>
-
-<h2 style="margin-bottom:20px;">2. Eligibility</h2>
-
-<p>
-You must be at least 18 years old and have the legal capacity to enter into binding contracts. By using the Platform, you represent and warrant that you meet this requirement.
-</p>
-
-</div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>You must be at least 18 years old and have the legal capacity to enter into binding contracts. By using the Platform, you represent and warrant that you meet this requirement.</p>
+<div class="highlight-box">
 We reserve the right to verify your age and identity. Accounts of minors will be suspended or terminated without notice.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">3. Account Registration & Security</div>
-
-<h2 style="margin-bottom:20px;">3. Account Registration & Security</h2>
-
-<p>
-To use most features, you must create an account. You are responsible for maintaining the confidentiality of your login credentials and for all activities under your account.
-</p>
-
-<p style="margin-top:20px;">
-You agree not to share your account information or use another person’s account.
-</p>
-
+<div class="term-card" id="section-3">
+<div class="term-header">
+<div class="term-number">03</div>
+<h2>Account Registration & Security</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>To use most features, you must create an account. You are responsible for maintaining the confidentiality of your login credentials and for all activities under your account.</p>
+<p>You agree not to share your account information or use another person’s account.</p>
+<div class="highlight-box">
 Violations may result in immediate account termination.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">4. Email Purchasing</div>
-
-<h2 style="margin-bottom:20px;">4. Email Purchasing</h2>
-
-<p>
-When you sell an email account through MailMart, you grant us the right to:
-</p>
-
-<ul style="margin:20px 0 20px 40px;line-height:1.7;font-size:14px;">
-<li style="margin:8px 0;">Access the account (with your consent) to verify eligibility</li>
-<li style="margin:8px 0;">Purchase the account for the agreed price</li>
-<li style="margin:8px 0;">Remove all data and terminate the account after purchase</li>
+<div class="term-card" id="section-4">
+<div class="term-header">
+<div class="term-number">04</div>
+<h2>Email Purchasing</h2>
+</div>
+<p>When you sell an email account through MailMart, you grant us the right to:</p>
+<ul>
+<li>Access the account (with your consent) to verify eligibility</li>
+<li>Purchase the account for the agreed price</li>
+<li>Remove all data and terminate the account after purchase</li>
 </ul>
-
-<p>
-We do not guarantee that purchased accounts will work indefinitely or that any email will remain active. We are not responsible for any lost access, spam reports, or delivery issues.
-</p>
-
-</div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>We do not guarantee that purchased accounts will work indefinitely or that any email will remain active. We are not responsible for any lost access, spam reports, or delivery issues.</p>
+<div class="highlight-box">
 Selling accounts that violate any platform’s terms of service (e.g., Gmail, Outlook) may result in permanent suspension and forfeiture of funds.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">5. User Conduct</div>
-
-<h2 style="margin-bottom:20px;">5. User Conduct</h2>
-
-<p>
-You agree not to:
-</p>
-
-<ul style="margin:20px 0 20px 40px;line-height:1.7;font-size:14px;">
-<li style="margin:8px 0;">Use the Platform for illegal, fraudulent, or harmful purposes</li>
-<li style="margin:8px 0;">Spam, abuse, or harass users</li>
-<li style="margin:8px 0;">Attempt to reverse-engineer, hack, or disrupt the Platform</li>
-<li style="margin:8px 0;">Sell or distribute any account, service, or digital good in violation of law</li>
+<div class="term-card" id="section-5">
+<div class="term-header">
+<div class="term-number">05</div>
+<h2>User Conduct</h2>
+</div>
+<p>You agree not to:</p>
+<ul>
+<li>Use the Platform for illegal, fraudulent, or harmful purposes</li>
+<li>Spam, abuse, or harass users</li>
+<li>Attempt to reverse-engineer, hack, or disrupt the Platform</li>
+<li>Sell or distribute any account, service, or digital good in violation of law</li>
 </ul>
-
-</div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<div class="highlight-box">
 Violations may result in account termination, legal action, and forfeiture of funds.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">6. Payment & Refunds</div>
-
-<h2 style="margin-bottom:20px;">6. Payment & Refunds</h2>
-
-<p>
-All transactions are processed through secure payment gateways. Once an email purchase is completed, no refunds are issued.
-</p>
-
-<p>
-For digital goods and services, refunds are granted only in cases of clear technical failure within 7 days (at our discretion).
-</p>
-
+<div class="term-card" id="section-6">
+<div class="term-header">
+<div class="term-number">06</div>
+<h2>Payment & Refunds</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>All transactions are processed through secure payment gateways. Once an email purchase is completed, no refunds are issued.</p>
+<p>For digital goods and services, refunds are granted only in cases of clear technical failure within 7 days (at our discretion).</p>
+<div class="highlight-box">
 We are not responsible for any bank or payment provider fees.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">7. Intellectual Property</div>
-
-<h2 style="margin-bottom:20px;">7. Intellectual Property</h2>
-
-<p>
-All content, logos, designs, and software on MailMart are owned by MailMart or its licensors. You may not copy, modify, or use them without permission.
-</p>
-
-<p style="margin-top:20px;">
-You retain ownership of the emails and digital goods you sell or create on the Platform.
-</p>
-
+<div class="term-card" id="section-7">
+<div class="term-header">
+<div class="term-number">07</div>
+<h2>Intellectual Property</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>All content, logos, designs, and software on MailMart are owned by MailMart or its licensors. You may not copy, modify, or use them without permission.</p>
+<p>You retain ownership of the emails and digital goods you sell or create on the Platform.</p>
+<div class="highlight-box">
 We grant you a limited, non-exclusive license to use the Platform solely for lawful purposes.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">8. Digital Services & Social Media</div>
-
-<h2 style="margin-bottom:20px;">8. Digital Services & Social Media</h2>
-
-<p>
-Our social media, marketing, and account services are provided “as is.” We do not guarantee specific results (e.g., follower growth, engagement rates).
-</p>
-
-<p style="margin-top:20px;">
-We reserve the right to suspend or remove any service that violates platform rules.
-</p>
-
+<div class="term-card" id="section-8">
+<div class="term-header">
+<div class="term-number">08</div>
+<h2>Digital Services & Social Media</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>Our social media, marketing, and account services are provided “as is.” We do not guarantee specific results (e.g., follower growth, engagement rates).</p>
+<p>We reserve the right to suspend or remove any service that violates platform rules.</p>
+<div class="highlight-box">
 Any negative impact on your accounts caused by our services is your responsibility.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">9. Limitation of Liability</div>
-
-<h2 style="margin-bottom:20px;">9. Limitation of Liability</h2>
-
-<p>
-To the maximum extent permitted by law, MailMart shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform.
-</p>
-
-<p style="margin-top:20px;">
-Our total liability shall not exceed the amount you paid us in the last 12 months.
-</p>
-
+<div class="term-card" id="section-9">
+<div class="term-header">
+<div class="term-number">09</div>
+<h2>Limitation of Liability</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>To the maximum extent permitted by law, MailMart shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the Platform.</p>
+<p>Our total liability shall not exceed the amount you paid us in the last 12 months.</p>
+<div class="highlight-box">
 This limitation applies to all claims, including those for negligence.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">10. Termination</div>
-
-<h2 style="margin-bottom:20px;">10. Termination</h2>
-
-<p>
-We may terminate or suspend your account at any time, with or without cause, without notice.
-</p>
-
-<p style="margin-top:20px;">
-You may close your account by contacting support.
-</p>
-
+<div class="term-card" id="section-10">
+<div class="term-header">
+<div class="term-number">10</div>
+<h2>Termination</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>We may terminate or suspend your account at any time, with or without cause, without notice.</p>
+<p>You may close your account by contacting support.</p>
+<div class="highlight-box">
 Upon termination, you lose access to all content and data on the Platform.
-</p>
+</div>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">11. Governing Law</div>
-
-<h2 style="margin-bottom:20px;">11. Governing Law</h2>
-
-<p>
-These Terms shall be governed by the laws of the jurisdiction where MailMart operates, without regard to conflict of laws principles.
-</p>
-
-<p style="margin-top:20px;">
-Any disputes shall be resolved exclusively in the courts of that jurisdiction.
-</p>
-
+<div class="term-card" id="section-11">
+<div class="term-header">
+<div class="term-number">11</div>
+<h2>Governing Law</h2>
 </div>
-
-<div class="about-box" style="margin:40px 0 60px;padding:40px;">
-<p style="font-size:15px;line-height:1.85;">
+<p>These Terms shall be governed by the laws of the jurisdiction where MailMart operates, without regard to conflict of laws principles.</p>
+<p>Any disputes shall be resolved exclusively in the courts of that jurisdiction.</p>
+<div class="highlight-box">
 You agree to waive any rights to a jury trial.
+</div>
+</div>
+
+<div class="term-card" id="section-12">
+<div class="term-header">
+<div class="term-number">12</div>
+<h2>Contact Us</h2>
+</div>
+<p>If you have any questions about these Terms, please contact us:</p>
+<p style="margin-top:12px;">
+<strong>Email:</strong> <a href="mailto:support@mailmart.com">support@mailmart.com</a><br>
+<strong>WhatsApp:</strong> <a href="https://wa.me/1234567890">+1 (234) 567-8900</a>
 </p>
 </div>
 
-<div class="about-content reveal">
-
-<div class="section-label">12. Contact Us</div>
-
-<h2 style="margin-bottom:20px;">12. Contact Us</h2>
-
-<p>
-If you have any questions about these Terms, please contact us:
-</p>
-
-<p style="margin-top:20px;">
-Email: <a href="mailto:support@mailmart.com" style="color:#00d9ff;">support@mailmart.com</a><br>
-WhatsApp: <a href="https://wa.me/1234567890" style="color:#00d9ff;">+1 (234) 567-8900</a>
-</p>
-
+</div>
 </div>
 
-</main>
-
+<!-- CTA -->
 <div class="cta" id="contact">
-
-<div class="section-label">Need Help?</div>
-
-<h2>
-Contact <span class="gradient-text">MailMart</span>
-</h2>
-
-<p>
-Have questions? Our team is here 24/7.
-</p>
-
-<div class="hero-actions" style="justify-content:center">
-
-<a href="register.html" class="btn btn-primary">
-Create Account
-<i class="fa-solid fa-arrow-right"></i>
-</a>
-
-<a href="login.html" class="btn btn-login">
-Login
-<i class="fa-solid fa-right-to-bracket"></i>
-</a>
-
+<div class="eyebrow" style="margin-bottom:18px;">
+<span class="live-dot"></span>
+Need Help?
 </div>
-
+<h2>Contact <span class="gradient-text">MailMart</span></h2>
+<p>Have questions about these Terms? Our support team is available 24/7.</p>
+<div class="hero-actions">
+<a href="register.html" class="btn btn-primary">
+Create Account <i class="fa-solid fa-arrow-right"></i>
+</a>
+<a href="login.html" class="btn btn-login">
+Login <i class="fa-solid fa-right-to-bracket"></i>
+</a>
+</div>
 </div>
 
 <footer>
-
 <div class="footer-inner">
-
 <div class="footer-grid">
-
 <div class="footer-brand">
-
 <a href="index.html" class="brand">
-
 <img src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
-
 <span>MailMart</span>
-
 </a>
-
-<p>
-Digital services, social media solutions and email purchasing.
-</p>
-
+<p>Digital services, social media solutions and email purchasing.</p>
 <div class="socials">
-
-<a href="#" class="social" aria-label="Facebook">
-<i class="fa-brands fa-facebook-f"></i>
-</a>
-
-<a href="#" class="social" aria-label="Instagram">
-<i class="fa-brands fa-instagram"></i>
-</a>
-
-<a href="#" class="social" aria-label="TikTok">
-<i class="fa-brands fa-tiktok"></i>
-</a>
-
-<a href="#" class="social" aria-label="Telegram">
-<i class="fa-brands fa-telegram"></i>
-</a>
-
-<a href="#" class="social" aria-label="Discord">
-<i class="fa-brands fa-discord"></i>
-</a>
-
-<a href="#" class="social" aria-label="X">
-<i class="fa-brands fa-x-twitter"></i>
-</a>
-
+<a href="#" class="social" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+<a href="#" class="social" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+<a href="#" class="social" aria-label="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+<a href="#" class="social" aria-label="Telegram"><i class="fa-brands fa-telegram"></i></a>
+<a href="#" class="social" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+<a href="#" class="social" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
 </div>
-
 </div>
 
 <div class="footer-column">
-
 <h4>Explore</h4>
-
 <a href="index.html">Home</a>
 <a href="index.html#services">Services</a>
 <a href="index.html#about">About Us</a>
 <a href="index.html#platforms">Platforms</a>
 <a href="#terms">Terms of Service</a>
-
 </div>
 
 <div class="footer-column">
-
 <h4>Services</h4>
-
 <a href="index.html#services">We Buy Emails</a>
 <a href="index.html#services">Social Media</a>
 <a href="index.html#services">Digital Goods</a>
 <a href="index.html#services">Digital Marketing</a>
-
 </div>
 
 <div class="footer-column">
-
 <h4>Account</h4>
-
 <a href="register.html">Create Account</a>
 <a href="login.html">Login</a>
 <a href="#terms">Terms & Conditions</a>
-
 </div>
-
 </div>
 
 <div class="copyright">
-
-<div>
-© 2026 MailMart. All Rights Reserved.
+<div>© 2026 MailMart. All Rights Reserved.</div>
+<div>We Buy Emails • Digital Services • Social Media</div>
 </div>
-
-<div>
-We Buy Emails • Digital Services • Social Media
 </div>
-
-</div>
-
-</div>
-
 </footer>
 
 <div class="floating-socials">
-
-<a href="#" class="float-btn" title="Telegram" aria-label="Telegram">
-<i class="fa-brands fa-telegram"></i>
-</a>
-
-<a href="#" class="float-btn" title="WhatsApp" aria-label="WhatsApp">
-<i class="fa-brands fa-whatsapp"></i>
-</a>
-
-<a href="#" class="float-btn" title="Instagram" aria-label="Instagram">
-<i class="fa-brands fa-instagram"></i>
-</a>
-
-<a href="register.html" class="float-btn" title="Create Account" aria-label="Create Account">
-<i class="fa-solid fa-user-plus"></i>
-</a>
-
+<a href="#" class="float-btn" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+<a href="#" class="float-btn" title="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+<a href="#" class="float-btn" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+<a href="register.html" class="float-btn" title="Create Account"><i class="fa-solid fa-user-plus"></i></a>
 </div>
 
-<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
 <i class="fa-solid fa-arrow-up"></i>
 </button>
 
@@ -2101,78 +1106,49 @@ We Buy Emails • Digital Services • Social Media
 function toggleMobileMenu(){
     document.getElementById("mobileNav").classList.toggle("active");
 }
-
 function closeMobileMenu(){
     document.getElementById("mobileNav").classList.remove("active");
 }
 
-const scrollTop=document.getElementById("scrollTop");
-
-window.addEventListener("scroll",()=>{
-    if(window.scrollY>500){
+const scrollTop = document.getElementById("scrollTop");
+window.addEventListener("scroll", () => {
+    if(window.scrollY > 500){
         scrollTop.classList.add("show");
-    }else{
+    } else {
         scrollTop.classList.remove("show");
     }
 });
 
-const observer=new IntersectionObserver(entries=>{
-    entries.forEach(entry=>{
-        if(entry.isIntersecting){
-            entry.target.classList.add("visible");
-            observer.unobserve(entry.target);
-        }
-    });
-},{threshold:.1});
-
-document.querySelectorAll(".reveal").forEach(element=>{
-    observer.observe(element);
-});
-
-window.addEventListener("resize",()=>{
-    if(window.innerWidth>900){
+window.addEventListener("resize", () => {
+    if(window.innerWidth > 900){
         document.getElementById("mobileNav").classList.remove("active");
     }
 });
 
-const hero=document.querySelector(".hero");
-const icons=document.querySelectorAll(".orbit-icon");
+document.querySelectorAll(".particle").forEach((particle, index) => {
+    particle.style.animationDelay = `${index * 1.3}s`;
+});
 
-if(hero && window.innerWidth>700){
+// Highlight active section in sidebar
+const sections = document.querySelectorAll(".term-card");
+const navLinks = document.querySelectorAll(".terms-nav a");
 
-    hero.addEventListener("mousemove",event=>{
-
-        const rect=hero.getBoundingClientRect();
-
-        const x=(event.clientX-rect.left)/rect.width-.5;
-        const y=(event.clientY-rect.top)/rect.height-.5;
-
-        icons.forEach((icon,index)=>{
-
-            const strength=(index+1)*1.5;
-
-            icon.style.marginLeft=`${x*strength}px`;
-            icon.style.marginTop=`${y*strength}px`;
-
-        });
-
+window.addEventListener("scroll", () => {
+    let current = "";
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        if(scrollY >= sectionTop - 200){
+            current = section.getAttribute("id");
+        }
     });
-
-    hero.addEventListener("mouseleave",()=>{
-
-        icons.forEach(icon=>{
-            icon.style.marginLeft="";
-            icon.style.marginTop="";
-        });
-
+    navLinks.forEach(link => {
+        link.classList.remove("active");
+        if(link.getAttribute("href") === `#${current}`){
+            link.classList.add("active");
+        }
     });
-}
-
-document.querySelectorAll(".particle").forEach((particle,index)=>{
-    particle.style.animationDelay=`${index*1.3}s`;
 });
 </script>
 
 </body>
-</html>
-```
+    </html>
