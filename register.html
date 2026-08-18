@@ -8,24 +8,12 @@
 
 <meta name="theme-color" content="#020812">
 
-<link
-rel="icon"
-type="image/jpeg"
-href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
->
-
-<link
-rel="shortcut icon"
-href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
->
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-<link
-href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-rel="stylesheet"
->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 
@@ -86,12 +74,9 @@ body::before{
 .page{
     position:relative;
     z-index:1;
-
     width:100%;
     min-height:100vh;
-
     padding:30px 20px;
-
     display:flex;
     justify-content:center;
     align-items:center;
@@ -100,12 +85,9 @@ body::before{
 .wrapper{
     width:100%;
     max-width:1080px;
-
     display:grid;
     grid-template-columns:1fr 430px;
-
     gap:65px;
-
     align-items:center;
 }
 
@@ -116,158 +98,102 @@ body::before{
 .logo{
     width:68px;
     height:68px;
-
     border-radius:19px;
-
     object-fit:cover;
-
     display:block;
-
     margin-bottom:25px;
-
-    box-shadow:
-        0 15px 45px rgba(0,160,255,.25);
+    box-shadow:0 15px 45px rgba(0,160,255,.25);
 }
 
 .brand-section h1{
     font-size:clamp(48px,6vw,72px);
-
     line-height:.98;
-
     letter-spacing:-4px;
-
     margin-bottom:22px;
 }
 
 .gradient{
-    background:
-        linear-gradient(
-            90deg,
-            #fff,
-            #35ddff,
-            #087cff
-        );
-
+    background:linear-gradient(90deg, #fff, #35ddff, #087cff);
     -webkit-background-clip:text;
     background-clip:text;
-
     color:transparent;
 }
 
 .brand-section p{
     max-width:530px;
-
     color:#8ba3bd;
-
     font-size:14px;
-
     line-height:1.8;
 }
 
 .tags{
     display:flex;
-
     flex-wrap:wrap;
-
     gap:9px;
-
     margin-top:27px;
 }
 
 .tag{
     padding:9px 12px;
-
     border-radius:10px;
-
     background:rgba(0,130,255,.06);
-
     border:1px solid rgba(0,200,255,.13);
-
     color:#9bb2ca;
-
     font-size:10px;
 }
 
 .card{
     width:100%;
-
     padding:32px;
-
     border-radius:27px;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(9,35,68,.96),
-            rgba(3,13,27,.98)
-        );
-
+    background:linear-gradient(145deg, rgba(9,35,68,.96), rgba(3,13,27,.98));
     border:1px solid rgba(0,205,255,.18);
-
-    box-shadow:
-        0 30px 100px rgba(0,0,0,.45);
+    box-shadow:0 30px 100px rgba(0,0,0,.45);
 }
 
 .card-header{
     text-align:center;
-
     margin-bottom:21px;
 }
 
 .card-logo{
     width:55px;
     height:55px;
-
     border-radius:15px;
-
     object-fit:cover;
-
     margin:0 auto 12px;
-
     display:block;
 }
 
 .card h2{
     font-size:23px;
-
     margin-bottom:6px;
 }
 
 .subtitle{
     color:#8198b1;
-
     font-size:10px;
-
     line-height:1.6;
 }
 
 .message{
     display:none;
-
     padding:11px 12px;
-
     border-radius:10px;
-
     margin-bottom:13px;
-
     font-size:10px;
-
     line-height:1.5;
 }
 
 .error{
     color:#ff9aa9;
-
     background:rgba(255,50,80,.08);
-
     border:1px solid rgba(255,50,80,.2);
 }
 
 .success{
     color:#69edb8;
-
     background:rgba(0,220,150,.07);
-
     border:1px solid rgba(0,220,150,.18);
 }
 
@@ -277,45 +203,28 @@ body::before{
 
 .field label{
     display:block;
-
     color:#b8cbe0;
-
     font-size:9px;
-
     font-weight:700;
-
     margin-bottom:6px;
 }
 
 .input-wrap{
     position:relative;
-
     width:100%;
 }
 
 .input-wrap input{
     display:block;
-
     width:100%;
-
     height:46px;
-
     padding:0 14px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.09);
-
+    border:1px solid rgba(255,255,255,.09);
     border-radius:10px;
-
     outline:none;
-
     background:rgba(0,0,0,.2);
-
     color:#fff;
-
     font-family:inherit;
-
     font-size:11px;
 }
 
@@ -325,10 +234,7 @@ body::before{
 
 .input-wrap input:focus{
     border-color:#08bfff;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(0,180,255,.07);
+    box-shadow:0 0 0 3px rgba(0,180,255,.07);
 }
 
 .input-wrap input::placeholder{
@@ -337,19 +243,12 @@ body::before{
 
 .eye{
     position:absolute;
-
     right:13px;
-
     top:50%;
-
     transform:translateY(-50%);
-
     color:#6c839b;
-
     font-size:9px;
-
     cursor:pointer;
-
     user-select:none;
 }
 
@@ -359,212 +258,133 @@ body::before{
 
 .password-strength{
     width:100%;
-
     height:3px;
-
     margin-top:6px;
-
     border-radius:10px;
-
     overflow:hidden;
-
-    background:
-        rgba(255,255,255,.07);
+    background:rgba(255,255,255,.07);
 }
 
 .strength-bar{
     width:0;
-
     height:100%;
-
     background:#00cfff;
-
     transition:.25s;
 }
 
 .strength-text{
     display:block;
-
     min-height:11px;
-
     margin-top:3px;
-
     color:#647c95;
-
     font-size:8px;
 }
 
 .terms{
     display:flex;
-
     align-items:flex-start;
-
     gap:8px;
-
-    margin:
-        13px
-        0
-        16px;
-
+    margin:13px 0 16px;
     color:#8197af;
-
     font-size:8px;
-
     line-height:1.5;
 }
 
 .terms input{
     flex:none;
-
     margin-top:2px;
-
     accent-color:#087cff;
 }
 
 .terms a{
     color:#28d9ff;
-
     text-decoration:none;
 }
 
 .register-btn{
     width:100%;
-
     height:48px;
-
     border:0;
-
     border-radius:11px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #087cff,
-            #00d5ff
-        );
-
+    background:linear-gradient(135deg, #087cff, #00d5ff);
     color:#fff;
-
     font-family:inherit;
-
     font-size:11px;
-
     font-weight:800;
-
     cursor:pointer;
-
     transition:.25s;
 }
 
 .register-btn:hover{
     transform:translateY(-2px);
-
-    box-shadow:
-        0 14px 30px
-        rgba(0,150,255,.25);
+    box-shadow:0 14px 30px rgba(0,150,255,.25);
 }
 
 .register-btn:disabled{
     opacity:.6;
-
     cursor:not-allowed;
-
     transform:none;
 }
 
 .divider{
     display:flex;
-
     align-items:center;
-
     gap:10px;
-
     margin:17px 0;
-
     color:#5e7690;
-
     font-size:8px;
 }
 
 .divider::before,
 .divider::after{
     content:"";
-
     flex:1;
-
     height:1px;
-
-    background:
-        rgba(255,255,255,.08);
+    background:rgba(255,255,255,.08);
 }
 
 .google-btn{
     width:100%;
-
     height:45px;
-
     border-radius:11px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.1);
-
-    background:
-        rgba(255,255,255,.035);
-
+    border:1px solid rgba(255,255,255,.1);
+    background:rgba(255,255,255,.035);
     color:#e2edf8;
-
     font-family:inherit;
-
     font-size:10px;
-
     font-weight:700;
-
     cursor:pointer;
-
     transition:.25s;
 }
 
 .google-btn:hover{
-    background:
-        rgba(255,255,255,.08);
+    background:rgba(255,255,255,.08);
 }
 
 .google-btn:disabled{
     opacity:.6;
-
     cursor:not-allowed;
 }
 
 .login{
     text-align:center;
-
     margin-top:16px;
-
     color:#7188a1;
-
     font-size:9px;
 }
 
 .login a{
     color:#29d9ff;
-
     font-weight:700;
-
     text-decoration:none;
 }
 
 .home{
     display:block;
-
     text-align:center;
-
     margin-top:13px;
-
     color:#607891;
-
     font-size:9px;
-
     text-decoration:none;
 }
 
@@ -577,237 +397,149 @@ body::before{
 }
 
 @media(max-width:850px){
-
     .page{
         align-items:flex-start;
-
-        padding:
-            25px
-            16px
-            35px;
+        padding:25px 16px 35px;
     }
-
     .wrapper{
         max-width:520px;
-
         display:block;
     }
-
     .brand-section{
-        padding:
-            10px
-            5px
-            22px;
-
+        padding:10px 5px 22px;
         text-align:center;
     }
-
     .logo{
         width:55px;
         height:55px;
-
         border-radius:16px;
-
-        margin:
-            0
-            auto
-            14px;
+        margin:0 auto 14px;
     }
-
     .brand-section h1{
         font-size:42px;
-
         letter-spacing:-3px;
-
         margin-bottom:12px;
     }
-
     .brand-section p{
         max-width:430px;
-
         margin:auto;
-
         font-size:11px;
-
         line-height:1.65;
     }
-
     .tags{
         justify-content:center;
-
         margin-top:16px;
     }
-
     .tag{
         padding:7px 9px;
-
         font-size:8px;
     }
-
     .card{
         max-width:460px;
-
         margin:0 auto;
     }
 }
 
 @media(max-width:500px){
-
     .page{
-        padding:
-            15px
-            10px
-            25px;
+        padding:15px 10px 25px;
     }
-
     .wrapper{
         width:100%;
     }
-
     .brand-section{
-        padding:
-            5px
-            4px
-            17px;
+        padding:5px 4px 17px;
     }
-
     .logo{
         width:46px;
         height:46px;
-
         border-radius:13px;
-
         margin-bottom:10px;
     }
-
     .brand-section h1{
         font-size:32px;
-
         letter-spacing:-2px;
-
         margin-bottom:8px;
     }
-
     .brand-section p{
         padding:0 12px;
-
         font-size:9px;
     }
-
     .tags{
         gap:5px;
-
         margin-top:11px;
     }
-
     .tag{
         padding:5px 7px;
-
         font-size:6px;
-
         border-radius:7px;
     }
-
     .card{
-        padding:
-            21px
-            16px;
-
+        padding:21px 16px;
         border-radius:19px;
     }
-
     .card-logo{
         width:46px;
         height:46px;
-
         border-radius:13px;
-
         margin-bottom:10px;
     }
-
     .card h2{
         font-size:19px;
-
         margin-bottom:4px;
     }
-
     .subtitle{
         font-size:8px;
     }
-
     .card-header{
         margin-bottom:17px;
     }
-
     .field{
         margin-bottom:11px;
     }
-
     .field label{
         font-size:8px;
-
         margin-bottom:5px;
     }
-
     .input-wrap input{
         height:44px;
-
         font-size:10px;
-
         border-radius:9px;
     }
-
     .terms{
-        margin:
-            12px
-            0
-            15px;
-
+        margin:12px 0 15px;
         font-size:7px;
     }
-
     .register-btn{
         height:46px;
-
         font-size:10px;
     }
-
     .divider{
         margin:16px 0;
     }
-
     .google-btn{
         height:44px;
-
         font-size:9px;
     }
-
     .login{
         margin-top:15px;
     }
 }
 
 @media(max-width:360px){
-
     .page{
         padding-left:8px;
         padding-right:8px;
     }
-
     .brand-section h1{
         font-size:29px;
     }
-
     .brand-section p{
         font-size:8px;
     }
-
     .card{
-        padding:
-            19px
-            13px;
+        padding:19px 13px;
     }
-
     .input-wrap input{
         height:43px;
     }
@@ -819,298 +551,98 @@ body::before{
 <body>
 
 <main class="page">
-
-<div class="wrapper">
-
-<section class="brand-section">
-
-<img
-class="logo"
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart"
->
-
-<h1>
-
-Join
-
-<span class="gradient">
-MailMart.
-</span>
-
-</h1>
-
-<p>
-Create your account and access MailMart's
-digital marketplace, social media services and email purchasing.
-</p>
-
-<div class="tags">
-
-<span class="tag">
-Social Media
-</span>
-
-<span class="tag">
-Digital Services
-</span>
-
-<span class="tag">
-We Buy Emails
-</span>
-
-<span class="tag">
-Fast Service
-</span>
-
-</div>
-
-</section>
-
-<section class="card">
-
-<div class="card-header">
-
-<img
-class="card-logo"
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart"
->
-
-<h2>
-Create Account
-</h2>
-
-<p class="subtitle">
-Register your MailMart account.
-</p>
-
-</div>
-
-<div id="error" class="message error"></div>
-
-<div id="success" class="message success"></div>
-
-<form id="registerForm">
-
-<div class="field">
-
-<label>
-Username
-</label>
-
-<div class="input-wrap">
-
-<input
-id="username"
-type="text"
-placeholder="Choose a username"
-autocomplete="username"
-minlength="3"
-maxlength="30"
-required
->
-
-</div>
-
-</div>
-
-<div class="field">
-
-<label>
-Phone Number
-</label>
-
-<div class="input-wrap">
-
-<input
-id="phone"
-type="tel"
-placeholder="Enter your phone number"
-autocomplete="tel"
-inputmode="tel"
-required
->
-
-</div>
-
-</div>
-
-<div class="field">
-
-<label>
-Email Address
-</label>
-
-<div class="input-wrap">
-
-<input
-id="email"
-type="email"
-placeholder="Enter your email"
-autocomplete="email"
-required
->
-
-</div>
-
-</div>
-
-<div class="field">
-
-<label>
-Password
-</label>
-
-<div class="input-wrap">
-
-<input
-id="password"
-class="password-input"
-type="password"
-placeholder="Create a password"
-autocomplete="new-password"
-minlength="6"
-required
->
-
-<span
-class="eye"
-id="passwordEye"
->
-Show
-</span>
-
-</div>
-
-<div class="password-strength">
-
-<div
-id="strengthBar"
-class="strength-bar"
-></div>
-
-</div>
-
-<span
-id="strengthText"
-class="strength-text"
-></span>
-
-</div>
-
-<div class="field">
-
-<label>
-Confirm Password
-</label>
-
-<div class="input-wrap">
-
-<input
-id="confirmPassword"
-class="password-input"
-type="password"
-placeholder="Confirm your password"
-autocomplete="new-password"
-minlength="6"
-required
->
-
-<span
-class="eye"
-id="confirmEye"
->
-Show
-</span>
-
-</div>
-
-</div>
-
-<label class="terms">
-
-<input
-type="checkbox"
-id="terms"
-required
->
-
-<span>
-
-I agree to the
-<a href="terms.html">
-Terms of Service
-</a>
-and
-<a href="privacy-policy.html">
-Privacy Policy
-</a>.
-
-</span>
-
-</label>
-
-<button
-type="submit"
-class="register-btn"
-id="registerBtn"
->
-
-<span id="registerText">
-Create Account
-</span>
-
-<span
-id="registerLoading"
-class="loading"
->
-Creating account...
-</span>
-
-</button>
-
-</form>
-
-<div class="divider">
-OR
-</div>
-
-<button
-type="button"
-class="google-btn"
-id="googleBtn"
->
-Continue with Google
-</button>
-
-<div class="login">
-
-Already have an account?
-
-<a href="login.html">
-Login
-</a>
-
-</div>
-
-<a
-href="index.html"
-class="home"
->
-← Back to home
-</a>
-
-</section>
-
-</div>
-
+  <div class="wrapper">
+    <section class="brand-section">
+      <img class="logo" src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
+      <h1>Join <span class="gradient">MailMart.</span></h1>
+      <p>Create your account and access MailMart's digital marketplace, social media services and email purchasing.</p>
+      <div class="tags">
+        <span class="tag">Social Media</span>
+        <span class="tag">Digital Services</span>
+        <span class="tag">We Buy Emails</span>
+        <span class="tag">Fast Service</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <img class="card-logo" src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg" alt="MailMart">
+        <h2>Create Account</h2>
+        <p class="subtitle">Register your MailMart account.</p>
+      </div>
+
+      <div id="error" class="message error"></div>
+      <div id="success" class="message success"></div>
+
+      <!-- Added novalidate to allow JavaScript validation to handle all outputs cleanly -->
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <input id="username" type="text" placeholder="Choose a username" autocomplete="username" minlength="3" maxlength="30" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone Number</label>
+          <div class="input-wrap">
+            <input id="phone" type="tel" placeholder="Enter your phone number" autocomplete="tel" inputmode="tel" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email Address</label>
+          <div class="input-wrap">
+            <input id="email" type="email" placeholder="Enter your email" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input id="password" class="password-input" type="password" placeholder="Create a password" autocomplete="new-password" minlength="6" required>
+            <span class="eye" id="passwordEye">Show</span>
+          </div>
+          <div class="password-strength">
+            <div id="strengthBar" class="strength-bar"></div>
+          </div>
+          <span id="strengthText" class="strength-text"></span>
+        </div>
+
+        <div class="field">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrap">
+            <input id="confirmPassword" class="password-input" type="password" placeholder="Confirm your password" autocomplete="new-password" minlength="6" required>
+            <span class="eye" id="confirmEye">Show</span>
+          </div>
+        </div>
+
+        <label class="terms">
+          <input type="checkbox" id="terms" required>
+          <span>I agree to the <a href="terms.html">Terms of Service</a> and <a href="privacy-policy.html">Privacy Policy</a>.</span>
+        </label>
+
+        <button type="submit" class="register-btn" id="registerBtn">
+          <span id="registerText">Create Account</span>
+          <span id="registerLoading" class="loading">Creating account...</span>
+        </button>
+      </form>
+
+      <div class="divider">OR</div>
+
+      <button type="button" class="google-btn" id="googleBtn">Continue with Google</button>
+
+      <div class="login">
+        Already have an account? <a href="login.html">Login</a>
+      </div>
+
+      <a href="index.html" class="home">← Back to home</a>
+    </section>
+  </div>
 </main>
 
 <script type="module">
-
 import { auth, db } from "./firebase.js";
-
 import {
     createUserWithEmailAndPassword,
     GoogleAuthProvider,
@@ -1121,576 +653,279 @@ import {
 
 import {
     doc,
+    getDoc,
     setDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-
-const form =
-    document.getElementById("registerForm");
-
-const username =
-    document.getElementById("username");
-
-const phone =
-    document.getElementById("phone");
-
-const email =
-    document.getElementById("email");
-
-const password =
-    document.getElementById("password");
-
-const confirmPassword =
-    document.getElementById("confirmPassword");
-
-const terms =
-    document.getElementById("terms");
-
-const registerBtn =
-    document.getElementById("registerBtn");
-
-const registerText =
-    document.getElementById("registerText");
-
-const registerLoading =
-    document.getElementById("registerLoading");
-
-const googleBtn =
-    document.getElementById("googleBtn");
-
-const errorBox =
-    document.getElementById("error");
-
-const successBox =
-    document.getElementById("success");
-
-const passwordEye =
-    document.getElementById("passwordEye");
-
-const confirmEye =
-    document.getElementById("confirmEye");
-
-const strengthBar =
-    document.getElementById("strengthBar");
-
-const strengthText =
-    document.getElementById("strengthText");
-
+const form = document.getElementById("registerForm");
+const username = document.getElementById("username");
+const phone = document.getElementById("phone");
+const email = document.getElementById("email");
+const password = document.getElementById("password");
+const confirmPassword = document.getElementById("confirmPassword");
+const terms = document.getElementById("terms");
+const registerBtn = document.getElementById("registerBtn");
+const registerText = document.getElementById("registerText");
+const registerLoading = document.getElementById("registerLoading");
+const googleBtn = document.getElementById("googleBtn");
+const errorBox = document.getElementById("error");
+const successBox = document.getElementById("success");
+const passwordEye = document.getElementById("passwordEye");
+const confirmEye = document.getElementById("confirmEye");
+const strengthBar = document.getElementById("strengthBar");
+const strengthText = document.getElementById("strengthText");
 
 function showError(message){
-
     errorBox.textContent = message;
-
     errorBox.style.display = "block";
-
     successBox.style.display = "none";
-
 }
-
 
 function showSuccess(message){
-
     successBox.textContent = message;
-
     successBox.style.display = "block";
-
     errorBox.style.display = "none";
-
 }
-
 
 function setLoading(state){
-
     registerBtn.disabled = state;
-
     googleBtn.disabled = state;
-
     if(state){
-
         registerText.style.display = "none";
-
         registerLoading.style.display = "inline";
-
     }else{
-
         registerText.style.display = "inline";
-
         registerLoading.style.display = "none";
-
     }
-
 }
-
 
 function getFirebaseError(error){
-
     console.error("Firebase error:", error);
-
     switch(error.code){
-
         case "auth/email-already-in-use":
             return "This email is already registered. Please login instead.";
-
         case "auth/invalid-email":
             return "Please enter a valid email address.";
-
         case "auth/weak-password":
             return "Password must contain at least 6 characters.";
-
         case "auth/network-request-failed":
             return "Network error. Please check your internet connection.";
-
         case "auth/operation-not-allowed":
             return "Email/password registration is not enabled in Firebase Authentication.";
-
         case "auth/popup-closed-by-user":
             return "Google registration was cancelled.";
-
         case "auth/popup-blocked":
             return "Your browser blocked the Google sign-in window.";
-
         case "permission-denied":
-            return "Your account was created, but Firestore rejected the profile. Please check your Firestore rules.";
-
+            return "Account created, but database access was denied. Check your Firestore Security Rules.";
         case "failed-precondition":
             return "Firestore is not configured correctly for this project.";
-
         case "unavailable":
             return "Firebase is temporarily unavailable. Please try again.";
-
         default:
             return error.message || "Registration failed. Please try again.";
-
     }
-
 }
-
 
 function togglePassword(input, eye){
-
     if(input.type === "password"){
-
         input.type = "text";
-
         eye.textContent = "Hide";
-
     }else{
-
         input.type = "password";
-
         eye.textContent = "Show";
-
     }
-
 }
-
 
 function checkStrength(value){
-
     let score = 0;
-
-    if(value.length >= 6)
-        score++;
-
-    if(value.length >= 10)
-        score++;
-
-    if(/[A-Z]/.test(value))
-        score++;
-
-    if(/[0-9]/.test(value))
-        score++;
-
-    if(/[^A-Za-z0-9]/.test(value))
-        score++;
-
+    if(value.length >= 6) score++;
+    if(value.length >= 10) score++;
+    if(/[A-Z]/.test(value)) score++;
+    if(/[0-9]/.test(value)) score++;
+    if(/[^A-Za-z0-9]/.test(value)) score++;
 
     if(!value){
-
         strengthBar.style.width = "0";
-
         strengthText.textContent = "";
-
         return;
-
     }
-
 
     if(score <= 1){
-
         strengthBar.style.width = "25%";
-
-        strengthText.textContent =
-            "Weak password";
-
+        strengthText.textContent = "Weak password";
     }else if(score <= 3){
-
         strengthBar.style.width = "60%";
-
-        strengthText.textContent =
-            "Moderate password";
-
+        strengthText.textContent = "Moderate password";
     }else{
-
         strengthBar.style.width = "100%";
-
-        strengthText.textContent =
-            "Strong password";
-
+        strengthText.textContent = "Strong password";
     }
-
 }
 
-
 password.addEventListener("input", () => {
-
     checkStrength(password.value);
-
 });
-
 
 passwordEye.addEventListener("click", () => {
-
-    togglePassword(
-        password,
-        passwordEye
-    );
-
+    togglePassword(password, passwordEye);
 });
-
 
 confirmEye.addEventListener("click", () => {
-
-    togglePassword(
-        confirmPassword,
-        confirmEye
-    );
-
+    togglePassword(confirmPassword, confirmEye);
 });
-
 
 form.addEventListener("submit", async(event) => {
-
     event.preventDefault();
-
     errorBox.style.display = "none";
-
     successBox.style.display = "none";
 
+    const usernameValue = username.value.trim();
+    const phoneValue = phone.value.trim();
+    const emailValue = email.value.trim().toLowerCase();
+    const passwordValue = password.value;
+    const confirmValue = confirmPassword.value;
 
-    const usernameValue =
-        username.value.trim();
-
-    const phoneValue =
-        phone.value.trim();
-
-    const emailValue =
-        email.value.trim().toLowerCase();
-
-    const passwordValue =
-        password.value;
-
-    const confirmValue =
-        confirmPassword.value;
-
-
-    if(usernameValue.length < 3){
-
-        showError(
-            "Username must contain at least 3 characters."
-        );
-
+    if(!usernameValue || usernameValue.length < 3){
+        showError("Username must contain at least 3 characters.");
         username.focus();
-
         return;
-
     }
-
 
     if(!/^[a-zA-Z0-9_.-]+$/.test(usernameValue)){
-
-        showError(
-            "Username can only contain letters, numbers, dots, underscores and hyphens."
-        );
-
+        showError("Username can only contain letters, numbers, dots, underscores and hyphens.");
         username.focus();
-
         return;
-
     }
 
-
-    if(phoneValue.length < 7){
-
-        showError(
-            "Please enter a valid phone number."
-        );
-
+    if(!phoneValue || phoneValue.length < 7){
+        showError("Please enter a valid phone number.");
         phone.focus();
-
         return;
-
     }
 
+    if(!emailValue){
+        showError("Please enter your email address.");
+        email.focus();
+        return;
+    }
 
     if(passwordValue.length < 6){
-
-        showError(
-            "Password must contain at least 6 characters."
-        );
-
+        showError("Password must contain at least 6 characters.");
         password.focus();
-
         return;
-
     }
-
 
     if(passwordValue !== confirmValue){
-
-        showError(
-            "Passwords do not match."
-        );
-
+        showError("Passwords do not match.");
         confirmPassword.focus();
-
         return;
-
     }
-
 
     if(!terms.checked){
-
-        showError(
-            "Please accept the Terms of Service and Privacy Policy."
-        );
-
+        showError("Please accept the Terms of Service and Privacy Policy.");
         return;
-
     }
-
 
     setLoading(true);
 
-
     try{
+        await setPersistence(auth, browserLocalPersistence);
 
-        await setPersistence(
+        const credential = await createUserWithEmailAndPassword(
             auth,
-            browserLocalPersistence
+            emailValue,
+            passwordValue
         );
 
-
-        const credential =
-            await createUserWithEmailAndPassword(
-                auth,
-                emailValue,
-                passwordValue
-            );
-
-
-        const user =
-            credential.user;
-
+        const user = credential.user;
 
         const userData = {
-
             uid: user.uid,
-
             username: usernameValue,
-
             phone: phoneValue,
-
             email: emailValue,
-
             displayName: usernameValue,
-
             photoURL: "",
-
             balance: 0,
-
             totalEarned: 0,
-
             totalWithdrawn: 0,
-
             emailPurchases: 0,
-
             status: "active",
-
             createdAt: serverTimestamp(),
-
             updatedAt: serverTimestamp()
-
         };
 
+        await setDoc(doc(db, "users", user.uid), userData);
 
-        await setDoc(
-            doc(
-                db,
-                "users",
-                user.uid
-            ),
-            userData
-        );
-
-
-        showSuccess(
-            "Account created successfully. Redirecting..."
-        );
-
+        showSuccess("Account created successfully. Redirecting...");
 
         setTimeout(() => {
-
-            window.location.href =
-                "dashboard.html";
-
-        },1000);
-
+            window.location.href = "dashboard.html";
+        }, 1000);
 
     }catch(error){
-
-        console.error(
-            "Registration failed:",
-            error
-        );
-
-        showError(
-            getFirebaseError(error)
-        );
-
+        showError(getFirebaseError(error));
         setLoading(false);
-
     }
-
 });
 
-
 googleBtn.addEventListener("click", async() => {
-
     errorBox.style.display = "none";
-
     successBox.style.display = "none";
 
-
-    const usernameValue =
-        username.value.trim();
-
-    const phoneValue =
-        phone.value.trim();
-
+    const usernameValue = username.value.trim();
+    const phoneValue = phone.value.trim();
 
     setLoading(true);
 
-
     try{
+        await setPersistence(auth, browserLocalPersistence);
 
-        await setPersistence(
-            auth,
-            browserLocalPersistence
-        );
-
-
-        const provider =
-            new GoogleAuthProvider();
-
-
+        const provider = new GoogleAuthProvider();
         provider.setCustomParameters({
-            prompt:"select_account"
+            prompt: "select_account"
         });
 
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-        const result =
-            await signInWithPopup(
-                auth,
-                provider
-            );
+        // Check if user document already exists so existing user state isn't reset
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
 
+        if (!userSnap.exists()) {
+            const finalUsername = usernameValue || user.displayName || user.email.split("@")[0];
 
-        const user =
-            result.user;
+            await setDoc(userRef, {
+                uid: user.uid,
+                username: finalUsername,
+                phone: phoneValue,
+                email: user.email || "",
+                displayName: user.displayName || finalUsername,
+                photoURL: user.photoURL || "",
+                balance: 0,
+                totalEarned: 0,
+                totalWithdrawn: 0,
+                emailPurchases: 0,
+                status: "active",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
 
-
-        const finalUsername =
-            usernameValue ||
-            user.displayName ||
-            user.email.split("@")[0];
-
-
-        await setDoc(
-            doc(
-                db,
-                "users",
-                user.uid
-            ),
-            {
-
-                uid:user.uid,
-
-                username:finalUsername,
-
-                phone:phoneValue,
-
-                email:user.email || "",
-
-                displayName:
-                    user.displayName ||
-                    finalUsername,
-
-                photoURL:
-                    user.photoURL || "",
-
-                balance:0,
-
-                totalEarned:0,
-
-                totalWithdrawn:0,
-
-                emailPurchases:0,
-
-                status:"active",
-
-                createdAt:serverTimestamp(),
-
-                updatedAt:serverTimestamp()
-
-            },
-            {
-                merge:true
-            }
-        );
-
-
-        showSuccess(
-            "Google registration successful. Redirecting..."
-        );
-
+        showSuccess("Google sign-in successful. Redirecting...");
 
         setTimeout(() => {
-
-            window.location.href =
-                "dashboard.html";
-
-        },1000);
-
+            window.location.href = "dashboard.html";
+        }, 1000);
 
     }catch(error){
-
-        console.error(
-            "Google registration failed:",
-            error
-        );
-
-        showError(
-            getFirebaseError(error)
-        );
-
+        showError(getFirebaseError(error));
         setLoading(false);
-
     }
-
 });
-
 </script>
 
 </body>
