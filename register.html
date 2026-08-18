@@ -574,7 +574,6 @@ body::before{
       <div id="error" class="message error"></div>
       <div id="success" class="message success"></div>
 
-      <!-- Added novalidate to allow JavaScript validation to handle all outputs cleanly -->
       <form id="registerForm" novalidate>
         <div class="field">
           <label for="username">Username</label>
@@ -891,7 +890,6 @@ googleBtn.addEventListener("click", async() => {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
-        // Check if user document already exists so existing user state isn't reset
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
 
