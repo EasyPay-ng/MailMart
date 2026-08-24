@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>Login | MailMart</title>
+<title>Dashboard | MailMart</title>
 
 <meta name="theme-color" content="#020812">
 
@@ -83,117 +83,358 @@ body::before{
     background-size:50px 50px;
 }
 
-.page{
+/* ---------- Layout ---------- */
+
+.shell{
     position:relative;
     z-index:1;
 
-    width:100%;
-    min-height:100vh;
+    display:grid;
+    grid-template-columns:255px 1fr;
 
-    padding:30px 20px;
+    min-height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar{
+    position:sticky;
+    top:0;
+
+    height:100vh;
+
+    padding:26px 18px;
 
     display:flex;
-    justify-content:center;
+    flex-direction:column;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(9,35,68,.55),
+            rgba(3,13,27,.25)
+        );
+
+    border-right:1px solid rgba(0,205,255,.12);
+
+    backdrop-filter:blur(8px);
+}
+
+.side-brand{
+    display:flex;
     align-items:center;
-}
+    gap:12px;
 
-.wrapper{
-    width:100%;
-    max-width:1080px;
+    padding:4px 6px 26px;
 
-    display:grid;
-    grid-template-columns:1fr 430px;
-
-    gap:65px;
-
-    align-items:center;
-}
-
-.brand-section{
-    padding:20px;
-}
-
-.logo{
-    width:68px;
-    height:68px;
-
-    border-radius:19px;
-
-    object-fit:cover;
-
-    display:block;
-
-    margin-bottom:25px;
-
-    box-shadow:
-        0 15px 45px rgba(0,160,255,.25);
-}
-
-.brand-section h1{
-    font-size:clamp(48px,6vw,72px);
-
-    line-height:.98;
-
-    letter-spacing:-4px;
+    border-bottom:1px solid rgba(0,205,255,.10);
 
     margin-bottom:22px;
 }
 
-.gradient{
-    background:
-        linear-gradient(
-            90deg,
-            #fff,
-            #35ddff,
-            #087cff
-        );
+.side-logo{
+    width:42px;
+    height:42px;
 
+    border-radius:13px;
+
+    object-fit:cover;
+
+    box-shadow:0 10px 28px rgba(0,160,255,.25);
+}
+
+.side-name{
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.side-name span{
+    background:linear-gradient(90deg,#fff,#35ddff,#087cff);
     -webkit-background-clip:text;
     background-clip:text;
-
     color:transparent;
 }
 
-.brand-section p{
-    max-width:530px;
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
 
-    color:#8ba3bd;
-
-    font-size:14px;
-
-    line-height:1.8;
+    flex:1;
 }
 
-.tags{
+.nav-label{
+    color:#5c758e;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+
+    padding:14px 12px 6px;
+}
+
+.nav-item{
     display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:11px 12px;
+
+    border-radius:12px;
+
+    color:#9bb2ca;
+    font-size:12.5px;
+    font-weight:600;
+    text-decoration:none;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.nav-item .ic{
+    width:17px;
+    height:17px;
+
+    flex-shrink:0;
+
+    opacity:.85;
+}
+
+.nav-item:hover{
+    background:rgba(0,130,255,.07);
+    color:#dbe9f7;
+}
+
+.nav-item.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    color:#fff;
+
+    border:1px solid rgba(0,205,255,.25);
+
+    box-shadow:0 8px 24px rgba(0,150,255,.12);
+}
+
+.nav-item.active .ic{
+    opacity:1;
+}
+
+.side-foot{
+    border-top:1px solid rgba(0,205,255,.10);
+
+    padding-top:16px;
+    margin-top:10px;
+}
+
+.logout-btn{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+
+    height:44px;
+
+    border:1px solid rgba(255,90,110,.22);
+    border-radius:12px;
+
+    background:rgba(255,50,80,.06);
+
+    color:#ff9aa9;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.logout-btn:hover{
+    background:rgba(255,50,80,.12);
+    color:#ffc1cb;
+}
+
+/* ---------- Main ---------- */
+
+.main{
+    min-width:0;
+
+    padding:26px 30px 40px;
+}
+
+.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
 
     flex-wrap:wrap;
 
-    gap:9px;
-
-    margin-top:27px;
+    margin-bottom:28px;
 }
 
-.tag{
-    padding:9px 12px;
+.greeting h1{
+    font-size:clamp(22px,3vw,30px);
+    letter-spacing:-1px;
+    margin-bottom:5px;
+}
 
-    border-radius:10px;
+.greeting .sub{
+    color:#8ba3bd;
+    font-size:12.5px;
+}
+
+.menu-toggle{
+    display:none;
+
+    width:42px;
+    height:42px;
+
+    border:1px solid rgba(0,205,255,.18);
+    border-radius:12px;
 
     background:rgba(0,130,255,.06);
 
-    border:1px solid rgba(0,200,255,.13);
+    color:#bfe6ff;
+    font-size:18px;
 
-    color:#9bb2ca;
-
-    font-size:10px;
+    cursor:pointer;
 }
 
-.card{
-    width:100%;
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
 
-    padding:32px;
+.icon-btn{
+    width:44px;
+    height:44px;
 
-    border-radius:27px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border:1px solid rgba(0,205,255,.16);
+    border-radius:13px;
+
+    background:rgba(255,255,255,.035);
+
+    color:#bcd3e8;
+
+    cursor:pointer;
+
+    position:relative;
+
+    transition:.2s;
+}
+
+.icon-btn:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
+}
+
+.icon-btn .dot{
+    position:absolute;
+    top:9px;
+    right:10px;
+
+    width:7px;
+    height:7px;
+
+    border-radius:50%;
+
+    background:#00d5ff;
+
+    box-shadow:0 0 0 3px rgba(0,213,255,.18);
+}
+
+.profile-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:6px 14px 6px 6px;
+
+    border:1px solid rgba(0,205,255,.16);
+    border-radius:40px;
+
+    background:rgba(255,255,255,.035);
+
+    cursor:pointer;
+}
+
+.profile-chip img{
+    width:32px;
+    height:32px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+}
+
+.profile-chip .who{
+    line-height:1.2;
+}
+
+.profile-chip .who .n{
+    font-size:12px;
+    font-weight:700;
+}
+
+.profile-chip .who .e{
+    font-size:9.5px;
+    color:#8ba3bd;
+
+    max-width:150px;
+
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.deposit-btn{
+    height:44px;
+
+    padding:0 20px;
+
+    border:0;
+    border-radius:13px;
+
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+
+    color:#fff;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:800;
+
+    cursor:pointer;
+
+    transition:.25s;
+}
+
+.deposit-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px rgba(0,150,255,.25);
+}
+
+/* ---------- Stat cards ---------- */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.stat{
+    padding:20px;
+
+    border-radius:20px;
 
     background:
         linear-gradient(
@@ -202,582 +443,594 @@ body::before{
             rgba(3,13,27,.98)
         );
 
-    border:1px solid rgba(0,205,255,.18);
+    border:1px solid rgba(0,205,255,.16);
 
-    box-shadow:
-        0 30px 100px rgba(0,0,0,.45);
-}
+    box-shadow:0 22px 60px rgba(0,0,0,.35);
 
-.card-header{
-    text-align:center;
-
-    margin-bottom:23px;
-}
-
-.card-logo{
-    width:58px;
-    height:58px;
-
-    border-radius:16px;
-
-    object-fit:cover;
-
-    margin:0 auto 14px;
-
-    display:block;
-}
-
-.card h2{
-    font-size:24px;
-
-    margin-bottom:7px;
-}
-
-.subtitle{
-    color:#8198b1;
-
-    font-size:11px;
-
-    line-height:1.6;
-}
-
-.message{
-    display:none;
-
-    padding:11px 12px;
-
-    border-radius:10px;
-
-    margin-bottom:14px;
-
-    font-size:10px;
-
-    line-height:1.5;
-}
-
-.error{
-    color:#ff9aa9;
-
-    background:rgba(255,50,80,.08);
-
-    border:1px solid rgba(255,50,80,.2);
-}
-
-.success{
-    color:#69edb8;
-
-    background:rgba(0,220,150,.07);
-
-    border:1px solid rgba(0,220,150,.18);
-}
-
-.field{
-    margin-bottom:15px;
-}
-
-.field label{
-    display:block;
-
-    color:#b8cbe0;
-
-    font-size:10px;
-
-    font-weight:700;
-
-    margin-bottom:7px;
-}
-
-.input-wrap{
     position:relative;
 
-    width:100%;
+    overflow:hidden;
 }
 
-.input-wrap input{
-    display:block;
-
-    width:100%;
-
-    height:48px;
-
-    padding:
-        0
-        45px
-        0
-        14px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.09);
-
-    border-radius:11px;
-
-    outline:none;
-
-    background:rgba(0,0,0,.2);
-
-    color:#fff;
-
-    font-family:inherit;
-
-    font-size:12px;
-}
-
-.input-wrap input:focus{
-    border-color:#08bfff;
-
-    box-shadow:
-        0 0 0 3px
-        rgba(0,180,255,.07);
-}
-
-.input-wrap input::placeholder{
-    color:#58718c;
-}
-
-.eye{
+.stat::after{
+    content:"";
     position:absolute;
+    right:-30px;
+    top:-30px;
 
-    right:13px;
+    width:90px;
+    height:90px;
 
-    top:50%;
+    border-radius:50%;
 
-    transform:translateY(-50%);
-
-    color:#6c839b;
-
-    font-size:9px;
-
-    cursor:pointer;
-
-    user-select:none;
+    background:radial-gradient(circle,rgba(0,170,255,.18),transparent 70%);
 }
 
-.eye:hover{
-    color:#29d9ff;
-}
-
-.options{
+.stat .top{
     display:flex;
-
+    align-items:center;
     justify-content:space-between;
 
-    align-items:center;
-
-    gap:10px;
-
-    margin:17px 0 19px;
-
-    font-size:9px;
+    margin-bottom:16px;
 }
 
-.remember{
+.stat .lbl{
+    color:#8ba3bd;
+    font-size:11px;
+    font-weight:600;
+}
+
+.stat .badge{
+    width:38px;
+    height:38px;
+
     display:flex;
-
     align-items:center;
+    justify-content:center;
 
-    gap:6px;
+    border-radius:12px;
 
-    color:#8197af;
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    border:1px solid rgba(0,205,255,.2);
+
+    color:#6fe0ff;
 }
 
-.remember input{
-    accent-color:#087cff;
+.stat .val{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-1px;
+
+    margin-bottom:9px;
 }
 
-.forgot{
-    color:#28d9ff;
+.stat .trend{
+    font-size:10.5px;
+    font-weight:600;
 
-    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
 }
 
-.login-btn{
-    width:100%;
+.trend.up{ color:#69edb8; }
+.trend.down{ color:#ff9aa9; }
 
-    height:49px;
+.trend .muted{
+    color:#6e849c;
+    font-weight:500;
+}
 
-    border:0;
+/* ---------- Grid rows ---------- */
 
-    border-radius:11px;
+.grid-2{
+    display:grid;
+    grid-template-columns:1.6fr 1fr;
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.panel{
+    padding:22px;
+
+    border-radius:22px;
 
     background:
         linear-gradient(
-            135deg,
-            #087cff,
-            #00d5ff
+            145deg,
+            rgba(9,35,68,.92),
+            rgba(3,13,27,.97)
         );
 
-    color:#fff;
+    border:1px solid rgba(0,205,255,.15);
+
+    box-shadow:0 22px 60px rgba(0,0,0,.32);
+}
+
+.panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:18px;
+}
+
+.panel-head h2{
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:-.4px;
+}
+
+.panel-head .link{
+    color:#28d9ff;
+    font-size:11px;
+    font-weight:700;
+    text-decoration:none;
+
+    cursor:pointer;
+}
+
+.panel-head .link:hover{
+    text-decoration:underline;
+}
+
+/* revenue chart */
+
+.chart{
+    width:100%;
+    height:200px;
+
+    display:block;
+}
+
+.chart-legend{
+    display:flex;
+    gap:18px;
+
+    margin-top:6px;
+}
+
+.chart-legend .item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    color:#8ba3bd;
+    font-size:10.5px;
+    font-weight:600;
+}
+
+.chart-legend .swatch{
+    width:11px;
+    height:11px;
+    border-radius:3px;
+}
+
+/* wallet panel */
+
+.wallet{
+    text-align:center;
+
+    padding:6px 0 14px;
+}
+
+.wallet .av{
+    font-size:30px;
+    font-weight:900;
+    letter-spacing:-1px;
+
+    background:linear-gradient(90deg,#fff,#35ddff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+
+    margin-bottom:4px;
+}
+
+.wallet .cap{
+    color:#8ba3bd;
+    font-size:11px;
+
+    margin-bottom:18px;
+}
+
+.wallet-actions{
+    display:flex;
+    gap:10px;
+}
+
+.wallet-actions button{
+    flex:1;
+
+    height:42px;
+
+    border-radius:12px;
 
     font-family:inherit;
-
-    font-size:12px;
-
+    font-size:11.5px;
     font-weight:800;
 
     cursor:pointer;
 
-    transition:.25s;
+    transition:.2s;
 }
 
-.login-btn:hover{
+.btn-fill{
+    border:0;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+}
+
+.btn-fill:hover{
     transform:translateY(-2px);
-
-    box-shadow:
-        0 14px 30px
-        rgba(0,150,255,.25);
+    box-shadow:0 12px 26px rgba(0,150,255,.25);
 }
 
-.login-btn:disabled{
-    opacity:.6;
-
-    cursor:not-allowed;
-
-    transform:none;
+.btn-ghost{
+    border:1px solid rgba(0,205,255,.22);
+    background:rgba(255,255,255,.04);
+    color:#cfe6fb;
 }
 
-.divider{
+.btn-ghost:hover{
+    background:rgba(255,255,255,.08);
+}
+
+.mini-list{
+    margin-top:18px;
+
     display:flex;
+    flex-direction:column;
+    gap:11px;
+}
 
+.mini{
+    display:flex;
     align-items:center;
+    justify-content:space-between;
 
+    font-size:11.5px;
+}
+
+.mini .left{
+    display:flex;
+    align-items:center;
     gap:10px;
-
-    margin:20px 0;
-
-    color:#5e7690;
-
-    font-size:8px;
+    color:#c4d6ea;
 }
 
-.divider::before,
-.divider::after{
-    content:"";
+.mini .left .d{
+    width:30px;
+    height:30px;
 
-    flex:1;
+    border-radius:9px;
 
-    height:1px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 
-    background:
-        rgba(255,255,255,.08);
+    background:rgba(0,130,255,.08);
+    border:1px solid rgba(0,205,255,.14);
+
+    color:#6fe0ff;
 }
 
-.google-btn{
-    width:100%;
-
-    height:47px;
-
-    border-radius:11px;
-
-    border:
-        1px solid
-        rgba(255,255,255,.1);
-
-    background:
-        rgba(255,255,255,.035);
-
-    color:#e2edf8;
-
-    font-family:inherit;
-
-    font-size:11px;
-
+.mini .amt{
     font-weight:700;
+    color:#fff;
+}
+
+.mini .amt.neg{
+    color:#ff9aa9;
+}
+
+/* ---------- Services ---------- */
+
+.section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:16px;
+}
+
+.section-title h2{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.svc{
+    padding:20px;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(9,35,68,.9),
+            rgba(3,13,27,.96)
+        );
+
+    border:1px solid rgba(0,205,255,.15);
 
     cursor:pointer;
 
     transition:.25s;
+
+    position:relative;
+    overflow:hidden;
 }
 
-.google-btn:hover{
-    background:
-        rgba(255,255,255,.08);
+.svc:hover{
+    transform:translateY(-4px);
+    border-color:rgba(0,205,255,.35);
+    box-shadow:0 22px 50px rgba(0,140,255,.18);
 }
 
-.google-btn:disabled{
-    opacity:.6;
+.svc .ic{
+    width:46px;
+    height:46px;
 
-    cursor:not-allowed;
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:linear-gradient(135deg,rgba(8,124,255,.25),rgba(0,213,255,.10));
+    border:1px solid rgba(0,205,255,.22);
+
+    color:#6fe0ff;
+
+    margin-bottom:14px;
 }
 
-.register{
-    text-align:center;
-
-    margin-top:19px;
-
-    color:#7188a1;
-
-    font-size:10px;
-}
-
-.register a{
-    color:#29d9ff;
-
+.svc h3{
+    font-size:14px;
     font-weight:700;
-
-    text-decoration:none;
+    margin-bottom:6px;
 }
 
-.home{
-    display:block;
+.svc p{
+    color:#8ba3bd;
+    font-size:11px;
+    line-height:1.6;
 
-    text-align:center;
-
-    margin-top:14px;
-
-    color:#607891;
-
-    font-size:9px;
-
-    text-decoration:none;
+    margin-bottom:14px;
 }
 
-.home:hover{
+.svc .go{
+    color:#28d9ff;
+    font-size:11px;
+    font-weight:700;
+}
+
+/* ---------- Orders table ---------- */
+
+.table{
+    width:100%;
+
+    border-collapse:collapse;
+}
+
+.table th{
+    text-align:left;
+
+    color:#6e849c;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+
+    padding:0 12px 14px;
+
+    border-bottom:1px solid rgba(0,205,255,.12);
+}
+
+.table td{
+    padding:14px 12px;
+
+    font-size:12px;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    color:#cdddee;
+}
+
+.table tr:last-child td{
+    border-bottom:0;
+}
+
+.table .id{
+    font-weight:700;
     color:#fff;
 }
 
-.loading{
-    display:none;
+.table .prod{
+    display:flex;
+    align-items:center;
+    gap:10px;
 }
 
+.table .prod .pdot{
+    width:30px;
+    height:30px;
 
-@media(max-width:850px){
+    border-radius:9px;
 
-    .page{
-        align-items:flex-start;
+    flex-shrink:0;
 
-        padding:
-            25px
-            16px
-            35px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:rgba(0,130,255,.08);
+    border:1px solid rgba(0,205,255,.14);
+
+    color:#6fe0ff;
+}
+
+.pill{
+    display:inline-block;
+
+    padding:5px 11px;
+
+    border-radius:20px;
+
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:.3px;
+}
+
+.pill.done{
+    color:#69edb8;
+    background:rgba(0,220,150,.1);
+    border:1px solid rgba(0,220,150,.2);
+}
+
+.pill.prog{
+    color:#ffd479;
+    background:rgba(255,190,60,.1);
+    border:1px solid rgba(255,190,60,.22);
+}
+
+.pill.pend{
+    color:#9ab6ff;
+    background:rgba(90,130,255,.1);
+    border:1px solid rgba(90,130,255,.22);
+}
+
+.pill.fail{
+    color:#ff9aa9;
+    background:rgba(255,50,80,.1);
+    border:1px solid rgba(255,50,80,.2);
+}
+
+/* ---------- Loader ---------- */
+
+.loading-screen{
+    position:fixed;
+    inset:0;
+    z-index:50;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+
+    background:#020812;
+}
+
+.spinner{
+    width:46px;
+    height:46px;
+
+    border:3px solid rgba(0,205,255,.18);
+    border-top-color:#00d5ff;
+
+    border-radius:50%;
+
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+.loading-screen .txt{
+    color:#8ba3bd;
+    font-size:12px;
+    font-weight:600;
+}
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:1100px){
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
     }
 
-    .wrapper{
-        max-width:520px;
-
-        display:block;
+    .services{
+        grid-template-columns:repeat(2,1fr);
     }
 
-    .brand-section{
-        padding:
-            10px
-            5px
-            24px;
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+}
 
-        text-align:center;
+@media(max-width:860px){
+
+    .shell{
+        grid-template-columns:1fr;
     }
 
-    .logo{
-        width:55px;
-        height:55px;
+    .sidebar{
+        position:fixed;
+        z-index:40;
 
-        border-radius:16px;
+        width:255px;
 
-        margin:
-            0
-            auto
-            15px;
+        transform:translateX(-100%);
+
+        transition:transform .3s ease;
     }
 
-    .brand-section h1{
-        font-size:42px;
-
-        letter-spacing:-3px;
-
-        margin-bottom:13px;
+    body.nav-open .sidebar{
+        transform:translateX(0);
     }
 
-    .brand-section p{
-        max-width:430px;
-
-        margin:auto;
-
-        font-size:11px;
-
-        line-height:1.65;
+    body.nav-open::after{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:39;
+        background:rgba(0,0,0,.55);
     }
 
-    .tags{
+    .menu-toggle{
+        display:flex;
+        align-items:center;
         justify-content:center;
-
-        margin-top:17px;
     }
 
-    .tag{
-        padding:7px 9px;
-
-        font-size:8px;
+    .main{
+        padding:18px 16px 34px;
     }
 
-    .card{
-        max-width:460px;
-
-        margin:0 auto;
+    .top-actions .deposit-btn{
+        display:none;
     }
 }
 
+@media(max-width:560px){
 
-@media(max-width:500px){
-
-    .page{
-        padding:
-            16px
-            10px
-            25px;
+    .stats{
+        grid-template-columns:1fr;
     }
 
-    .wrapper{
-        width:100%;
+    .services{
+        grid-template-columns:1fr;
     }
 
-    .brand-section{
-        padding:
-            7px
-            4px
-            19px;
+    .profile-chip .who{
+        display:none;
     }
 
-    .logo{
-        width:48px;
-        height:48px;
-
-        border-radius:14px;
-
-        margin-bottom:12px;
-    }
-
-    .brand-section h1{
-        font-size:34px;
-
-        letter-spacing:-2px;
-
-        margin-bottom:10px;
-    }
-
-    .brand-section p{
-        padding:0 15px;
-
-        font-size:10px;
-    }
-
-    .tags{
-        gap:6px;
-
-        margin-top:13px;
-    }
-
-    .tag{
-        padding:6px 8px;
-
-        font-size:7px;
-
-        border-radius:8px;
-    }
-
-    .card{
-        padding:
-            23px
-            17px;
-
-        border-radius:20px;
-    }
-
-    .card-logo{
-        width:49px;
-        height:49px;
-
-        border-radius:14px;
-
-        margin-bottom:11px;
-    }
-
-    .card h2{
-        font-size:20px;
-
-        margin-bottom:5px;
-    }
-
-    .subtitle{
-        font-size:9px;
-    }
-
-    .card-header{
-        margin-bottom:18px;
-    }
-
-    .field{
-        margin-bottom:12px;
-    }
-
-    .field label{
-        font-size:9px;
-
-        margin-bottom:6px;
-    }
-
-    .input-wrap input{
-        height:46px;
-
-        font-size:11px;
-
-        border-radius:10px;
-    }
-
-    .options{
-        margin:
-            14px
-            0
-            16px;
-
-        font-size:8px;
-    }
-
-    .login-btn{
-        height:47px;
-
-        font-size:11px;
-    }
-
-    .divider{
-        margin:17px 0;
-    }
-
-    .google-btn{
-        height:45px;
-
-        font-size:10px;
-    }
-
-    .register{
-        margin-top:16px;
-    }
-}
-
-
-@media(max-width:360px){
-
-    .page{
-        padding-left:8px;
-
-        padding-right:8px;
-    }
-
-    .brand-section h1{
-        font-size:31px;
-    }
-
-    .brand-section p{
-        font-size:9px;
-    }
-
-    .card{
-        padding:
-            20px
-            14px;
-    }
-
-    .input-wrap input{
-        height:44px;
+    .table .hide-sm{
+        display:none;
     }
 }
 
@@ -786,217 +1039,355 @@ body::before{
 
 <body>
 
-<main class="page">
-
-<div class="wrapper">
-
-<section class="brand-section">
-
-<img
-class="logo"
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_300/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart"
->
-
-<h1>
-Welcome to
-<span class="gradient">MailMart.</span>
-</h1>
-
-<p>
-Access your MailMart account and continue using
-our digital marketplace, social media services and email purchasing.
-</p>
-
-<div class="tags">
-
-<span class="tag">
-Social Media
-</span>
-
-<span class="tag">
-Digital Services
-</span>
-
-<span class="tag">
-We Buy Emails
-</span>
-
-<span class="tag">
-Fast Service
-</span>
-
+<!-- Loading gate (shown until Firebase confirms auth) -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="txt">Verifying your session…</div>
 </div>
 
-</section>
+<div class="shell" id="shell" style="display:none">
 
+    <!-- Sidebar -->
+    <aside class="sidebar">
 
-<section class="card">
+        <div class="side-brand">
+            <img class="side-logo"
+                 src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                 alt="MailMart">
+            <div class="side-name">Mail<span>Mart</span></div>
+        </div>
 
-<div class="card-header">
+        <nav class="nav">
+            <span class="nav-label">Menu</span>
 
-<img
-class="card-logo"
-src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
-alt="MailMart"
->
+            <a class="nav-item active" data-page="Dashboard">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Dashboard
+            </a>
 
-<h2>
-Welcome Back
-</h2>
+            <a class="nav-item" data-page="Orders">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Orders
+            </a>
 
-<p class="subtitle">
-Login to your MailMart account.
-</p>
+            <a class="nav-item" data-page="Services">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
+                Services
+            </a>
+
+            <a class="nav-item" data-page="Wallet">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
+                Wallet
+            </a>
+
+            <a class="nav-item" data-page="Emails">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Buy Emails
+            </a>
+
+            <span class="nav-label">Account</span>
+
+            <a class="nav-item" data-page="Profile">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                Profile
+            </a>
+
+            <a class="nav-item" data-page="Settings">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <button class="logout-btn" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                Log out
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div style="display:flex;align-items:center;gap:12px">
+
+                <button class="menu-toggle" id="menuToggle">☰</button>
+
+                <div class="greeting">
+                    <h1 id="greeting">Welcome back</h1>
+                    <div class="sub" id="greetSub">Here's what's happening with your MailMart account.</div>
+                </div>
+
+            </div>
+
+            <div class="top-actions">
+
+                <button class="icon-btn" title="Notifications">
+                    <span class="dot"></span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+                </button>
+
+                <button class="deposit-btn" id="depositBtn">+ Add Funds</button>
+
+                <div class="profile-chip" id="profileChip">
+                    <img id="profileImg"
+                         src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_120/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                         alt="Profile">
+                    <div class="who">
+                        <div class="n" id="profileName">Member</div>
+                        <div class="e" id="profileEmail">—</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Stats -->
+        <section class="stats">
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Wallet Balance</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statBalance">$0.00</div>
+                <div class="trend up">▲ 12.4% <span class="muted">vs last week</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Active Orders</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statOrders">0</div>
+                <div class="trend up">▲ 3 <span class="muted">new today</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Emails Purchased</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statEmails">0</div>
+                <div class="trend up">▲ 8.1% <span class="muted">this month</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Completed Jobs</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statDone">0</div>
+                <div class="trend down">▼ 2.0% <span class="muted">vs last month</span></div>
+            </div>
+
+        </section>
+
+        <!-- Chart + Wallet -->
+        <section class="grid-2">
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Revenue &amp; Spend</h2>
+                    <a class="link">Last 7 days</a>
+                </div>
+
+                <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="fill1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(0,213,255,.35)"/>
+                            <stop offset="100%" stop-color="rgba(0,213,255,0)"/>
+                        </linearGradient>
+                        <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(8,124,255,.25)"/>
+                            <stop offset="100%" stop-color="rgba(8,124,255,0)"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- grid lines -->
+                    <g stroke="rgba(255,255,255,.05)" stroke-width="1">
+                        <line x1="0" y1="40" x2="600" y2="40"/>
+                        <line x1="0" y1="90" x2="600" y2="90"/>
+                        <line x1="0" y1="140" x2="600" y2="140"/>
+                        <line x1="0" y1="190" x2="600" y2="190"/>
+                    </g>
+
+                    <!-- area: revenue -->
+                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70 L600,200 L0,200 Z" fill="url(#fill1)"/>
+                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70" fill="none" stroke="#00d5ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- area: spend -->
+                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145 L600,200 L0,200 Z" fill="url(#fill2)"/>
+                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145" fill="none" stroke="#087cff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+
+                <div class="chart-legend">
+                    <div class="item"><span class="swatch" style="background:#00d5ff"></span> Revenue</div>
+                    <div class="item"><span class="swatch" style="background:#087cff"></span> Spend</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>My Wallet</h2>
+                    <a class="link" id="walletLink">Manage</a>
+                </div>
+
+                <div class="wallet">
+                    <div class="av" id="walletAv">$0.00</div>
+                    <div class="cap">Available balance</div>
+                    <div class="wallet-actions">
+                        <button class="btn-fill" id="addFundsBtn">Add Funds</button>
+                        <button class="btn-ghost" id="withdrawBtn">Withdraw</button>
+                    </div>
+                </div>
+
+                <div class="mini-list" id="miniList">
+                    <div class="mini">
+                        <div class="left"><span class="d">$</span> Last deposit</div>
+                        <div class="amt">+ $50.00</div>
+                    </div>
+                    <div class="mini">
+                        <div class="left"><span class="d">↻</span> Order payment</div>
+                        <div class="amt neg">− $12.40</div>
+                    </div>
+                    <div class="mini">
+                        <div class="left"><span class="d">✓</span> Email payout</div>
+                        <div class="amt">+ $8.75</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Services -->
+        <div class="section-title">
+            <h2>Our Services</h2>
+            <a class="link">View all</a>
+        </div>
+
+        <section class="services">
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z"/></svg>
+                </div>
+                <h3>Social Media</h3>
+                <p>Grow your reach with followers, likes, views &amp; engagement across platforms.</p>
+                <div class="go">Get started →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
+                </div>
+                <h3>Digital Services</h3>
+                <p>Accounts, verification, boosting and other digital fulfillment services.</p>
+                <div class="go">Get started →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                </div>
+                <h3>We Buy Emails</h3>
+                <p>Sell your email lists to us at competitive rates — fast payouts, every time.</p>
+                <div class="go">Sell now →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+                </div>
+                <h3>Fast Service</h3>
+                <p>Priority queue &amp; express delivery for every order you place with us.</p>
+                <div class="go">Learn more →</div>
+            </div>
+
+        </section>
+
+        <!-- Recent Orders -->
+        <div class="section-title">
+            <h2>Recent Orders</h2>
+            <a class="link">See all orders</a>
+        </div>
+
+        <section class="panel">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Product</th>
+                        <th class="hide-sm">Date</th>
+                        <th class="hide-sm">Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody">
+                    <tr>
+                        <td class="id">#MM-2041</td>
+                        <td>
+                            <div class="prod"><span class="pdot">IG</span> Instagram Followers</div>
+                        </td>
+                        <td class="hide-sm">Aug 23, 2026</td>
+                        <td class="hide-sm">$14.00</td>
+                        <td><span class="pill prog">In Progress</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2038</td>
+                        <td>
+                            <div class="prod"><span class="pdot">@</span> 5,000 Email List</div>
+                        </td>
+                        <td class="hide-sm">Aug 22, 2026</td>
+                        <td class="hide-sm">$8.75</td>
+                        <td><span class="pill done">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2033</td>
+                        <td>
+                            <div class="prod"><span class="pdot">YT</span> YouTube Watch Hours</div>
+                        </td>
+                        <td class="hide-sm">Aug 21, 2026</td>
+                        <td class="hide-sm">$32.50</td>
+                        <td><span class="pill pend">Pending</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2029</td>
+                        <td>
+                            <div class="prod"><span class="pdot">X</span> X (Twitter) Engagement</div>
+                        </td>
+                        <td class="hide-sm">Aug 19, 2026</td>
+                        <td class="hide-sm">$6.20</td>
+                        <td><span class="pill done">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2021</td>
+                        <td>
+                            <div class="prod"><span class="pdot">!</span> Account Verification</div>
+                        </td>
+                        <td class="hide-sm">Aug 17, 2026</td>
+                        <td class="hide-sm">$45.00</td>
+                        <td><span class="pill fail">Failed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
 
 </div>
-
-
-<div
-id="error"
-class="message error"
-></div>
-
-<div
-id="success"
-class="message success"
-></div>
-
-
-<form id="loginForm">
-
-<div class="field">
-
-<label>
-Email Address
-</label>
-
-<div class="input-wrap">
-
-<input
-id="email"
-type="email"
-placeholder="Enter your email"
-autocomplete="email"
-required
->
-
-</div>
-
-</div>
-
-
-<div class="field">
-
-<label>
-Password
-</label>
-
-<div class="input-wrap">
-
-<input
-id="password"
-type="password"
-placeholder="Enter your password"
-autocomplete="current-password"
-required
->
-
-<span
-class="eye"
-id="passwordEye"
->
-Show
-</span>
-
-</div>
-
-</div>
-
-
-<div class="options">
-
-<label class="remember">
-
-<input
-type="checkbox"
-id="remember"
->
-
-Remember me
-
-</label>
-
-<span
-class="forgot"
-id="forgot"
->
-Forgot password?
-</span>
-
-</div>
-
-
-<button
-type="submit"
-class="login-btn"
-id="loginBtn"
->
-
-<span id="loginText">
-Login
-</span>
-
-<span
-id="loginLoading"
-class="loading"
->
-Signing in...
-</span>
-
-</button>
-
-</form>
-
-
-<div class="divider">
-OR
-</div>
-
-
-<button
-type="button"
-class="google-btn"
-id="googleBtn"
->
-Continue with Google
-</button>
-
-
-<div class="register">
-
-Don't have an account?
-
-<a href="register.html">
-Create an account
-</a>
-
-</div>
-
-
-<a
-href="index.html"
-class="home"
->
-← Back to home
-</a>
-
-</section>
-
-</div>
-
-</main>
-
 
 <script type="module">
 
@@ -1006,472 +1397,92 @@ initializeApp
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 
-
 import {
 getAuth,
-signInWithEmailAndPassword,
-GoogleAuthProvider,
-signInWithPopup,
-sendPasswordResetEmail,
-setPersistence,
-browserLocalPersistence,
-browserSessionPersistence
+onAuthStateChanged,
+signOut
 }
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
-
 const firebaseConfig={
-
-apiKey:
-"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-
-authDomain:
-"mailmartz.firebaseapp.com",
-
-projectId:
-"mailmartz",
-
-storageBucket:
-"mailmartz.firebasestorage.app",
-
-messagingSenderId:
-"802413654231",
-
-appId:
-"1:802413654231:web:4e5d87d23d6a2317724092",
-
-measurementId:
-"G-LKLEWS7RPF"
-
+apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+authDomain:"mailmartz.firebaseapp.com",
+projectId:"mailmartz",
+storageBucket:"mailmartz.firebasestorage.app",
+messagingSenderId:"802413654231",
+appId:"1:802413654231:web:4e5d87d23d6a2317724092",
+measurementId:"G-LKLEWS7RPF"
 };
 
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
 
-const app=
-initializeApp(firebaseConfig);
+const loadingScreen=document.getElementById("loadingScreen");
+const shell=document.getElementById("shell");
 
+/* Guard: only show dashboard to signed-in users */
+onAuthStateChanged(auth,(user)=>{
 
-const auth=
-getAuth(app);
+    if(!user){
+        window.location.href="login.html";
+        return;
+    }
 
+    /* populate profile */
+    const email=user.email||"";
+    const name=(email.split("@")[0]||"Member")
+        .replace(/[._-]+/g," ")
+        .replace(/\b\w/g,c=>c.toUpperCase());
 
-const provider=
-new GoogleAuthProvider();
+    document.getElementById("profileName").textContent=name;
+    document.getElementById("profileEmail").textContent=email;
+    document.getElementById("profileImg").src=
+        user.photoURL||
+        "https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_120/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg";
 
+    document.getElementById("greeting").textContent=
+        "Welcome back, "+name;
 
-provider.setCustomParameters({
-
-prompt:
-"select_account"
+    loadingScreen.style.display="none";
+    shell.style.display="grid";
 
 });
 
-
-const form=
-document.getElementById(
-"loginForm"
-);
-
-
-const email=
-document.getElementById(
-"email"
-);
-
-
-const password=
-document.getElementById(
-"password"
-);
-
-
-const remember=
-document.getElementById(
-"remember"
-);
-
-
-const loginBtn=
-document.getElementById(
-"loginBtn"
-);
-
-
-const loginText=
-document.getElementById(
-"loginText"
-);
-
-
-const loginLoading=
-document.getElementById(
-"loginLoading"
-);
-
-
-const googleBtn=
-document.getElementById(
-"googleBtn"
-);
-
-
-const errorBox=
-document.getElementById(
-"error"
-);
-
-
-const successBox=
-document.getElementById(
-"success"
-);
-
-
-const forgot=
-document.getElementById(
-"forgot"
-);
-
-
-const passwordEye=
-document.getElementById(
-"passwordEye"
-);
-
-
-function showError(text){
-
-errorBox.textContent=
-text;
-
-errorBox.style.display=
-"block";
-
-successBox.style.display=
-"none";
-
-}
-
-
-function showSuccess(text){
-
-successBox.textContent=
-text;
-
-successBox.style.display=
-"block";
-
-errorBox.style.display=
-"none";
-
-}
-
-
-function loading(state){
-
-loginBtn.disabled=
-state;
-
-googleBtn.disabled=
-state;
-
-
-if(state){
-
-loginText.style.display=
-"none";
-
-loginLoading.style.display=
-"inline";
-
-}else{
-
-loginText.style.display=
-"inline";
-
-loginLoading.style.display=
-"none";
-
-}
-
-}
-
-
-function firebaseError(error){
-
-switch(error.code){
-
-case "auth/invalid-email":
-
-return "Please enter a valid email address.";
-
-case "auth/user-not-found":
-
-return "No account was found with this email.";
-
-case "auth/wrong-password":
-
-return "Incorrect email or password.";
-
-case "auth/invalid-credential":
-
-return "Incorrect email or password.";
-
-case "auth/user-disabled":
-
-return "This account has been disabled.";
-
-case "auth/too-many-requests":
-
-return "Too many login attempts. Please try again later.";
-
-case "auth/network-request-failed":
-
-return "Network error. Check your internet connection.";
-
-case "auth/popup-closed-by-user":
-
-return "Google login was cancelled.";
-
-case "auth/popup-blocked":
-
-return "Your browser blocked the Google login window.";
-
-case "auth/operation-not-allowed":
-
-return "This sign-in method is not enabled in Firebase.";
-
-default:
-
-return "Unable to sign in. Please try again.";
-
-}
-
-}
-
-
-passwordEye.addEventListener(
-"click",
-()=>{
-
-if(password.type==="password"){
-
-password.type="text";
-
-passwordEye.textContent=
-"Hide";
-
-}else{
-
-password.type="password";
-
-passwordEye.textContent=
-"Show";
-
-}
-
-}
-);
-
-
-form.addEventListener(
-"submit",
-async(event)=>{
-
-event.preventDefault();
-
-
-errorBox.style.display=
-"none";
-
-successBox.style.display=
-"none";
-
-
-const emailValue=
-email.value.trim();
-
-
-const passwordValue=
-password.value;
-
-
-if(!emailValue||
-!passwordValue){
-
-showError(
-"Please enter your email and password."
-);
-
-return;
-
-}
-
-
-loading(true);
-
-
-try{
-
-await setPersistence(
-auth,
-remember.checked
-?
-browserLocalPersistence
-:
-browserSessionPersistence
-);
-
-
-await signInWithEmailAndPassword(
-auth,
-emailValue,
-passwordValue
-);
-
-
-showSuccess(
-"Login successful. Redirecting..."
-);
-
-
-setTimeout(
-()=>{
-
-window.location.href=
-"dashboard.html";
-
-},
-700
-);
-
-
-}catch(error){
-
-showError(
-firebaseError(error)
-);
-
-loading(false);
-
-}
-
-}
-);
-
-
-googleBtn.addEventListener(
-"click",
-async()=>{
-
-errorBox.style.display=
-"none";
-
-successBox.style.display=
-"none";
-
-loading(true);
-
-
-try{
-
-await setPersistence(
-auth,
-remember.checked
-?
-browserLocalPersistence
-:
-browserSessionPersistence
-);
-
-
-await signInWithPopup(
-auth,
-provider
-);
-
-
-showSuccess(
-"Google login successful. Redirecting..."
-);
-
-
-setTimeout(
-()=>{
-
-window.location.href=
-"dashboard.html";
-
-},
-700
-);
-
-
-}catch(error){
-
-showError(
-firebaseError(error)
-);
-
-loading(false);
-
-}
-
-}
-);
-
-
-forgot.addEventListener(
-"click",
-async()=>{
-
-errorBox.style.display=
-"none";
-
-successBox.style.display=
-"none";
-
-
-const emailValue=
-email.value.trim();
-
-
-if(!emailValue){
-
-showError(
-"Enter your email address first."
-);
-
-email.focus();
-
-return;
-
-}
-
-
-try{
-
-await sendPasswordResetEmail(
-auth,
-emailValue
-);
-
-
-showSuccess(
-"Password reset instructions have been sent to your email."
-);
-
-
-}catch(error){
-
-showError(
-firebaseError(error)
-);
-
-}
-
-}
-);
+/* Logout */
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+    try{
+        await signOut(auth);
+        window.location.href="login.html";
+    }catch(e){
+        console.error(e);
+    }
+});
+
+/* Mobile sidebar toggle */
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.toggle("nav-open");
+});
+
+/* Sidebar nav (visual state only) */
+document.querySelectorAll(".nav-item").forEach(item=>{
+    item.addEventListener("click",(e)=>{
+        e.preventDefault();
+        document.querySelectorAll(".nav-item")
+            .forEach(n=>n.classList.remove("active"));
+        item.classList.add("active");
+        document.body.classList.remove("nav-open");
+    });
+});
+
+/* Placeholder buttons */
+["depositBtn","addFundsBtn","walletLink","withdrawBtn","profileChip"]
+.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener("click",()=>{
+        alert("This is a demo dashboard. Wire this action to your backend / Firestore.");
+    });
+});
 
 </script>
 
