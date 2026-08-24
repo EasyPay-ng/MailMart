@@ -1,103 +1,1490 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#06101f">
-  <meta name="description" content="Manage your MailMart account, requests and earnings.">
-  <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_160/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
-  <link rel="apple-touch-icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_180/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
-  <title>MailMart — Dashboard</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <style>
-    :root{--bg:#030a15;--surface:#081526;--surface-2:#0b1b31;--line:rgba(151,196,235,.12);--text:#eff8ff;--muted:#8fa6bd;--cyan:#2cdbff;--blue:#397dff;--green:#28d998;--amber:#ffce5c;--red:#ff6f89;--shadow:0 18px 60px rgba(0,0,0,.26)}
-    *{box-sizing:border-box;margin:0;padding:0} html{scroll-behavior:smooth} body{min-height:100vh;overflow-x:hidden;font-family:Inter,Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 90% 0,rgba(40,135,255,.18),transparent 28rem),radial-gradient(circle at 5% 100%,rgba(0,214,255,.1),transparent 24rem),var(--bg)}
-    button,input,select{font:inherit} button{cursor:pointer} a{color:inherit;text-decoration:none}.bg-grid{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(82,182,255,.027) 1px,transparent 1px),linear-gradient(90deg,rgba(82,182,255,.027) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(#000,transparent 88%)}
-    .sidebar{position:fixed;inset:0 auto 0 0;width:258px;padding:22px 14px;background:rgba(4,13,27,.91);border-right:1px solid var(--line);backdrop-filter:blur(20px);display:flex;flex-direction:column;z-index:20}.brand{display:flex;align-items:center;gap:11px;padding:4px 10px 28px;font-size:20px;font-weight:800}.brand-mark{height:39px;width:39px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#3478ff,#2de5ff);box-shadow:0 8px 24px rgba(27,169,255,.32)}.brand-mark i{font-size:18px}.brand span{background:linear-gradient(90deg,#fff,#57e7ff);-webkit-background-clip:text;color:transparent}.nav-caption{padding:0 12px;margin:13px 0 9px;color:#5f7892;font-size:10px;font-weight:800;letter-spacing:1.35px;text-transform:uppercase}.nav-list{display:grid;gap:4px}.nav-item{width:100%;display:flex;align-items:center;gap:13px;padding:13px;border:1px solid transparent;border-radius:13px;background:transparent;color:#91a9c0;font-size:13px;font-weight:600;text-align:left;transition:.2s}.nav-item i{width:18px;text-align:center;font-size:15px}.nav-item:hover{color:#eaf8ff;background:rgba(80,174,255,.07)}.nav-item.active{color:#fff;border-color:rgba(83,210,255,.14);background:linear-gradient(90deg,rgba(47,112,255,.23),rgba(0,219,255,.08))}.nav-item.active i{color:var(--cyan)}.account-box{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03)}.account-row{display:flex;align-items:center;gap:10px}.avatar{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#4175ff,#24d9ff);font-size:13px;font-weight:800}.account-row strong{display:block;max-width:148px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.account-row small{display:block;margin-top:3px;color:#718ba5;font-size:10px}.sign-out{width:100%;margin-top:11px;padding:10px;border:0;border-radius:10px;color:#ff8c9e;background:rgba(255,102,133,.08);font-size:11px;font-weight:700}.sign-out:hover{background:rgba(255,102,133,.15)}
-    .main{min-height:100vh;margin-left:258px}.topbar{height:76px;padding:0 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(151,196,235,.08);background:rgba(3,10,21,.74);backdrop-filter:blur(16px)}.crumb{color:#94aac0;font-size:12px}.crumb strong{display:block;margin-top:4px;color:#fff;font-size:17px}.top-actions{display:flex;align-items:center;gap:10px}.icon-button{width:42px;height:42px;position:relative;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#b9d0e5}.icon-button:hover{border-color:rgba(44,219,255,.42);color:#fff}.notice-dot{position:absolute;right:9px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 12px var(--cyan)}.menu-button{display:none}.content{max-width:1480px;margin:0 auto;padding:31px 32px 44px}.intro{display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:25px}.intro h1{font-size:29px;letter-spacing:-1.2px}.intro h1 span{background:linear-gradient(90deg,#fff,#36dcff);-webkit-background-clip:text;color:transparent}.intro p{margin-top:8px;color:var(--muted);font-size:13px;line-height:1.65}.primary{border:0;border-radius:12px;padding:13px 17px;color:#fff;background:linear-gradient(135deg,#3975ff,#10cff4);font-size:12px;font-weight:800;box-shadow:0 10px 26px rgba(24,132,255,.25);transition:.2s}.primary:hover{transform:translateY(-2px);box-shadow:0 16px 32px rgba(24,172,255,.34)}.primary i{margin-right:8px}.summary{display:grid;grid-template-columns:1.5fr repeat(3,1fr);gap:14px}.metric{min-height:158px;position:relative;overflow:hidden;padding:20px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(10,31,60,.88),rgba(5,16,33,.88));box-shadow:var(--shadow)}.metric.main{background:radial-gradient(circle at 90% 5%,rgba(44,219,255,.22),transparent 38%),linear-gradient(135deg,#0c3265,#07182e)}.metric:after{content:"";position:absolute;width:120px;height:120px;right:-55px;bottom:-60px;border:1px solid rgba(72,208,255,.13);border-radius:50%}.metric-label{display:flex;align-items:center;gap:7px;color:#a4bad0;font-size:11px;font-weight:600}.metric-label i{color:var(--cyan)}.metric-value{margin-top:18px;font-size:27px;font-weight:800;letter-spacing:-1px}.metric-note{position:absolute;left:20px;bottom:19px;color:#7189a1;font-size:10px}.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}.quick{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.025);transition:.2s}.quick:hover{transform:translateY(-3px);border-color:rgba(44,219,255,.3);background:rgba(31,127,255,.07)}.quick-icon{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border-radius:11px;color:var(--cyan);background:rgba(44,219,255,.09)}.quick strong{display:block;font-size:11px}.quick small{display:block;margin-top:4px;color:#7690aa;font-size:9px}.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(285px,.8fr);gap:16px}.card{overflow:hidden;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,rgba(9,28,55,.75),rgba(4,14,29,.82));box-shadow:var(--shadow)}.card-head{display:flex;align-items:center;justify-content:space-between;padding:19px 21px;border-bottom:1px solid rgba(151,196,235,.08)}.card-head h2{font-size:14px}.text-link{border:0;background:none;color:var(--cyan);font-size:10px;font-weight:700}.text-link:hover{text-decoration:underline}.activity{padding:3px 19px}.activity-row{display:flex;align-items:center;gap:12px;min-height:71px;border-bottom:1px solid rgba(151,196,235,.075)}.activity-row:last-child{border:0}.activity-icon{width:38px;height:38px;display:grid;place-items:center;flex:0 0 38px;border-radius:11px;background:rgba(44,219,255,.09);color:var(--cyan)}.activity-info{flex:1;min-width:0}.activity-info strong{display:block;font-size:11px}.activity-info small{display:block;margin-top:5px;color:#748da6;font-size:9px}.activity-status{font-size:9px;font-weight:700}.status-pending{color:var(--amber)}.empty{padding:38px 20px;text-align:center;color:#748da6}.empty i{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 12px;border-radius:15px;background:rgba(44,219,255,.08);color:var(--cyan);font-size:19px}.empty h3{font-size:12px;color:#d9eaff}.empty p{max-width:260px;margin:7px auto 0;font-size:10px;line-height:1.6}.side-stack{display:grid;gap:16px}.status-body{padding:19px 21px}.verification{display:flex;gap:11px;align-items:center;padding:12px;border-radius:13px;background:rgba(40,217,152,.065);border:1px solid rgba(40,217,152,.14)}.verification i{color:var(--green)}.verification strong{display:block;font-size:11px}.verification small{display:block;margin-top:3px;color:#81a098;font-size:9px}.detail-list{display:grid;gap:13px;margin-top:18px}.detail{display:flex;justify-content:space-between;gap:12px;color:#8ca5bc;font-size:10px}.detail b{max-width:170px;overflow:hidden;color:#e2f0fa;text-align:right;text-overflow:ellipsis;white-space:nowrap;font-size:10px}.safe-box{padding:21px;background:radial-gradient(circle at 100% 0,rgba(0,211,255,.14),transparent 35%),rgba(7,27,52,.76)}.safe-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:rgba(44,219,255,.11);color:var(--cyan)}.safe-box h2{margin-top:14px;font-size:16px}.safe-box p{margin:8px 0 15px;color:#8ba5bd;font-size:11px;line-height:1.65}.outline{width:100%;padding:11px;border:1px solid rgba(44,219,255,.32);border-radius:10px;background:transparent;color:#81e9ff;font-size:10px;font-weight:800}.outline:hover{background:rgba(44,219,255,.08)}
-    .modal-backdrop{position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:18px;background:rgba(0,5,13,.72);backdrop-filter:blur(7px)}.modal-backdrop.open{display:grid}.modal{width:min(100%,470px);border:1px solid rgba(97,213,255,.2);border-radius:21px;background:#08182d;box-shadow:0 30px 90px rgba(0,0,0,.55);overflow:hidden}.modal-head{display:flex;align-items:center;justify-content:space-between;padding:20px 21px;border-bottom:1px solid var(--line)}.modal-head h2{font-size:15px}.close{border:0;background:transparent;color:#9eb8ce;font-size:18px}.modal-form{padding:21px}.modal-form p{color:#8fa6bd;font-size:11px;line-height:1.6}.field{display:grid;gap:7px;margin-top:17px}.field label{color:#bcd1e2;font-size:10px;font-weight:700}.field input,.field select{width:100%;padding:12px;border:1px solid rgba(151,196,235,.15);border-radius:10px;outline:0;background:rgba(255,255,255,.035);color:#e9f6ff;font-size:12px}.field input:focus,.field select:focus{border-color:var(--cyan)}.checkline{display:flex;align-items:flex-start;gap:9px;margin:16px 0;color:#94abc0;font-size:10px;line-height:1.5}.checkline input{margin-top:2px;accent-color:#19cfea}.modal-form .primary{width:100%}.toast{position:fixed;right:22px;bottom:22px;z-index:50;display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:14px 16px;border:1px solid rgba(44,219,255,.22);border-radius:13px;background:#0a1c35;color:#dceefa;box-shadow:var(--shadow);font-size:11px;transform:translateY(130px);opacity:0;transition:.3s}.toast.show{transform:translateY(0);opacity:1}.toast i{color:var(--cyan)}
-    .auth-loading .sidebar,.auth-loading .main{visibility:hidden}.auth-loading .toast{display:none}.auth-gate{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:#030a15;color:#dbeefd}.auth-gate[hidden]{display:none}.gate-box{width:min(90vw,340px);padding:28px;text-align:center;border:1px solid var(--line);border-radius:20px;background:#08172a;box-shadow:var(--shadow)}.gate-spinner{width:34px;height:34px;margin:0 auto 14px;border:3px solid rgba(43,219,255,.18);border-top-color:var(--cyan);border-radius:50%;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.gate-box h2{font-size:16px}.gate-box p{margin-top:8px;color:var(--muted);font-size:10px;line-height:1.6}
-    @media(max-width:1120px){.summary{grid-template-columns:repeat(2,1fr)}.metric.main{grid-column:span 2}.dashboard-grid{grid-template-columns:1fr}.quick-grid{grid-template-columns:repeat(2,1fr)}}
-    @media(max-width:860px){.sidebar{width:270px;transform:translateX(-100%);transition:.25s}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.menu-button{display:grid;place-items:center}.topbar{height:68px;padding:0 18px}.content{padding:24px 17px 35px}.crumb{display:none}.mobile-title{display:block!important;font-size:17px;font-weight:800}.intro{align-items:flex-start;flex-direction:column}.intro h1{font-size:26px}.intro .primary{width:100%}}
-    @media(max-width:540px){.top-actions .icon-button{width:38px;height:38px}.content{padding:20px 12px}.summary{gap:9px}.metric{min-height:135px;padding:16px;border-radius:16px}.metric-value{margin-top:14px;font-size:22px}.metric-note{left:16px;bottom:15px;font-size:8px}.quick-grid{gap:8px;margin:14px 0}.quick{gap:8px;padding:11px 9px}.quick-icon{width:33px;height:33px;flex-basis:33px;font-size:12px}.quick strong{font-size:9px}.quick small{font-size:7px}.card{border-radius:17px}.card-head{padding:16px}.activity{padding:2px 14px}.activity-row{min-height:64px}.activity-icon{width:34px;height:34px;flex-basis:34px;font-size:12px}.safe-box{padding:18px}.toast{right:12px;bottom:12px}.modal-backdrop{padding:12px}}
-  </style>
-</head>
-<body class="auth-loading">
-<div class="auth-gate" id="authGate"><div class="gate-box"><div class="gate-spinner"></div><h2>Loading your workspace</h2><p>Securely checking your MailMart session.</p></div></div>
-<div class="bg-grid"></div>
-<aside class="sidebar" id="sidebar">
-  <a class="brand" href="index.html" aria-label="MailMart home"><span class="brand-mark"><i class="fa-solid fa-envelope"></i></span><span>MailMart</span></a>
-  <div class="nav-caption">Workspace</div>
-  <nav class="nav-list">
-    <a class="nav-item active" href="dashboard.html"><i class="fa-solid fa-grid-2"></i>Dashboard</a>
-    <button class="nav-item" type="button" data-message="Your requests area will be available shortly."><i class="fa-solid fa-envelope-open-text"></i>My Requests</button>
-    <button class="nav-item" type="button" data-message="Services will be available shortly."><i class="fa-solid fa-layer-group"></i>Services</button>
-    <button class="nav-item" type="button" data-message="Your transaction history will appear here."><i class="fa-solid fa-clock-rotate-left"></i>Transactions</button>
-    <button class="nav-item" type="button" data-message="Withdrawals will be available once you have an eligible balance."><i class="fa-solid fa-wallet"></i>Withdraw</button>
-  </nav>
-  <div class="nav-caption">Account</div>
-  <nav class="nav-list">
-    <button class="nav-item" type="button" data-message="Profile settings will be available shortly."><i class="fa-solid fa-user"></i>Profile</button>
-    <button class="nav-item" type="button" data-message="You have no new notifications."><i class="fa-solid fa-bell"></i>Notifications</button>
-    <button class="nav-item" type="button" data-message="Support chat will be available shortly."><i class="fa-solid fa-headset"></i>Support</button>
-  </nav>
-  <div class="account-box"><div class="account-row"><div class="avatar" id="avatar">U</div><div><strong id="accountName">MailMart User</strong><small id="accountEmail">Sign in to sync data</small></div></div><button class="sign-out" type="button" id="signOut"><i class="fa-solid fa-right-from-bracket"></i> Sign out</button></div>
-</aside>
-<main class="main">
-  <header class="topbar"><button class="icon-button menu-button" id="menuButton" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button><div class="crumb">MailMart workspace<strong>Dashboard overview</strong></div><div class="mobile-title" style="display:none">MailMart</div><div class="top-actions"><button class="icon-button" id="noticeButton" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="notice-dot"></span></button><button class="icon-button" type="button" data-message="Profile settings will be available shortly." aria-label="Profile"><i class="fa-solid fa-user"></i></button></div></header>
-  <div class="content">
-    <section class="intro"><div><h1>Welcome back, <span id="welcomeName">User</span></h1><p>Track your balance, manage your requests and explore MailMart services.</p></div><button class="primary" id="openRequest"><i class="fa-solid fa-plus"></i>New request</button></section>
-    <section class="summary" aria-label="Account summary">
-      <article class="metric main"><div class="metric-label"><i class="fa-solid fa-wallet"></i>Available balance</div><div class="metric-value" id="balance">₦0.00</div><div class="metric-note">Available for eligible withdrawals</div></article>
-      <article class="metric"><div class="metric-label"><i class="fa-solid fa-arrow-trend-up"></i>Total earned</div><div class="metric-value" id="earned">₦0.00</div><div class="metric-note">Lifetime earnings</div></article>
-      <article class="metric"><div class="metric-label"><i class="fa-solid fa-envelope-circle-check"></i>Approved requests</div><div class="metric-value" id="approved">0</div><div class="metric-note">All-time approved</div></article>
-      <article class="metric"><div class="metric-label"><i class="fa-solid fa-clock"></i>Pending review</div><div class="metric-value" id="pending">0</div><div class="metric-note">Requests awaiting review</div></article>
-    </section>
-    <section class="quick-grid" aria-label="Quick actions">
-      <button class="quick" id="quickRequest"><span class="quick-icon"><i class="fa-solid fa-paper-plane"></i></span><span><strong>New request</strong><small>Submit for review</small></span></button>
-      <button class="quick" type="button" data-message="Services will be available shortly."><span class="quick-icon"><i class="fa-solid fa-layer-group"></i></span><span><strong>Browse services</strong><small>Explore the marketplace</small></span></button>
-      <button class="quick" type="button" data-message="Withdrawals will be available once you have an eligible balance."><span class="quick-icon"><i class="fa-solid fa-money-bill-transfer"></i></span><span><strong>Withdraw</strong><small>Request a payout</small></span></button>
-      <button class="quick" type="button" data-message="Your transaction history will appear here."><span class="quick-icon"><i class="fa-solid fa-receipt"></i></span><span><strong>Activity</strong><small>View transactions</small></span></button>
-    </section>
-    <section class="dashboard-grid">
-      <article class="card"><div class="card-head"><h2>Recent activity</h2><button class="text-link" type="button" data-message="Your complete activity history will be available shortly.">View all</button></div><div class="activity" id="activityList"><div class="empty"><i class="fa-solid fa-receipt"></i><h3>No activity yet</h3><p>When you submit a request or receive a payment update, it will appear here.</p></div></div></article>
-      <div class="side-stack"><article class="card"><div class="card-head"><h2>Account status</h2></div><div class="status-body"><div class="verification"><i class="fa-solid fa-circle-check"></i><div><strong>Account active</strong><small>Your dashboard is ready to use.</small></div></div><div class="detail-list"><div class="detail"><span>Email</span><b id="statusEmail">Not signed in</b></div><div class="detail"><span>Currency</span><b>NGN (₦)</b></div><div class="detail"><span>Member type</span><b>Standard</b></div></div></div></article><article class="card safe-box"><div class="safe-icon"><i class="fa-solid fa-shield-halved"></i></div><h2>Keep your account safe</h2><p>MailMart will never ask for passwords, recovery codes, or authentication codes. Submit only information you are authorised to provide.</p><button class="outline" type="button" data-message="Safety guidelines will be published shortly.">Read safety guidelines</button></article></div>
-    </section>
-  </div>
-</main>
-<div class="modal-backdrop" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><div class="modal-head"><h2 id="modalTitle">Create a request</h2><button class="close" id="closeModal" aria-label="Close">×</button></div><form class="modal-form" id="requestForm"><p>Use this form to start an authorised request. Do not enter passwords, recovery details, verification codes, or any sensitive credentials.</p><div class="field"><label for="requestType">Request type</label><select id="requestType" required><option value="Email eligibility review">Email eligibility review</option><option value="Digital service enquiry">Digital service enquiry</option></select></div><div class="field"><label for="requestEmail">Contact email</label><input id="requestEmail" type="email" placeholder="you@example.com" required></div><label class="checkline"><input id="consent" type="checkbox" required><span>I confirm that I am authorised to provide this contact information and that I have not included passwords, codes, or private account credentials.</span></label><button class="primary" type="submit"><i class="fa-solid fa-paper-plane"></i>Submit request</button></form></div></div>
-<div class="toast" id="toast"><i class="fa-solid fa-circle-info"></i><span id="toastText"></span></div>
-<script type="module">
-  import { auth, db } from './firebase.js';
-  import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { doc, getDoc, collection, addDoc, onSnapshot, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  const $=id=>document.getElementById(id);
-  const money=new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',minimumFractionDigits:2});
-  const toast=message=>{const box=$('toast'),text=$('toastText');text.textContent=message;box.classList.add('show');clearTimeout(window.dashboardToastTimer);window.dashboardToastTimer=setTimeout(()=>box.classList.remove('show'),3800)};
-  const formatDate=value=>{const date=value?.toDate?.()||(value?new Date(value):null);return date&&!Number.isNaN(date.valueOf())?date.toLocaleDateString('en-NG',{day:'numeric',month:'short'}):'Just now'};
-  let currentUser=null, requests=[];
-  function renderActivity(){const target=$('activityList');if(!requests.length){target.innerHTML='<div class="empty"><i class="fa-solid fa-receipt"></i><h3>No activity yet</h3><p>When you submit a request or receive a payment update, it will appear here.</p></div>';return}target.innerHTML=[...requests].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0)).slice(0,5).map(item=>{const status=(item.status||'pending').toLowerCase();const color=status==='approved'?'green':status==='rejected'?'red':'blue';return `<div class="activity-row"><span class="activity-icon ${color}"><i class="fa-solid ${status==='approved'?'fa-circle-check':status==='rejected'?'fa-circle-xmark':'fa-clock'}"></i></span><span class="activity-info"><strong>${item.type||'Request submitted'}</strong><small>${formatDate(item.createdAt)} · ${status}</small></span><span class="activity-status status-${status==='pending'?'pending':''}">${status}</span></div>`}).join('')}
-  async function loadProfile(user){let data={};try{const snap=await getDoc(doc(db,'users',user.uid));if(snap.exists())data=snap.data()}catch(error){console.error(error);toast('Could not load your account profile.')}const name=data.displayName||data.username||user.displayName||user.email?.split('@')[0]||'User';const balance=Number(data.balance||0);$('welcomeName').textContent=name;$('accountName').textContent=name;$('accountEmail').textContent=user.email||'Account';$('statusEmail').textContent=user.email||'—';$('avatar').textContent=name.charAt(0).toUpperCase();$('balance').textContent=money.format(balance);$('earned').textContent=money.format(Number(data.totalEarned||data.earnings||0));}
-  function subscribeToRequests(user){const ownRequests=query(collection(db,'requests'),where('userId','==',user.uid));onSnapshot(ownRequests,snap=>{requests=snap.docs.map(item=>({id:item.id,...item.data()}));$('approved').textContent=requests.filter(item=>(item.status||'').toLowerCase()==='approved').length;$('pending').textContent=requests.filter(item=>(item.status||'pending').toLowerCase()==='pending').length;renderActivity()},error=>{console.error(error);toast('Could not load your requests. Check Firestore Rules.')})}
-  window.submitMailMartRequest=async form=>{if(!currentUser){toast('Your session has expired. Please log in again.');return}const button=form.querySelector('button[type="submit"]');button.disabled=true;try{await addDoc(collection(db,'requests'),{userId:currentUser.uid,userEmail:currentUser.email||'',contactEmail:$('requestEmail').value.trim(),type:$('requestType').value,status:'pending',createdAt:serverTimestamp(),updatedAt:serverTimestamp()});form.reset();$('requestModal').classList.remove('open');toast('Request submitted successfully. It is now awaiting review.')}catch(error){console.error(error);toast('Could not submit your request. Check your connection and Firestore Rules.')}finally{button.disabled=false}};
-  window.mailMartLogout=async()=>{try{await signOut(auth);location.replace('login.html')}catch(error){console.error(error);toast('Unable to sign out. Please try again.')}};
-  onAuthStateChanged(auth,user=>{if(!user){location.replace('login.html');return}currentUser=user;$('authGate').hidden=true;document.body.classList.remove('auth-loading');loadProfile(user);subscribeToRequests(user)},error=>{console.error(error);const gate=$('authGate');gate.innerHTML='<div class="gate-box"><i class="fa-solid fa-triangle-exclamation" style="color:#ffce5c;font-size:22px"></i><h2 style="margin-top:14px">Authentication could not start</h2><p>Check that firebase.js is uploaded beside this file and that this website domain is authorised in Firebase Authentication.</p><a href="login.html" style="display:inline-block;margin-top:16px;color:#7deaff;font-size:11px;font-weight:700">Return to login</a></div>';gate.hidden=false;document.body.classList.remove('auth-loading')});
+<title>Dashboard | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link
+rel="icon"
+type="image/jpeg"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link
+rel="shortcut icon"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+rel="stylesheet"
+>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    width:100%;
+    min-height:100%;
+    overflow-x:hidden;
+}
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+
+    background:
+        radial-gradient(
+            circle at 15% 0%,
+            rgba(0,120,255,.17),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 100% 100%,
+            rgba(0,210,255,.10),
+            transparent 35%
+        ),
+        #020812;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+
+    background-image:
+        linear-gradient(
+            rgba(0,190,255,.025) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(0,190,255,.025) 1px,
+            transparent 1px
+        );
+
+    background-size:50px 50px;
+}
+
+/* ---------- Layout ---------- */
+
+.shell{
+    position:relative;
+    z-index:1;
+
+    display:grid;
+    grid-template-columns:255px 1fr;
+
+    min-height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar{
+    position:sticky;
+    top:0;
+
+    height:100vh;
+
+    padding:26px 18px;
+
+    display:flex;
+    flex-direction:column;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(9,35,68,.55),
+            rgba(3,13,27,.25)
+        );
+
+    border-right:1px solid rgba(0,205,255,.12);
+
+    backdrop-filter:blur(8px);
+}
+
+.side-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:4px 6px 26px;
+
+    border-bottom:1px solid rgba(0,205,255,.10);
+
+    margin-bottom:22px;
+}
+
+.side-logo{
+    width:42px;
+    height:42px;
+
+    border-radius:13px;
+
+    object-fit:cover;
+
+    box-shadow:0 10px 28px rgba(0,160,255,.25);
+}
+
+.side-name{
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.side-name span{
+    background:linear-gradient(90deg,#fff,#35ddff,#087cff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+
+    flex:1;
+}
+
+.nav-label{
+    color:#5c758e;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+
+    padding:14px 12px 6px;
+}
+
+.nav-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:11px 12px;
+
+    border-radius:12px;
+
+    color:#9bb2ca;
+    font-size:12.5px;
+    font-weight:600;
+    text-decoration:none;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.nav-item .ic{
+    width:17px;
+    height:17px;
+
+    flex-shrink:0;
+
+    opacity:.85;
+}
+
+.nav-item:hover{
+    background:rgba(0,130,255,.07);
+    color:#dbe9f7;
+}
+
+.nav-item.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    color:#fff;
+
+    border:1px solid rgba(0,205,255,.25);
+
+    box-shadow:0 8px 24px rgba(0,150,255,.12);
+}
+
+.nav-item.active .ic{
+    opacity:1;
+}
+
+.side-foot{
+    border-top:1px solid rgba(0,205,255,.10);
+
+    padding-top:16px;
+    margin-top:10px;
+}
+
+.logout-btn{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+
+    height:44px;
+
+    border:1px solid rgba(255,90,110,.22);
+    border-radius:12px;
+
+    background:rgba(255,50,80,.06);
+
+    color:#ff9aa9;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.logout-btn:hover{
+    background:rgba(255,50,80,.12);
+    color:#ffc1cb;
+}
+
+/* ---------- Main ---------- */
+
+.main{
+    min-width:0;
+
+    padding:26px 30px 40px;
+}
+
+.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+
+    flex-wrap:wrap;
+
+    margin-bottom:28px;
+}
+
+.greeting h1{
+    font-size:clamp(22px,3vw,30px);
+    letter-spacing:-1px;
+    margin-bottom:5px;
+}
+
+.greeting .sub{
+    color:#8ba3bd;
+    font-size:12.5px;
+}
+
+.menu-toggle{
+    display:none;
+
+    width:42px;
+    height:42px;
+
+    border:1px solid rgba(0,205,255,.18);
+    border-radius:12px;
+
+    background:rgba(0,130,255,.06);
+
+    color:#bfe6ff;
+    font-size:18px;
+
+    cursor:pointer;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.icon-btn{
+    width:44px;
+    height:44px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border:1px solid rgba(0,205,255,.16);
+    border-radius:13px;
+
+    background:rgba(255,255,255,.035);
+
+    color:#bcd3e8;
+
+    cursor:pointer;
+
+    position:relative;
+
+    transition:.2s;
+}
+
+.icon-btn:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
+}
+
+.icon-btn .dot{
+    position:absolute;
+    top:9px;
+    right:10px;
+
+    width:7px;
+    height:7px;
+
+    border-radius:50%;
+
+    background:#00d5ff;
+
+    box-shadow:0 0 0 3px rgba(0,213,255,.18);
+}
+
+.profile-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    padding:6px 14px 6px 6px;
+
+    border:1px solid rgba(0,205,255,.16);
+    border-radius:40px;
+
+    background:rgba(255,255,255,.035);
+
+    cursor:pointer;
+}
+
+.profile-chip img{
+    width:32px;
+    height:32px;
+
+    border-radius:50%;
+
+    object-fit:cover;
+}
+
+.profile-chip .who{
+    line-height:1.2;
+}
+
+.profile-chip .who .n{
+    font-size:12px;
+    font-weight:700;
+}
+
+.profile-chip .who .e{
+    font-size:9.5px;
+    color:#8ba3bd;
+
+    max-width:150px;
+
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.deposit-btn{
+    height:44px;
+
+    padding:0 20px;
+
+    border:0;
+    border-radius:13px;
+
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+
+    color:#fff;
+    font-family:inherit;
+    font-size:12.5px;
+    font-weight:800;
+
+    cursor:pointer;
+
+    transition:.25s;
+}
+
+.deposit-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px rgba(0,150,255,.25);
+}
+
+/* ---------- Stat cards ---------- */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.stat{
+    padding:20px;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(9,35,68,.96),
+            rgba(3,13,27,.98)
+        );
+
+    border:1px solid rgba(0,205,255,.16);
+
+    box-shadow:0 22px 60px rgba(0,0,0,.35);
+
+    position:relative;
+
+    overflow:hidden;
+}
+
+.stat::after{
+    content:"";
+    position:absolute;
+    right:-30px;
+    top:-30px;
+
+    width:90px;
+    height:90px;
+
+    border-radius:50%;
+
+    background:radial-gradient(circle,rgba(0,170,255,.18),transparent 70%);
+}
+
+.stat .top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:16px;
+}
+
+.stat .lbl{
+    color:#8ba3bd;
+    font-size:11px;
+    font-weight:600;
+}
+
+.stat .badge{
+    width:38px;
+    height:38px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    border-radius:12px;
+
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    border:1px solid rgba(0,205,255,.2);
+
+    color:#6fe0ff;
+}
+
+.stat .val{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-1px;
+
+    margin-bottom:9px;
+}
+
+.stat .trend{
+    font-size:10.5px;
+    font-weight:600;
+
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+}
+
+.trend.up{ color:#69edb8; }
+.trend.down{ color:#ff9aa9; }
+
+.trend .muted{
+    color:#6e849c;
+    font-weight:500;
+}
+
+/* ---------- Grid rows ---------- */
+
+.grid-2{
+    display:grid;
+    grid-template-columns:1.6fr 1fr;
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.panel{
+    padding:22px;
+
+    border-radius:22px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(9,35,68,.92),
+            rgba(3,13,27,.97)
+        );
+
+    border:1px solid rgba(0,205,255,.15);
+
+    box-shadow:0 22px 60px rgba(0,0,0,.32);
+}
+
+.panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:18px;
+}
+
+.panel-head h2{
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:-.4px;
+}
+
+.panel-head .link{
+    color:#28d9ff;
+    font-size:11px;
+    font-weight:700;
+    text-decoration:none;
+
+    cursor:pointer;
+}
+
+.panel-head .link:hover{
+    text-decoration:underline;
+}
+
+/* revenue chart */
+
+.chart{
+    width:100%;
+    height:200px;
+
+    display:block;
+}
+
+.chart-legend{
+    display:flex;
+    gap:18px;
+
+    margin-top:6px;
+}
+
+.chart-legend .item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+
+    color:#8ba3bd;
+    font-size:10.5px;
+    font-weight:600;
+}
+
+.chart-legend .swatch{
+    width:11px;
+    height:11px;
+    border-radius:3px;
+}
+
+/* wallet panel */
+
+.wallet{
+    text-align:center;
+
+    padding:6px 0 14px;
+}
+
+.wallet .av{
+    font-size:30px;
+    font-weight:900;
+    letter-spacing:-1px;
+
+    background:linear-gradient(90deg,#fff,#35ddff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+
+    margin-bottom:4px;
+}
+
+.wallet .cap{
+    color:#8ba3bd;
+    font-size:11px;
+
+    margin-bottom:18px;
+}
+
+.wallet-actions{
+    display:flex;
+    gap:10px;
+}
+
+.wallet-actions button{
+    flex:1;
+
+    height:42px;
+
+    border-radius:12px;
+
+    font-family:inherit;
+    font-size:11.5px;
+    font-weight:800;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.btn-fill{
+    border:0;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+}
+
+.btn-fill:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 26px rgba(0,150,255,.25);
+}
+
+.btn-ghost{
+    border:1px solid rgba(0,205,255,.22);
+    background:rgba(255,255,255,.04);
+    color:#cfe6fb;
+}
+
+.btn-ghost:hover{
+    background:rgba(255,255,255,.08);
+}
+
+.mini-list{
+    margin-top:18px;
+
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+}
+
+.mini{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    font-size:11.5px;
+}
+
+.mini .left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#c4d6ea;
+}
+
+.mini .left .d{
+    width:30px;
+    height:30px;
+
+    border-radius:9px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:rgba(0,130,255,.08);
+    border:1px solid rgba(0,205,255,.14);
+
+    color:#6fe0ff;
+}
+
+.mini .amt{
+    font-weight:700;
+    color:#fff;
+}
+
+.mini .amt.neg{
+    color:#ff9aa9;
+}
+
+/* ---------- Services ---------- */
+
+.section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    margin-bottom:16px;
+}
+
+.section-title h2{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+
+    margin-bottom:26px;
+}
+
+.svc{
+    padding:20px;
+
+    border-radius:20px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(9,35,68,.9),
+            rgba(3,13,27,.96)
+        );
+
+    border:1px solid rgba(0,205,255,.15);
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    position:relative;
+    overflow:hidden;
+}
+
+.svc:hover{
+    transform:translateY(-4px);
+    border-color:rgba(0,205,255,.35);
+    box-shadow:0 22px 50px rgba(0,140,255,.18);
+}
+
+.svc .ic{
+    width:46px;
+    height:46px;
+
+    border-radius:14px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:linear-gradient(135deg,rgba(8,124,255,.25),rgba(0,213,255,.10));
+    border:1px solid rgba(0,205,255,.22);
+
+    color:#6fe0ff;
+
+    margin-bottom:14px;
+}
+
+.svc h3{
+    font-size:14px;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+.svc p{
+    color:#8ba3bd;
+    font-size:11px;
+    line-height:1.6;
+
+    margin-bottom:14px;
+}
+
+.svc .go{
+    color:#28d9ff;
+    font-size:11px;
+    font-weight:700;
+}
+
+/* ---------- Orders table ---------- */
+
+.table{
+    width:100%;
+
+    border-collapse:collapse;
+}
+
+.table th{
+    text-align:left;
+
+    color:#6e849c;
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+
+    padding:0 12px 14px;
+
+    border-bottom:1px solid rgba(0,205,255,.12);
+}
+
+.table td{
+    padding:14px 12px;
+
+    font-size:12px;
+
+    border-bottom:1px solid rgba(255,255,255,.05);
+
+    color:#cdddee;
+}
+
+.table tr:last-child td{
+    border-bottom:0;
+}
+
+.table .id{
+    font-weight:700;
+    color:#fff;
+}
+
+.table .prod{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.table .prod .pdot{
+    width:30px;
+    height:30px;
+
+    border-radius:9px;
+
+    flex-shrink:0;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:rgba(0,130,255,.08);
+    border:1px solid rgba(0,205,255,.14);
+
+    color:#6fe0ff;
+}
+
+.pill{
+    display:inline-block;
+
+    padding:5px 11px;
+
+    border-radius:20px;
+
+    font-size:9.5px;
+    font-weight:700;
+    letter-spacing:.3px;
+}
+
+.pill.done{
+    color:#69edb8;
+    background:rgba(0,220,150,.1);
+    border:1px solid rgba(0,220,150,.2);
+}
+
+.pill.prog{
+    color:#ffd479;
+    background:rgba(255,190,60,.1);
+    border:1px solid rgba(255,190,60,.22);
+}
+
+.pill.pend{
+    color:#9ab6ff;
+    background:rgba(90,130,255,.1);
+    border:1px solid rgba(90,130,255,.22);
+}
+
+.pill.fail{
+    color:#ff9aa9;
+    background:rgba(255,50,80,.1);
+    border:1px solid rgba(255,50,80,.2);
+}
+
+/* ---------- Loader ---------- */
+
+.loading-screen{
+    position:fixed;
+    inset:0;
+    z-index:50;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+
+    background:#020812;
+}
+
+.spinner{
+    width:46px;
+    height:46px;
+
+    border:3px solid rgba(0,205,255,.18);
+    border-top-color:#00d5ff;
+
+    border-radius:50%;
+
+    animation:spin .8s linear infinite;
+}
+
+@keyframes spin{
+    to{ transform:rotate(360deg); }
+}
+
+.loading-screen .txt{
+    color:#8ba3bd;
+    font-size:12px;
+    font-weight:600;
+}
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:1100px){
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .services{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .grid-2{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:860px){
+
+    .shell{
+        grid-template-columns:1fr;
+    }
+
+    .sidebar{
+        position:fixed;
+        z-index:40;
+
+        width:255px;
+
+        transform:translateX(-100%);
+
+        transition:transform .3s ease;
+    }
+
+    body.nav-open .sidebar{
+        transform:translateX(0);
+    }
+
+    body.nav-open::after{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:39;
+        background:rgba(0,0,0,.55);
+    }
+
+    .menu-toggle{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+    }
+
+    .main{
+        padding:18px 16px 34px;
+    }
+
+    .top-actions .deposit-btn{
+        display:none;
+    }
+}
+
+@media(max-width:560px){
+
+    .stats{
+        grid-template-columns:1fr;
+    }
+
+    .services{
+        grid-template-columns:1fr;
+    }
+
+    .profile-chip .who{
+        display:none;
+    }
+
+    .table .hide-sm{
+        display:none;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- Loading gate (shown until Firebase confirms auth) -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="txt">Verifying your session…</div>
+</div>
+
+<div class="shell" id="shell" style="display:none">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="side-brand">
+            <img class="side-logo"
+                 src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                 alt="MailMart">
+            <div class="side-name">Mail<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <span class="nav-label">Menu</span>
+
+            <a class="nav-item active" data-page="Dashboard">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Dashboard
+            </a>
+
+            <a class="nav-item" data-page="Orders">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Orders
+            </a>
+
+            <a class="nav-item" data-page="Services">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
+                Services
+            </a>
+
+            <a class="nav-item" data-page="Wallet">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
+                Wallet
+            </a>
+
+            <a class="nav-item" data-page="Emails">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Buy Emails
+            </a>
+
+            <span class="nav-label">Account</span>
+
+            <a class="nav-item" data-page="Profile">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                Profile
+            </a>
+
+            <a class="nav-item" data-page="Settings">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <button class="logout-btn" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                Log out
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div style="display:flex;align-items:center;gap:12px">
+
+                <button class="menu-toggle" id="menuToggle">☰</button>
+
+                <div class="greeting">
+                    <h1 id="greeting">Welcome back</h1>
+                    <div class="sub" id="greetSub">Here's what's happening with your MailMart account.</div>
+                </div>
+
+            </div>
+
+            <div class="top-actions">
+
+                <button class="icon-btn" title="Notifications">
+                    <span class="dot"></span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+                </button>
+
+                <button class="deposit-btn" id="depositBtn">+ Add Funds</button>
+
+                <div class="profile-chip" id="profileChip">
+                    <img id="profileImg"
+                         src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_120/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                         alt="Profile">
+                    <div class="who">
+                        <div class="n" id="profileName">Member</div>
+                        <div class="e" id="profileEmail">—</div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Stats -->
+        <section class="stats">
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Wallet Balance</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statBalance">$0.00</div>
+                <div class="trend up">▲ 12.4% <span class="muted">vs last week</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Active Orders</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statOrders">0</div>
+                <div class="trend up">▲ 3 <span class="muted">new today</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Emails Purchased</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statEmails">0</div>
+                <div class="trend up">▲ 8.1% <span class="muted">this month</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Completed Jobs</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statDone">0</div>
+                <div class="trend down">▼ 2.0% <span class="muted">vs last month</span></div>
+            </div>
+
+        </section>
+
+        <!-- Chart + Wallet -->
+        <section class="grid-2">
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Revenue &amp; Spend</h2>
+                    <a class="link">Last 7 days</a>
+                </div>
+
+                <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="fill1" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(0,213,255,.35)"/>
+                            <stop offset="100%" stop-color="rgba(0,213,255,0)"/>
+                        </linearGradient>
+                        <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="rgba(8,124,255,.25)"/>
+                            <stop offset="100%" stop-color="rgba(8,124,255,0)"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- grid lines -->
+                    <g stroke="rgba(255,255,255,.05)" stroke-width="1">
+                        <line x1="0" y1="40" x2="600" y2="40"/>
+                        <line x1="0" y1="90" x2="600" y2="90"/>
+                        <line x1="0" y1="140" x2="600" y2="140"/>
+                        <line x1="0" y1="190" x2="600" y2="190"/>
+                    </g>
+
+                    <!-- area: revenue -->
+                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70 L600,200 L0,200 Z" fill="url(#fill1)"/>
+                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70" fill="none" stroke="#00d5ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+                    <!-- area: spend -->
+                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145 L600,200 L0,200 Z" fill="url(#fill2)"/>
+                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145" fill="none" stroke="#087cff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+
+                <div class="chart-legend">
+                    <div class="item"><span class="swatch" style="background:#00d5ff"></span> Revenue</div>
+                    <div class="item"><span class="swatch" style="background:#087cff"></span> Spend</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>My Wallet</h2>
+                    <a class="link" id="walletLink">Manage</a>
+                </div>
+
+                <div class="wallet">
+                    <div class="av" id="walletAv">$0.00</div>
+                    <div class="cap">Available balance</div>
+                    <div class="wallet-actions">
+                        <button class="btn-fill" id="addFundsBtn">Add Funds</button>
+                        <button class="btn-ghost" id="withdrawBtn">Withdraw</button>
+                    </div>
+                </div>
+
+                <div class="mini-list" id="miniList">
+                    <div class="mini">
+                        <div class="left"><span class="d">$</span> Last deposit</div>
+                        <div class="amt">+ $50.00</div>
+                    </div>
+                    <div class="mini">
+                        <div class="left"><span class="d">↻</span> Order payment</div>
+                        <div class="amt neg">− $12.40</div>
+                    </div>
+                    <div class="mini">
+                        <div class="left"><span class="d">✓</span> Email payout</div>
+                        <div class="amt">+ $8.75</div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Services -->
+        <div class="section-title">
+            <h2>Our Services</h2>
+            <a class="link">View all</a>
+        </div>
+
+        <section class="services">
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z"/></svg>
+                </div>
+                <h3>Social Media</h3>
+                <p>Grow your reach with followers, likes, views &amp; engagement across platforms.</p>
+                <div class="go">Get started →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
+                </div>
+                <h3>Digital Services</h3>
+                <p>Accounts, verification, boosting and other digital fulfillment services.</p>
+                <div class="go">Get started →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                </div>
+                <h3>We Buy Emails</h3>
+                <p>Sell your email lists to us at competitive rates — fast payouts, every time.</p>
+                <div class="go">Sell now →</div>
+            </div>
+
+            <div class="svc">
+                <div class="ic">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
+                </div>
+                <h3>Fast Service</h3>
+                <p>Priority queue &amp; express delivery for every order you place with us.</p>
+                <div class="go">Learn more →</div>
+            </div>
+
+        </section>
+
+        <!-- Recent Orders -->
+        <div class="section-title">
+            <h2>Recent Orders</h2>
+            <a class="link">See all orders</a>
+        </div>
+
+        <section class="panel">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Product</th>
+                        <th class="hide-sm">Date</th>
+                        <th class="hide-sm">Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersBody">
+                    <tr>
+                        <td class="id">#MM-2041</td>
+                        <td>
+                            <div class="prod"><span class="pdot">IG</span> Instagram Followers</div>
+                        </td>
+                        <td class="hide-sm">Aug 23, 2026</td>
+                        <td class="hide-sm">$14.00</td>
+                        <td><span class="pill prog">In Progress</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2038</td>
+                        <td>
+                            <div class="prod"><span class="pdot">@</span> 5,000 Email List</div>
+                        </td>
+                        <td class="hide-sm">Aug 22, 2026</td>
+                        <td class="hide-sm">$8.75</td>
+                        <td><span class="pill done">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2033</td>
+                        <td>
+                            <div class="prod"><span class="pdot">YT</span> YouTube Watch Hours</div>
+                        </td>
+                        <td class="hide-sm">Aug 21, 2026</td>
+                        <td class="hide-sm">$32.50</td>
+                        <td><span class="pill pend">Pending</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2029</td>
+                        <td>
+                            <div class="prod"><span class="pdot">X</span> X (Twitter) Engagement</div>
+                        </td>
+                        <td class="hide-sm">Aug 19, 2026</td>
+                        <td class="hide-sm">$6.20</td>
+                        <td><span class="pill done">Completed</span></td>
+                    </tr>
+                    <tr>
+                        <td class="id">#MM-2021</td>
+                        <td>
+                            <div class="prod"><span class="pdot">!</span> Account Verification</div>
+                        </td>
+                        <td class="hide-sm">Aug 17, 2026</td>
+                        <td class="hide-sm">$45.00</td>
+                        <td><span class="pill fail">Failed</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+    </main>
+
+</div>
+
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+authDomain:"mailmartz.firebaseapp.com",
+projectId:"mailmartz",
+storageBucket:"mailmartz.firebasestorage.app",
+messagingSenderId:"802413654231",
+appId:"1:802413654231:web:4e5d87d23d6a2317724092",
+measurementId:"G-LKLEWS7RPF"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+
+const loadingScreen=document.getElementById("loadingScreen");
+const shell=document.getElementById("shell");
+
+/* Guard: only show dashboard to signed-in users */
+onAuthStateChanged(auth,(user)=>{
+
+    if(!user){
+        window.location.href="login.html";
+        return;
+    }
+
+    /* populate profile */
+    const email=user.email||"";
+    const name=(email.split("@")[0]||"Member")
+        .replace(/[._-]+/g," ")
+        .replace(/\b\w/g,c=>c.toUpperCase());
+
+    document.getElementById("profileName").textContent=name;
+    document.getElementById("profileEmail").textContent=email;
+    document.getElementById("profileImg").src=
+        user.photoURL||
+        "https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_120/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg";
+
+    document.getElementById("greeting").textContent=
+        "Welcome back, "+name;
+
+    loadingScreen.style.display="none";
+    shell.style.display="grid";
+
+});
+
+/* Logout */
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+    try{
+        await signOut(auth);
+        window.location.href="login.html";
+    }catch(e){
+        console.error(e);
+    }
+});
+
+/* Mobile sidebar toggle */
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.toggle("nav-open");
+});
+
+/* Sidebar nav (visual state only) */
+document.querySelectorAll(".nav-item").forEach(item=>{
+    item.addEventListener("click",(e)=>{
+        e.preventDefault();
+        document.querySelectorAll(".nav-item")
+            .forEach(n=>n.classList.remove("active"));
+        item.classList.add("active");
+        document.body.classList.remove("nav-open");
+    });
+});
+
+/* Placeholder buttons */
+["depositBtn","addFundsBtn","walletLink","withdrawBtn","profileChip"]
+.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener("click",()=>{
+        alert("This is a demo dashboard. Wire this action to your backend / Firestore.");
+    });
+});
+
 </script>
-<script>
-  const toast=document.getElementById('toast'), toastText=document.getElementById('toastText'); let toastTimer;
-  setTimeout(()=>{if(document.body.classList.contains('auth-loading')){const gate=document.getElementById('authGate');gate.innerHTML='<div class="gate-box"><i class="fa-solid fa-wifi" style="color:#ffce5c;font-size:22px"></i><h2 style="margin-top:14px">Firebase did not load</h2><p>This page needs a live hosted website, firebase.js in the same folder, and an authorised Firebase domain. The workspace file preview blocks external Firebase scripts.</p><a href="login.html" style="display:inline-block;margin-top:16px;color:#7deaff;font-size:11px;font-weight:700">Return to login</a></div>';document.body.classList.remove('auth-loading')}},7000);
-  function showToast(message){toastText.textContent=message;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),3600)}
-  document.querySelectorAll('[data-message]').forEach(el=>el.addEventListener('click',()=>showToast(el.dataset.message)));
-  const sidebar=document.getElementById('sidebar');document.getElementById('menuButton').addEventListener('click',()=>sidebar.classList.toggle('open'));
-  document.addEventListener('click',e=>{if(innerWidth<=860&&sidebar.classList.contains('open')&&!sidebar.contains(e.target)&&!document.getElementById('menuButton').contains(e.target))sidebar.classList.remove('open')});
-  document.getElementById('noticeButton').addEventListener('click',()=>showToast('You have no new notifications.'));
-  const modal=document.getElementById('requestModal');function openModal(){modal.classList.add('open');document.getElementById('requestEmail').focus()}function closeModal(){modal.classList.remove('open')}document.getElementById('openRequest').addEventListener('click',openModal);document.getElementById('quickRequest').addEventListener('click',openModal);document.getElementById('closeModal').addEventListener('click',closeModal);modal.addEventListener('click',e=>{if(e.target===modal)closeModal()});
-  document.getElementById('requestForm').addEventListener('submit',e=>{e.preventDefault();if(window.submitMailMartRequest)window.submitMailMartRequest(e.target);else showToast('Your account is still loading. Please try again in a moment.')});
-  document.getElementById('signOut').addEventListener('click',()=>{if(window.mailMartLogout)window.mailMartLogout()});
-</script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a301fa643b9ba8a7',t:'MTc4NzU3MDUzNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</body>
 </html>
