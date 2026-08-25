@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<title>Sales Review | MailMart Admin</title>
+
+<meta name="theme-color" content="#020812">
+
+<link
+rel="icon"
+type="image/jpeg"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link
+rel="shortcut icon"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+rel="stylesheet"
+>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{ width:100%; min-height:100%; overflow-x:hidden; }
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+
+    background:
+        radial-gradient(circle at 15% 0%,rgba(0,120,255,.17),transparent 35%),
+        radial-gradient(circle at 100% 100%,rgba(0,210,255,.10),transparent 35%),
+        #020812;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+        linear-gradient(rgba(0,190,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,190,255,.025) 1px,transparent 1px);
+    background-size:50px 50px;
+}
+
+.shell{
+    position:relative;
+    z-index:1;
+    display:grid;
+    grid-template-columns:255px 1fr;
+    min-height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    padding:26px 18px;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,rgba(9,35,68,.55),rgba(3,13,27,.25));
+    border-right:1px solid rgba(0,205,255,.12);
+    backdrop-filter:blur(8px);
+}
+
+.side-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:4px 6px 26px;
+    border-bottom:1px solid rgba(0,205,255,.10);
+    margin-bottom:22px;
+}
+
+.side-logo{
+    width:42px; height:42px;
+    border-radius:13px;
+    object-fit:cover;
+    box-shadow:0 10px 28px rgba(0,160,255,.25);
+}
+
+.side-name{ font-size:17px; font-weight:800; letter-spacing:-.5px; }
+.side-name span{
+    background:linear-gradient(90deg,#fff,#35ddff,#087cff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+.nav{ display:flex; flex-direction:column; gap:5px; flex:1; }
+
+.nav-label{
+    color:#5c758e; font-size:9px; font-weight:700;
+    letter-spacing:1.4px; text-transform:uppercase;
+    padding:14px 12px 6px;
+}
+
+.nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 12px;
+    border-radius:12px;
+    color:#9bb2ca; font-size:12.5px; font-weight:600;
+    text-decoration:none; cursor:pointer; transition:.2s;
+}
+
+.nav-item .ic{ width:17px; height:17px; flex-shrink:0; opacity:.85; }
+
+.nav-item:hover{ background:rgba(0,130,255,.07); color:#dbe9f7; }
+
+.nav-item.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    color:#fff; border:1px solid rgba(0,205,255,.25);
+    box-shadow:0 8px 24px rgba(0,150,255,.12);
+}
+
+.nav-item.active .ic{ opacity:1; }
+
+.side-foot{
+    border-top:1px solid rgba(0,205,255,.10);
+    padding-top:16px; margin-top:10px;
+}
+
+.logout-btn{
+    width:100%;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    height:44px;
+    border:1px solid rgba(255,90,110,.22);
+    border-radius:12px;
+    background:rgba(255,50,80,.06);
+    color:#ff9aa9; font-family:inherit; font-size:12px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.logout-btn:hover{ background:rgba(255,50,80,.12); color:#ffc1cb; }
+
+/* ---------- Main ---------- */
+
+.main{ min-width:0; padding:26px 30px 40px; }
+
+.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:18px; flex-wrap:wrap; margin-bottom:24px;
+}
+
+.head-left{ display:flex; align-items:center; gap:12px; }
+
+.menu-toggle{
+    display:none;
+    width:42px; height:42px;
+    border:1px solid rgba(0,205,255,.18);
+    border-radius:12px;
+    background:rgba(0,130,255,.06);
+    color:#bfe6ff; font-size:18px; cursor:pointer;
+}
+
+.page-title{ font-size:clamp(22px,3vw,28px); letter-spacing:-1px; margin-bottom:5px; }
+
+.page-sub{ color:#8ba3bd; font-size:12.5px; display:flex; align-items:center; gap:8px; }
+
+.live-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#69edb8;
+    box-shadow:0 0 0 3px rgba(0,220,150,.18);
+    animation:pulse 1.6s infinite;
+}
+
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+/* ---------- Stats ---------- */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:24px;
+}
+
+.stat{
+    padding:20px;
+    border-radius:20px;
+    background:linear-gradient(145deg,rgba(9,35,68,.96),rgba(3,13,27,.98));
+    border:1px solid rgba(0,205,255,.16);
+    box-shadow:0 22px 60px rgba(0,0,0,.35);
+}
+
+.stat .lbl{ color:#8ba3bd; font-size:11px; font-weight:600; margin-bottom:12px; }
+
+.stat .val{ font-size:26px; font-weight:800; letter-spacing:-1px; }
+
+.stat .val.green{ color:#69edb8; }
+.stat .val.amber{ color:#ffd479; }
+.stat .val.blue{ color:#6fe0ff; }
+.stat .val.red{ color:#ff9aa9; }
+
+/* ---------- Filters ---------- */
+
+.filters{
+    display:flex; flex-wrap:wrap; gap:9px;
+    margin-bottom:22px;
+}
+
+.filter{
+    padding:9px 15px;
+    border-radius:11px;
+    border:1px solid rgba(0,205,255,.16);
+    background:rgba(255,255,255,.035);
+    color:#bcd3e8; font-family:inherit; font-size:11.5px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.filter:hover{ background:rgba(255,255,255,.08); color:#fff; }
+
+.filter.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.28),rgba(0,213,255,.12));
+    border-color:rgba(0,205,255,.4);
+    color:#fff;
+}
+
+.filter .c{
+    display:inline-block;
+    min-width:18px;
+    padding:1px 6px;
+    margin-left:6px;
+    border-radius:9px;
+    background:rgba(0,0,0,.25);
+    font-size:9.5px;
+}
+
+/* ---------- Sale cards ---------- */
+
+.list{ display:flex; flex-direction:column; gap:16px; }
+
+.sale-card{
+    padding:22px;
+    border-radius:20px;
+    background:linear-gradient(145deg,rgba(9,35,68,.92),rgba(3,13,27,.97));
+    border:1px solid rgba(0,205,255,.15);
+    box-shadow:0 22px 60px rgba(0,0,0,.32);
+}
+
+.sale-head{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:14px; margin-bottom:16px;
+}
+
+.sale-email{ font-size:17px; font-weight:800; letter-spacing:-.4px; word-break:break-all; }
+
+.sale-meta{ font-size:10.5px; color:#6e849c; margin-top:5px; }
+
+.pill{
+    flex-shrink:0;
+    display:inline-block;
+    padding:6px 13px;
+    border-radius:20px;
+    font-size:10px; font-weight:800;
+    letter-spacing:.4px; text-transform:uppercase;
+}
+
+.pill.pend{ color:#ffd479; background:rgba(255,190,60,.12); border:1px solid rgba(255,190,60,.3); }
+.pill.appr{ color:#6fe0ff; background:rgba(0,170,255,.12); border:1px solid rgba(0,205,255,.3); }
+.pill.paid{ color:#69edb8; background:rgba(0,220,150,.12); border:1px solid rgba(0,220,150,.3); }
+.pill.rej{ color:#ff9aa9; background:rgba(255,50,80,.12); border:1px solid rgba(255,50,80,.3); }
+
+.sale-row{
+    display:flex; align-items:center; gap:14px;
+    padding:12px 14px;
+    border-radius:13px;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.06);
+    margin-bottom:16px;
+}
+
+.sale-key{ font-size:11px; font-weight:700; color:#8ba3bd; width:80px; flex-shrink:0; }
+
+.sale-val{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+
+.pw{ font-size:13px; color:#dfeaf6; font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; }
+
+.mini-btn{
+    flex-shrink:0;
+    padding:6px 12px;
+    border-radius:9px;
+    border:1px solid rgba(0,205,255,.2);
+    background:rgba(0,130,255,.07);
+    color:#bfe6ff; font-family:inherit; font-size:10px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.mini-btn:hover{ background:rgba(0,130,255,.14); color:#fff; }
+
+/* submissions */
+
+.subs-title{
+    font-size:11px; font-weight:700; color:#8ba3bd;
+    margin-bottom:11px;
+    display:flex; align-items:center; gap:8px;
+}
+
+.subs-title .num{
+    background:rgba(0,170,255,.14);
+    border:1px solid rgba(0,205,255,.25);
+    color:#6fe0ff;
+    border-radius:8px;
+    padding:2px 8px; font-size:9.5px;
+}
+
+.subs{ display:flex; flex-direction:column; gap:9px; margin-bottom:18px; }
+
+.sub-item{
+    display:flex; gap:11px; align-items:flex-start;
+    padding:11px 13px;
+    border-radius:12px;
+    background:rgba(0,0,0,.2);
+    border:1px solid rgba(255,255,255,.05);
+}
+
+.sub-badge{
+    flex-shrink:0;
+    font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;
+    color:#6fe0ff; background:rgba(0,170,255,.12);
+    border:1px solid rgba(0,205,255,.25);
+    padding:5px 9px; border-radius:9px; white-space:nowrap;
+}
+
+.sub-body{ flex:1; min-width:0; }
+
+.sub-text{ font-size:12px; color:#dfeaf6; line-height:1.55; word-break:break-word; }
+
+.sub-time{ font-size:10px; color:#6e849c; margin-top:4px; }
+
+.subs-empty{ font-size:11px; color:#6e849c; padding:4px 2px 14px; }
+
+/* actions */
+
+.actions{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+
+.act{
+    height:42px;
+    padding:0 18px;
+    border-radius:12px;
+    font-family:inherit; font-size:12px; font-weight:800;
+    cursor:pointer; transition:.2s;
+    border:0;
+}
+
+.act.approve{
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+}
+
+.act.approve:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,150,255,.25); }
+
+.act.reject{
+    border:1px solid rgba(255,90,110,.3);
+    background:rgba(255,50,80,.08);
+    color:#ff9aa9;
+}
+
+.act.reject:hover{ background:rgba(255,50,80,.16); color:#ffc1cb; }
+
+.pay{ display:flex; align-items:center; gap:8px; }
+
+.amt{
+    height:42px;
+    width:120px;
+    padding:0 12px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    background:rgba(0,0,0,.25);
+    color:#fff; font-family:inherit; font-size:12px;
+    outline:none;
+}
+
+.amt:focus{ border-color:#08bfff; }
+
+.act.pay-btn{
+    background:linear-gradient(135deg,#0fae6e,#39e6a0);
+    color:#04210f;
+}
+
+.act.pay-btn:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,200,140,.25); }
+
+.paid-note{
+    font-size:12px; font-weight:800; color:#69edb8;
+    display:flex; align-items:center; gap:7px;
+}
+
+.rej-note{ font-size:12px; font-weight:800; color:#ff9aa9; }
+
+/* empty */
+
+.empty{
+    text-align:center;
+    padding:60px 20px;
+    color:#6e849c;
+    font-size:13px;
+}
+
+.empty .big{ font-size:15px; font-weight:700; color:#9bb2ca; margin-bottom:8px; }
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:1100px){
+    .stats{ grid-template-columns:repeat(2,1fr); }
+}
+
+@media(max-width:860px){
+    .shell{ grid-template-columns:1fr; }
+    .sidebar{
+        position:fixed; z-index:40; width:255px;
+        transform:translateX(-100%); transition:transform .3s ease;
+    }
+    body.nav-open .sidebar{ transform:translateX(0); }
+    body.nav-open::after{
+        content:""; position:fixed; inset:0; z-index:39; background:rgba(0,0,0,.55);
+    }
+    .menu-toggle{ display:flex; align-items:center; justify-content:center; }
+    .main{ padding:18px 16px 34px; }
+}
+
+@media(max-width:560px){
+    .stats{ grid-template-columns:1fr; }
+    .sale-row{ flex-direction:column; align-items:flex-start; gap:10px; }
+    .sale-key{ width:auto; }
+    .amt{ width:100%; }
+    .pay{ width:100%; }
+    .pay .act.pay-btn{ flex:1; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="shell" id="shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="side-brand">
+            <img class="side-logo"
+                 src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                 alt="MailMart">
+            <div class="side-name">Mail<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <span class="nav-label">Store</span>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Dashboard
+            </a>
+
+            <a class="nav-item" href="email-sale.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Sell Email
+            </a>
+
+            <span class="nav-label">Admin</span>
+
+            <a class="nav-item active" href="admin.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+                Sales Review
+            </a>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                Users
+            </a>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <button class="logout-btn" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                Log out
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="head-left">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div>
+                    <div class="page-title">Sales Review</div>
+                    <div class="page-sub">
+                        <span class="live-dot"></span> Live · submitted emails from sellers
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Stats -->
+        <section class="stats">
+            <div class="stat">
+                <div class="lbl">Pending</div>
+                <div class="val amber" id="stPend">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Approved</div>
+                <div class="val blue" id="stAppr">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Paid</div>
+                <div class="val green" id="stPaid">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Total Payout</div>
+                <div class="val green" id="stPayout">$0.00</div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <div class="filters" id="filters">
+            <button class="filter active" data-filter="all">All <span class="c" id="cAll">0</span></button>
+            <button class="filter" data-filter="pending">Pending <span class="c" id="cPend">0</span></button>
+            <button class="filter" data-filter="approved">Approved <span class="c" id="cAppr">0</span></button>
+            <button class="filter" data-filter="paid">Paid <span class="c" id="cPaid">0</span></button>
+            <button class="filter" data-filter="rejected">Rejected <span class="c" id="cRej">0</span></button>
+        </div>
+
+        <!-- List -->
+        <section class="list" id="list">
+            <div class="empty">
+                <div class="big">No submissions yet</div>
+                Emails submitted through the Sell Email page will appear here live.
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+getFirestore,
+collection,
+onSnapshot,
+query,
+orderBy,
+doc,
+updateDoc,
+serverTimestamp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+authDomain:"mailmartz.firebaseapp.com",
+projectId:"mailmartz",
+storageBucket:"mailmartz.firebasestorage.app",
+messagingSenderId:"802413654231",
+appId:"1:802413654231:web:4e5d87d23d6a2317724092",
+measurementId:"G-LKLEWS7RPF"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+/* ------------------------------------------------------------------
+   AUTH GUARD
+   Requires a signed-in user. For production, also verify the user is
+   an admin (e.g. Firebase custom claims, or an /admins/{uid} doc).
+   Example:
+     const snap = await getDoc(doc(db,"admins",user.uid));
+     if(!snap.exists()){ window.location.href="dashboard.html"; return; }
+------------------------------------------------------------------ */
+onAuthStateChanged(auth,(user)=>{
+    if(!user){
+        window.location.href="login.html";
+    }
+});
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+    try{ await signOut(auth); window.location.href="login.html"; }
+    catch(e){ console.error(e); }
+});
+
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.toggle("nav-open");
+});
+document.querySelectorAll(".nav-item").forEach(item=>{
+    item.addEventListener("click",()=>document.body.classList.remove("nav-open"));
+});
+
+/* ------------------------------------------------------------------
+   LIVE SALES FEED
+------------------------------------------------------------------ */
+const listEl=document.getElementById("list");
+
+let allSales=[];          // full snapshot
+let saleData={};          // id -> {password,...} kept in memory (not in DOM)
+let currentFilter="all";
+
+const q=query(collection(db,"sales"),orderBy("createdAt","desc"));
+
+onSnapshot(q,(snap)=>{
+
+    allSales=[];
+    saleData={};
+
+    snap.forEach(d=>{
+        const data=d.data();
+        allSales.push({ id:d.id, ...data });
+        saleData[d.id]={ password:data.password||"" };
+    });
+
+    render();
+
+},{err=>{
+    console.error("Firestore read failed:",err);
+    listEl.innerHTML=
+        '<div class="empty"><div class="big">Could not load sales</div>'+
+        'Check your Firestore security rules and that you are signed in.</div>';
+}});
+
+/* ---------- Render ---------- */
+
+function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g,c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    }[c]));
+}
+
+function fmtTime(ts){
+    if(!ts) return "just now";
+    let d=ts;
+    if(ts&&typeof ts.toDate==="function") d=ts.toDate();
+    try{ return d.toLocaleString(); }catch(e){ return "just now"; }
+}
+
+function pillClass(status){
+    return ({pending:"pend",approved:"appr",paid:"paid",rejected:"rej"})[status]||"pend";
+}
+
+function statusLabel(status){
+    return ({pending:"Pending",approved:"Approved",paid:"Paid",rejected:"Rejected"})[status]||"Pending";
+}
+
+function render(){
+
+    /* stats */
+    let pend=0,appr=0,paid=0,rej=0,payout=0;
+    allSales.forEach(s=>{
+        if(s.status==="pending") pend++;
+        else if(s.status==="approved") appr++;
+        else if(s.status==="paid"){ paid++; payout+=(Number(s.payout)||0); }
+        else if(s.status==="rejected") rej++;
+    });
+
+    document.getElementById("stPend").textContent=pend;
+    document.getElementById("stAppr").textContent=appr;
+    document.getElementById("stPaid").textContent=paid;
+    document.getElementById("stPayout").textContent="$"+payout.toFixed(2);
+
+    document.getElementById("cAll").textContent=allSales.length;
+    document.getElementById("cPend").textContent=pend;
+    document.getElementById("cAppr").textContent=appr;
+    document.getElementById("cPaid").textContent=paid;
+    document.getElementById("cRej").textContent=rej;
+
+    /* filter */
+    const rows=allSales.filter(s=>currentFilter==="all"||s.status===currentFilter);
+
+    if(rows.length===0){
+        listEl.innerHTML=
+            '<div class="empty"><div class="big">Nothing here</div>'+
+            'No sales match this filter.</div>';
+        return;
+    }
+
+    listEl.innerHTML=rows.map(cardHtml).join("");
+}
+
+function cardHtml(s){
+
+    const subs=(s.submissions||[]);
+
+    const subsHtml=subs.length
+        ? subs.map(sub=>
+            '<div class="sub-item">'+
+                '<span class="sub-badge">'+escapeHtml(sub.category||"Note")+'</span>'+
+                '<div class="sub-body">'+
+                    '<div class="sub-text">'+escapeHtml(sub.text||"")+'</div>'+
+                    '<div class="sub-time">'+(sub.time?escapeHtml(sub.time):"")+'</div>'+
+                '</div>'+
+            '</div>'
+          ).join("")
+        : '<div class="subs-empty">No additional submissions yet.</div>';
+
+    let actions="";
+
+    if(s.status==="pending"){
+        actions+='<button class="act approve" data-action="approve" data-id="'+s.id+'">Approve</button>';
+        actions+='<button class="act reject" data-action="reject" data-id="'+s.id+'">Reject</button>';
+    }
+
+    if(s.status==="pending"||s.status==="approved"){
+        actions+=
+            '<div class="pay">'+
+                '<input class="amt" id="amt-'+s.id+'" type="number" placeholder="Amount $" min="0" step="0.01">'+
+                '<button class="act pay-btn" data-action="pay" data-id="'+s.id+'">Send Payment</button>'+
+            '</div>';
+    }
+
+    if(s.status==="paid"){
+        actions+='<span class="paid-note">✓ Paid $'+(Number(s.payout)||0).toFixed(2)+'</span>';
+    }
+
+    if(s.status==="rejected"){
+        actions+='<span class="rej-note">✕ Rejected</span>';
+    }
+
+    return ''+
+    '<div class="sale-card" data-id="'+s.id+'">'+
+        '<div class="sale-head">'+
+            '<div>'+
+                '<div class="sale-email">'+escapeHtml(s.email||"")+'</div>'+
+                '<div class="sale-meta">Submitted '+fmtTime(s.createdAt)+'</div>'+
+            '</div>'+
+            '<span class="pill '+pillClass(s.status)+'">'+statusLabel(s.status)+'</span>'+
+        '</div>'+
+
+        '<div class="sale-row">'+
+            '<span class="sale-key">Password</span>'+
+            '<span class="sale-val">'+
+                '<span class="pw" data-shown="0">••••••••••</span>'+
+                '<button class="mini-btn" data-action="togglepw" data-id="'+s.id+'">Show</button>'+
+            '</span>'+
+        '</div>'+
+
+        '<div class="subs-title">Additional submissions <span class="num">'+subs.length+'</span></div>'+
+        '<div class="subs">'+subsHtml+'</div>'+
+
+        '<div class="actions">'+actions+'</div>'+
+    '</div>';
+}
+
+/* ---------- Filters ---------- */
+
+document.getElementById("filters").addEventListener("click",(e)=>{
+    const btn=e.target.closest(".filter");
+    if(!btn) return;
+    document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter=btn.dataset.filter;
+    render();
+});
+
+/* ---------- Actions (event delegation) ---------- */
+
+listEl.addEventListener("click",async(e)=>{
+
+    const btn=e.target.closest("[data-action]");
+    if(!btn) return;
+
+    const id=btn.dataset.id;
+    const action=btn.dataset.action;
+
+    if(action==="togglepw"){
+        const card=e.target.closest(".sale-card");
+        const span=card.querySelector(".pw");
+        const showBtn=card.querySelector('[data-action="togglepw"]');
+        if(span.dataset.shown==="1"){
+            span.textContent="••••••••••";
+            span.dataset.shown="0";
+            showBtn.textContent="Show";
+        }else{
+            span.textContent=saleData[id]?saleData[id].password:"";
+            span.dataset.shown="1";
+            showBtn.textContent="Hide";
+        }
+        return;
+    }
+
+    if(action==="approve"){
+        await updateDoc(doc(db,"sales",id),{ status:"approved", updatedAt:serverTimestamp() });
+        return;
+    }
+
+    if(action==="reject"){
+        await updateDoc(doc(db,"sales",id),{ status:"rejected", updatedAt:serverTimestamp() });
+        return;
+    }
+
+    if(action==="pay"){
+        const amtInput=document.getElementById("amt-"+id);
+        const amount=parseFloat(amtInput.value);
+        if(!amount||amount<=0){
+            alert("Enter a valid payment amount.");
+            amtInput.focus();
+            return;
+        }
+        if(!confirm("Send payment of $"+amount.toFixed(2)+" for this email?")) return;
+        await updateDoc(doc(db,"sales",id),{
+            status:"paid",
+            payout:amount,
+            paidAt:serverTimestamp(),
+            updatedAt:serverTimestamp()
+        });
+        return;
+    }
+
+});
+
+</script>
+
+</body>
+</html>
