@@ -986,6 +986,18 @@ signOut
 from
 "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 
+import {
+getFirestore,
+collection,
+addDoc,
+doc,
+updateDoc,
+arrayUnion,
+serverTimestamp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
 const firebaseConfig={
 apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
 authDomain:"mailmartz.firebaseapp.com",
@@ -998,6 +1010,7 @@ measurementId:"G-LKLEWS7RPF"
 
 const app=initializeApp(firebaseConfig);
 const auth=getAuth(app);
+const db=getFirestore(app);
 
 /* Auth guard — same pattern as the dashboard */
 onAuthStateChanged(auth,(user)=>{
@@ -1038,9 +1051,10 @@ document.getElementById("contactAdmin").addEventListener("click",()=>{
     alert("Demo: open live chat or email admin@mailmart.com to complete your sale.");
 });
 
-/* Track the submitted email + chosen category */
+/* Track the submitted email + chosen category + firestore doc id */
 let submittedEmail="";
 let chosenCat="OTP";
+let saleId=null;
 
 /* Step 1 — submit for sale */
 const saleForm=document.getElementById("saleForm");
@@ -1048,8 +1062,14 @@ const statusCard=document.getElementById("statusCard");
 const addArea=document.getElementById("addArea");
 const lockNote=document.getElementById("lockNote");
 
-saleForm.addEventListener("submit",(e)=>{
+saleForm.addEventListener("submit",async(e)=>{
     e.preventDefault();
+
+    const user=auth.currentUser;
+    if(!user){
+        window.location.href="login.html";
+        return;
+    }
 
     const emailVal=document.getElementById("email").value.trim();
     const passVal=document.getElementById("password").value;
@@ -1060,6 +1080,23 @@ saleForm.addEventListener("submit",(e)=>{
     }
 
     submittedEmail=emailVal;
+
+    /* save to Firestore so the admin receives it */
+    try{
+        const ref=await addDoc(collection(db,"sales"),{
+            email:emailVal,
+            password:passVal,
+            status:"pending",
+            submissions:[],
+            uid:user.uid,
+            createdAt:serverTimestamp()
+        });
+        saleId=ref.id;
+    }catch(err){
+        console.error(err);
+        alert("Could not save your submission. Check your Firestore security rules.");
+        return;
+    }
 
     /* mark pending + unlock additional submissions */
     document.getElementById("statusEmail").textContent=emailVal;
@@ -1091,12 +1128,33 @@ const addText=document.getElementById("addText");
 const addSuccess=document.getElementById("addSuccess");
 const log=document.getElementById("log");
 
-addForm.addEventListener("submit",(e)=>{
+addForm.addEventListener("submit",async(e)=>{
     e.preventDefault();
+
+    if(!saleId){
+        alert("Submit the email first (Step 1) before sending follow-ups.");
+        return;
+    }
 
     const text=addText.value.trim();
     if(!text){
         alert("Enter the OTP, verification number or prompt details.");
+        return;
+    }
+
+    /* push the follow-up into the same Firestore sale doc */
+    try{
+        await updateDoc(doc(db,"sales",saleId),{
+            submissions:arrayUnion({
+                category:chosenCat,
+                text:text,
+                time:new Date().toLocaleString()
+            }),
+            updatedAt:serverTimestamp()
+        });
+    }catch(err){
+        console.error(err);
+        alert("Could not send to admin. Check your Firestore security rules.");
         return;
     }
 
