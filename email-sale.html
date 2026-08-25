@@ -1009,6 +1009,9 @@ getFirestore,
 collection,
 addDoc,
 doc,
+getDocs,
+query,
+where,
 updateDoc,
 onSnapshot,
 arrayUnion,
@@ -1035,7 +1038,10 @@ const db=getFirestore(app);
 onAuthStateChanged(auth,(user)=>{
     if(!user){
         window.location.href="login.html";
+        return;
     }
+    /* reload the seller's existing sale after a refresh / revisit */
+    restoreLatestSale(user.uid);
 });
 
 /* Logout */
@@ -1131,8 +1137,6 @@ saleForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    submittedEmail=emailVal;
-
     /* save to Firestore so the admin receives it */
     try{
         const ref=await addDoc(collection(db,"sales"),{
@@ -1143,14 +1147,11 @@ saleForm.addEventListener("submit",async(e)=>{
             uid:user.uid,
             createdAt:serverTimestamp()
         });
-        saleId=ref.id;
-
-        /* listen for admin status changes on this sale */
-        if(unsubSale) unsubSale();
-        unsubSale=onSnapshot(doc(db,"sales",saleId),(snap)=>{
-            if(snap.exists()){
-                setStatus(snap.data().status||"pending");
-            }
+        loadSale(ref.id,{
+            email:emailVal,
+            password:passVal,
+            status:"pending",
+            submissions:[]
         });
     }catch(err){
         console.error(err);
@@ -1158,18 +1159,66 @@ saleForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* mark pending + unlock additional submissions */
-    document.getElementById("statusEmail").textContent=emailVal;
+    alert("Submitted! Your email is now Pending. Stay online and send any Google OTP / prompt below.");
+});
+
+/* Restore the seller's latest sale (survives refresh / revisit) */
+async function restoreLatestSale(uid){
+    try{
+        const snap=await getDocs(query(collection(db,"sales"),where("uid","==",uid)));
+        let best=null;
+        snap.forEach(d=>{
+            const data=d.data();
+            const t=(data.createdAt&&data.createdAt.toMillis)?data.createdAt.toMillis():0;
+            if(!best||t>best.t) best={id:d.id,data,t};
+        });
+        if(best) loadSale(best.id,best.data);
+    }catch(err){
+        console.error("Could not restore sale:",err);
+    }
+}
+
+/* Load a sale into the UI and keep it synced with admin actions */
+function loadSale(id,data){
+    saleId=id;
+    submittedEmail=data.email||"";
+
+    document.getElementById("statusEmail").textContent=submittedEmail;
     statusCard.classList.add("show");
     addArea.classList.add("unlocked");
     lockNote.style.display="none";
 
-    /* reset the submission log for this email */
-    document.getElementById("log").innerHTML=
-        '<div class="log-empty" id="logEmpty">No additional submissions yet for '+emailVal+'.</div>';
+    /* repopulate the follow-up log from saved submissions */
+    const subs=data.submissions||[];
+    if(subs.length){
+        log.innerHTML="";
+        subs.forEach(sub=>{
+            const item=document.createElement("div");
+            item.className="log-item";
+            item.innerHTML=
+                '<span class="tagbadge">'+escapeHtml(sub.category||"Note")+'</span>'+
+                '<div class="body">'+
+                    '<div class="txt">'+escapeHtml(sub.text||"")+'</div>'+
+                    '<div class="time">For '+escapeHtml(submittedEmail)+' · '+(sub.time?escapeHtml(sub.time):"")+'</div>'+
+                '</div>';
+            log.appendChild(item);
+        });
+    }else{
+        log.innerHTML='<div class="log-empty" id="logEmpty">No additional submissions yet for '+escapeHtml(submittedEmail)+'.</div>';
+    }
 
-    alert("Submitted! Your email is now Pending. Stay online and send any Google OTP / prompt below.");
-});
+    setStatus(data.status||"pending");
+
+    /* live updates from admin */
+    if(unsubSale) unsubSale();
+    unsubSale=onSnapshot(doc(db,"sales",id),(snap)=>{
+        if(snap.exists()){
+            const sd=snap.data();
+            if(sd.email) submittedEmail=sd.email;
+            setStatus(sd.status||"pending");
+        }
+    });
+}
 
 /* Category selector */
 document.querySelectorAll(".cat").forEach(c=>{
@@ -1251,5 +1300,5 @@ function escapeHtml(s){
 
 </script>
 
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30994ef6fa26fa0',t:'MTc4NzY1MDI2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
