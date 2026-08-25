@@ -1,55 +1,856 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#06101f">
-  <meta name="description" content="MailMart administration workspace.">
-  <title>MailMart — Admin</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <style>
-    :root{--bg:#030a15;--panel:#08172a;--panel2:#0b1e36;--text:#eef8ff;--muted:#8ca5bd;--line:rgba(153,204,244,.12);--cyan:#2bdbff;--blue:#4779ff;--green:#2bd99b;--amber:#ffd15c;--red:#ff718b;--shadow:0 20px 60px rgba(0,0,0,.27)}*{box-sizing:border-box;margin:0;padding:0}body{min-height:100vh;color:var(--text);font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 92% 0,rgba(50,118,255,.17),transparent 28rem),radial-gradient(circle at 0 100%,rgba(0,218,255,.1),transparent 28rem),var(--bg)}button,input,select{font:inherit}button{cursor:pointer}a{text-decoration:none;color:inherit}.grid-bg{position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(87,188,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(87,188,255,.025) 1px,transparent 1px);background-size:50px 50px;mask-image:linear-gradient(#000,transparent 90%)}
-    .side{position:fixed;inset:0 auto 0 0;z-index:20;width:258px;padding:22px 14px;background:rgba(3,12,26,.93);border-right:1px solid var(--line);backdrop-filter:blur(19px);display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:11px;padding:4px 10px 28px;font-size:20px;font-weight:800}.mark{height:39px;width:39px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#4579ff,#22dfff);box-shadow:0 8px 24px rgba(28,172,255,.35)}.brand>span{background:linear-gradient(90deg,#fff,#63e8ff);-webkit-background-clip:text;color:transparent}.tag{margin-left:2px;padding:4px 7px;border-radius:7px;background:rgba(43,219,255,.1);color:#7deaff;font-size:8px;letter-spacing:1px}.nav-label{padding:0 12px;margin:12px 0 9px;color:#5d7791;font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase}.nav{display:grid;gap:4px}.nav button{width:100%;display:flex;align-items:center;gap:13px;padding:13px;border:1px solid transparent;border-radius:13px;background:transparent;color:#90a8c0;text-align:left;font-size:12px;font-weight:600;transition:.2s}.nav button i{width:18px;text-align:center;font-size:14px}.nav button:hover{background:rgba(77,178,255,.07);color:#eaf7ff}.nav button.active{border-color:rgba(55,211,255,.15);color:#fff;background:linear-gradient(90deg,rgba(54,109,255,.25),rgba(0,218,255,.08))}.nav button.active i{color:var(--cyan)}.admin-profile{margin-top:auto;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03)}.profile-row{display:flex;align-items:center;gap:10px}.profile-icon{height:36px;width:36px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#604dff,#2bd9ff);font-size:13px}.profile-row strong{display:block;font-size:11px}.profile-row small{display:block;margin-top:3px;color:#7290ab;font-size:9px}.end-session{width:100%;margin-top:11px;padding:10px;border:0;border-radius:10px;color:#ff8da0;background:rgba(255,105,135,.08);font-size:10px;font-weight:700}.end-session:hover{background:rgba(255,105,135,.15)}
-    .main{min-height:100vh;margin-left:258px}.top{position:sticky;top:0;z-index:10;height:76px;padding:0 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(153,204,244,.08);background:rgba(3,10,21,.75);backdrop-filter:blur(16px)}.top small{display:block;color:#89a2ba;font-size:10px}.top h1{margin-top:3px;font-size:16px}.top-actions{display:flex;align-items:center;gap:10px}.icon{position:relative;width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#bcd2e5}.icon:hover{border-color:rgba(43,219,255,.4);color:#fff}.menu{display:none}.dot{position:absolute;right:9px;top:9px;width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 11px var(--cyan)}.content{max-width:1500px;margin:auto;padding:31px 32px 50px}.security-note{display:flex;align-items:center;gap:10px;margin-bottom:21px;padding:12px 14px;border:1px solid rgba(255,209,92,.2);border-radius:13px;color:#e6ca7f;background:rgba(255,193,50,.055);font-size:10px;line-height:1.55}.security-note i{color:var(--amber);font-size:14px}.security-note strong{color:#ffe3a0}.section{display:none}.section.active{display:block}.heading{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:23px}.heading h2{font-size:27px;letter-spacing:-1px}.heading p{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.6}.button{padding:12px 15px;border:0;border-radius:11px;background:linear-gradient(135deg,#4677ff,#17d0f1);color:#fff;font-size:11px;font-weight:800;box-shadow:0 10px 26px rgba(37,130,255,.25)}.button:hover{transform:translateY(-2px)}.button i{margin-right:7px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.stat{min-height:142px;position:relative;overflow:hidden;padding:19px;border:1px solid var(--line);border-radius:19px;background:linear-gradient(145deg,rgba(10,30,58,.83),rgba(4,14,29,.85));box-shadow:var(--shadow)}.stat:after{content:"";position:absolute;width:108px;height:108px;right:-48px;bottom:-55px;border:1px solid rgba(58,216,255,.13);border-radius:50%}.stat-label{display:flex;align-items:center;gap:7px;color:#a5bdd2;font-size:10px;font-weight:600}.stat-label i{color:var(--cyan)}.stat-value{margin-top:19px;font-size:26px;font-weight:800}.stat-note{position:absolute;bottom:18px;color:#718ba5;font-size:9px}.layout{display:grid;grid-template-columns:1.45fr .8fr;gap:16px;margin-top:17px}.card{overflow:hidden;border:1px solid var(--line);border-radius:19px;background:linear-gradient(145deg,rgba(8,27,53,.76),rgba(4,14,29,.84));box-shadow:var(--shadow)}.card-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid rgba(153,204,244,.08)}.card-head h3{font-size:13px}.link{border:0;background:transparent;color:var(--cyan);font-size:10px;font-weight:700}.link:hover{text-decoration:underline}.empty{padding:40px 20px;text-align:center}.empty-icon{height:47px;width:47px;margin:0 auto 12px;border-radius:15px;display:grid;place-items:center;background:rgba(43,219,255,.08);color:var(--cyan);font-size:18px}.empty h4{font-size:12px}.empty p{max-width:270px;margin:7px auto 0;color:#7892aa;font-size:10px;line-height:1.65}.health{padding:18px 20px}.health-row{display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid rgba(153,204,244,.07)}.health-row:last-child{border:0}.health-icon{width:32px;height:32px;display:grid;place-items:center;border-radius:10px;color:var(--green);background:rgba(43,217,155,.08);font-size:12px}.health-row div{flex:1}.health-row strong{display:block;font-size:10px}.health-row small{display:block;margin-top:4px;color:#738fa8;font-size:9px}.pill{padding:5px 7px;border-radius:7px;color:#7debb9;background:rgba(43,217,155,.08);font-size:8px;font-weight:800}.table-card{border:1px solid var(--line);border-radius:19px;overflow:hidden;background:linear-gradient(145deg,rgba(8,27,53,.76),rgba(4,14,29,.84));box-shadow:var(--shadow)}.toolbar{padding:16px 19px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(153,204,244,.08)}.search{flex:1;position:relative}.search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#7490a9;font-size:11px}.search input,.toolbar select{width:100%;padding:10px 11px 10px 32px;border:1px solid rgba(153,204,244,.13);border-radius:10px;outline:0;background:rgba(255,255,255,.035);color:#dcebf6;font-size:10px}.toolbar select{width:auto;padding-left:11px}.search input:focus,.toolbar select:focus{border-color:var(--cyan)}.table-wrap{overflow-x:auto}.table{width:100%;border-collapse:collapse;min-width:650px}.table th{text-align:left;padding:13px 19px;color:#68829c;background:rgba(255,255,255,.018);font-size:9px;letter-spacing:.5px;text-transform:uppercase}.table td{padding:15px 19px;border-top:1px solid rgba(153,204,244,.07);color:#a7bfd2;font-size:10px}.table-empty{padding:38px!important;text-align:center!important;color:#7893aa!important}.mini-pending{color:#ffe09a;background:rgba(255,209,92,.09)}.mini{display:inline-flex;padding:5px 7px;border-radius:7px;font-size:8px;font-weight:800}.settings{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.setting{padding:21px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(145deg,rgba(8,27,53,.76),rgba(4,14,29,.84))}.setting i{color:var(--cyan);font-size:19px}.setting h3{margin-top:15px;font-size:13px}.setting p{margin:7px 0 15px;color:#839db6;font-size:10px;line-height:1.6}.outline{padding:10px 12px;border:1px solid rgba(43,219,255,.27);border-radius:9px;background:transparent;color:#83ebff;font-size:10px;font-weight:700}.outline:hover{background:rgba(43,219,255,.07)}.toast{position:fixed;z-index:50;right:22px;bottom:22px;display:flex;gap:10px;align-items:center;max-width:calc(100vw - 30px);padding:14px 16px;border:1px solid rgba(43,219,255,.22);border-radius:13px;background:#0a1d36;box-shadow:var(--shadow);color:#e3f2fc;font-size:10px;transform:translateY(130px);opacity:0;transition:.3s}.toast.show{opacity:1;transform:translateY(0)}.toast i{color:var(--cyan)}
-    @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}}@media(max-width:840px){.side{width:270px;transform:translateX(-100%);transition:.25s}.side.open{transform:translateX(0)}.main{margin-left:0}.menu{display:grid;place-items:center}.top{height:68px;padding:0 18px}.content{padding:24px 17px}.heading{align-items:flex-start;flex-direction:column}.heading .button{width:100%}}@media(max-width:520px){.content{padding:20px 12px}.top h1{font-size:14px}.top-actions .icon{width:38px;height:38px}.heading h2{font-size:24px}.stats{gap:9px}.stat{min-height:125px;padding:15px;border-radius:16px}.stat-value{margin-top:15px;font-size:22px}.stat-note{bottom:14px;font-size:8px}.card,.table-card{border-radius:16px}.toolbar{flex-wrap:wrap;padding:13px}.toolbar select{width:100%}.settings{grid-template-columns:1fr}.toast{right:12px;bottom:12px}}
-  </style>
-</head>
-<body class="auth-loading"><div class="auth-gate" id="authGate"><div class="gate-box"><div class="gate-spinner"></div><h2>Verifying administrator access</h2><p>Please wait while we securely check your MailMart session.</p></div></div><div class="grid-bg"></div>
-<aside class="side" id="side"><a class="brand" href="index.html"><span class="mark"><i class="fa-solid fa-envelope"></i></span><span>MailMart</span><b class="tag">ADMIN</b></a><div class="nav-label">Management</div><nav class="nav"><button class="active" data-view="overview"><i class="fa-solid fa-chart-pie"></i>Overview</button><button data-view="requests"><i class="fa-solid fa-inbox"></i>Request queue</button><button data-view="withdrawals"><i class="fa-solid fa-money-bill-transfer"></i>Withdrawals</button><button data-view="users"><i class="fa-solid fa-users"></i>Users</button></nav><div class="nav-label">System</div><nav class="nav"><button data-view="settings"><i class="fa-solid fa-gear"></i>Settings</button><button data-message="Audit logs will be available after the backend is connected."><i class="fa-solid fa-shield-halved"></i>Audit log</button></nav><div class="admin-profile"><div class="profile-row"><div class="profile-icon"><i class="fa-solid fa-user-shield"></i></div><div><strong>Administrator</strong><small>Role verification required</small></div></div><button class="end-session" id="signOut"><i class="fa-solid fa-right-from-bracket"></i> End session</button></div></aside>
-<main class="main"><header class="top"><button class="icon menu" id="menu" aria-label="Open navigation"><i class="fa-solid fa-bars"></i></button><div><small>MailMart control centre</small><h1 id="topTitle">Admin overview</h1></div><div class="top-actions"><button class="icon" id="notifications" aria-label="Notifications"><i class="fa-solid fa-bell"></i><span class="dot"></span></button><button class="icon" data-message="Administrator profile settings will be available shortly." aria-label="Administrator profile"><i class="fa-solid fa-user-shield"></i></button></div></header>
-<div class="content"><div class="security-note"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>Administrator access must be enforced by your backend.</strong> This frontend is a visual workspace only. Protect all user, balance, request and payout actions with Firebase security rules and server-side admin-role checks.</div></div>
-<section class="section active" id="overview"><div class="heading"><div><h2>Good day, Administrator</h2><p>Monitor request activity, account health and platform performance.</p></div><button class="button" data-view="requests"><i class="fa-solid fa-inbox"></i>Open request queue</button></div><div class="stats"><article class="stat"><div class="stat-label"><i class="fa-solid fa-users"></i>Total users</div><div class="stat-value">0</div><div class="stat-note">Synced from user records</div></article><article class="stat"><div class="stat-label"><i class="fa-solid fa-clock"></i>Pending requests</div><div class="stat-value">0</div><div class="stat-note">Awaiting a review decision</div></article><article class="stat"><div class="stat-label"><i class="fa-solid fa-wallet"></i>Pending withdrawals</div><div class="stat-value">0</div><div class="stat-note">Awaiting payout processing</div></article><article class="stat"><div class="stat-label"><i class="fa-solid fa-naira-sign"></i>Payouts this month</div><div class="stat-value">₦0</div><div class="stat-note">Processed payment volume</div></article></div><div class="layout"><article class="card"><div class="card-head"><h3>Latest requests</h3><button class="link" data-view="requests">View queue</button></div><div class="empty"><div class="empty-icon"><i class="fa-solid fa-inbox"></i></div><h4>No requests to review</h4><p>New authorised user requests will show here when your database connection is enabled.</p></div></article><article class="card"><div class="card-head"><h3>System health</h3><button class="link" data-message="Connect live monitoring to view system health.">Refresh</button></div><div class="health"><div class="health-row"><span class="health-icon"><i class="fa-solid fa-database"></i></span><div><strong>Database connection</strong><small>Awaiting Firebase configuration</small></div><span class="pill">Setup</span></div><div class="health-row"><span class="health-icon"><i class="fa-solid fa-shield-halved"></i></span><div><strong>Admin role checks</strong><small>Configure before publishing</small></div><span class="pill">Setup</span></div><div class="health-row"><span class="health-icon"><i class="fa-solid fa-bell"></i></span><div><strong>Notifications</strong><small>Optional service integration</small></div><span class="pill">Setup</span></div></div></article></div></section>
-<section class="section" id="requests"><div class="heading"><div><h2>Request queue</h2><p>Review authorised user requests. Never request passwords, recovery codes or authentication codes.</p></div><button class="button" data-message="Export becomes available after the database is connected."><i class="fa-solid fa-file-export"></i>Export list</button></div><div class="table-card"><div class="toolbar"><div class="search"><i class="fa-solid fa-magnifying-glass"></i><input id="requestSearch" placeholder="Search by request ID or contact email"></div><select aria-label="Filter request status"><option>All statuses</option><option>Pending</option><option>Approved</option><option>Rejected</option></select></div><div class="table-wrap"><table class="table"><thead><tr><th>Request</th><th>Contact</th><th>Type</th><th>Submitted</th><th>Status</th><th>Action</th></tr></thead><tbody id="requestRows"><tr><td colspan="6" class="table-empty"><i class="fa-solid fa-inbox"></i> Loading request records…</td></tr></tbody></table></div></div></section>
-<section class="section" id="withdrawals"><div class="heading"><div><h2>Withdrawal review</h2><p>Review account eligibility and payment details using a secure backend workflow.</p></div><button class="button" data-message="Payout export becomes available after a secure payment workflow is connected."><i class="fa-solid fa-file-export"></i>Export payouts</button></div><div class="table-card"><div class="toolbar"><div class="search"><i class="fa-solid fa-magnifying-glass"></i><input placeholder="Search withdrawals"></div><select aria-label="Filter withdrawal status"><option>All statuses</option><option>Pending</option><option>Processing</option><option>Paid</option><option>Declined</option></select></div><div class="table-wrap"><table class="table"><thead><tr><th>Reference</th><th>User</th><th>Amount</th><th>Requested</th><th>Status</th><th>Action</th></tr></thead><tbody><tr><td colspan="6" class="table-empty"><i class="fa-solid fa-wallet"></i> No withdrawal requests to process.</td></tr></tbody></table></div></div></section>
-<section class="section" id="users"><div class="heading"><div><h2>User management</h2><p>Search users, view account states and apply account actions only through authorised server-side controls.</p></div><button class="button" data-message="User invitation tools will be available after the backend is connected."><i class="fa-solid fa-user-plus"></i>Invite user</button></div><div class="table-card"><div class="toolbar"><div class="search"><i class="fa-solid fa-magnifying-glass"></i><input placeholder="Search users by name, email or ID"></div><select aria-label="Filter user status"><option>All users</option><option>Active</option><option>Suspended</option></select></div><div class="table-wrap"><table class="table"><thead><tr><th>User</th><th>Email</th><th>Balance</th><th>Joined</th><th>Status</th><th>Action</th></tr></thead><tbody><tr><td colspan="6" class="table-empty"><i class="fa-solid fa-users"></i> No user records loaded. Configure secure database access first.</td></tr></tbody></table></div></div></section>
-<section class="section" id="settings"><div class="heading"><div><h2>Platform settings</h2><p>Configure platform policies and integrations from a protected server-side settings service.</p></div></div><div class="settings"><article class="setting"><i class="fa-solid fa-shield-halved"></i><h3>Roles & permissions</h3><p>Restrict this console to verified administrators using custom claims and server-enforced Firebase security rules.</p><button class="outline" data-message="Configure administrator roles in your authentication backend, not in frontend code.">Role guidance</button></article><article class="setting"><i class="fa-solid fa-envelope-circle-check"></i><h3>Request policy</h3><p>Set eligibility requirements, review instructions and user-facing policy text in your secure configuration.</p><button class="outline" data-message="Connect a protected settings collection to manage request policy.">Manage policy</button></article><article class="setting"><i class="fa-solid fa-money-bill-transfer"></i><h3>Payout rules</h3><p>Define withdrawal limits, review requirements and payout provider settings through protected backend functions.</p><button class="outline" data-message="Connect a secure payment provider and backend validation before enabling payouts.">Payout setup</button></article><article class="setting"><i class="fa-solid fa-bell"></i><h3>Notifications</h3><p>Connect email or push alerts so administrators are notified of requests requiring a review.</p><button class="outline" data-message="Connect your notification service to enable administrator alerts.">Notification setup</button></article></div></section>
-</div></main><div class="toast" id="toast"><i class="fa-solid fa-circle-info"></i><span id="toastText"></span></div>
-<script type="module">
-  import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js';
-  import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js';
-  import { getFirestore, collection, onSnapshot, doc, updateDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js';
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  const firebaseConfig={apiKey:'AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE',authDomain:'mailmartz.firebaseapp.com',projectId:'mailmartz',storageBucket:'mailmartz.firebasestorage.app',messagingSenderId:'802413654231',appId:'1:802413654231:web:4e5d87d23d6a2317724092',measurementId:'G-LKLEWS7RPF'};
-  const ADMIN_EMAILS=new Set(['beniwealth70@gmail.com','baasituoppor01@gmail.com']);
-  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-  const currency=new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',maximumFractionDigits:0});
-  const $=id=>document.getElementById(id); const escapeHTML=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-  const when=value=>{const date=value?.toDate?.()|| (value ? new Date(value) : null);return date&&!Number.isNaN(date.valueOf())?date.toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'}):'—'};
-  const empty=(message,icon='fa-inbox')=>`<tr><td colspan="6" class="table-empty"><i class="fa-solid ${icon}"></i> ${escapeHTML(message)}</td></tr>`;
-  function adminToast(message){const t=$('toast'),text=$('toastText');text.textContent=message;t.classList.add('show');clearTimeout(window.adminToastTimer);window.adminToastTimer=setTimeout(()=>t.classList.remove('show'),3800)}
-  function renderUsers(docs){$('userCount').textContent=docs.length;$('userRows').innerHTML=docs.length?docs.map(({id,data})=>`<tr><td>${escapeHTML(data.displayName||data.username||'User')}</td><td>${escapeHTML(data.email||'—')}</td><td>${currency.format(Number(data.balance||0))}</td><td>${when(data.createdAt)}</td><td><span class="mini ${data.status==='suspended'?'mini-pending':''}">${escapeHTML(data.status||'active')}</span></td><td><button class="link" data-user-id="${escapeHTML(id)}">View</button></td></tr>`).join(''):empty('No user records found.','fa-users')}
-  function renderRequests(docs){const ordered=[...docs].sort((a,b)=>((b.data.createdAt?.seconds||0)-(a.data.createdAt?.seconds||0)));const pending=ordered.filter(x=>(x.data.status||'pending')==='pending');$('pendingRequestCount').textContent=pending.length;$('requestRows').innerHTML=ordered.length?ordered.map(({id,data})=>{const status=(data.status||'pending').toLowerCase();return `<tr><td>#${escapeHTML(id.slice(0,8).toUpperCase())}</td><td>${escapeHTML(data.contactEmail||data.email||data.userEmail||'—')}</td><td>${escapeHTML(data.type||'Request')}</td><td>${when(data.createdAt)}</td><td><span class="mini ${status==='pending'?'mini-pending':''}">${escapeHTML(status)}</span></td><td>${status==='pending'?`<button class="link" data-review="approved" data-request-id="${escapeHTML(id)}">Approve</button> <button class="link" data-review="rejected" data-request-id="${escapeHTML(id)}">Reject</button>`:'—'}</td></tr>`}).join(''):empty('No request records to review.');$('latestRequests').innerHTML=ordered.length?ordered.slice(0,4).map(({id,data})=>`<div class="health-row"><span class="health-icon"><i class="fa-solid fa-inbox"></i></span><div><strong>${escapeHTML(data.type||'Request')}</strong><small>${escapeHTML(data.contactEmail||data.email||'No contact')} · ${when(data.createdAt)}</small></div><span class="pill">${escapeHTML(data.status||'pending')}</span></div>`).join(''):`<div class="empty"><div class="empty-icon"><i class="fa-solid fa-inbox"></i></div><h4>No requests to review</h4><p>New authorised user requests will appear here.</p></div>`}
-  function renderWithdrawals(docs){const ordered=[...docs].sort((a,b)=>((b.data.createdAt?.seconds||0)-(a.data.createdAt?.seconds||0)));$('pendingWithdrawalCount').textContent=ordered.filter(x=>(x.data.status||'pending')==='pending').length;const start=new Date();start.setDate(1);start.setHours(0,0,0,0);const paid=ordered.filter(x=>['paid','completed'].includes((x.data.status||'').toLowerCase())&&(x.data.paidAt?.toDate?.()||x.data.updatedAt?.toDate?.()||new Date(0))>=start).reduce((sum,x)=>sum+Number(x.data.amount||0),0);$('monthlyPayouts').textContent=currency.format(paid);$('withdrawalRows').innerHTML=ordered.length?ordered.map(({id,data})=>`<tr><td>#${escapeHTML(id.slice(0,8).toUpperCase())}</td><td>${escapeHTML(data.userEmail||data.email||data.userName||'—')}</td><td>${currency.format(Number(data.amount||0))}</td><td>${when(data.createdAt)}</td><td><span class="mini ${(data.status||'pending')==='pending'?'mini-pending':''}">${escapeHTML(data.status||'pending')}</span></td><td>—</td></tr>`).join(''):empty('No withdrawal requests to process.','fa-wallet')}
-  async function reviewRequest(id,status,user){try{await updateDoc(doc(db,'requests',id),{status,reviewedAt:serverTimestamp(),reviewedBy:user.email});adminToast(`Request ${status}.`)}catch(error){console.error(error);adminToast('Could not update the request. Check your Firebase security rules.')}}
-  onAuthStateChanged(auth,user=>{if(!user){location.replace('login.html');return}const email=(user.email||'').trim().toLowerCase();if(!ADMIN_EMAILS.has(email)){signOut(auth).finally(()=>location.replace('login.html'));return}$('authGate').hidden=true;document.body.classList.remove('auth-loading');document.querySelector('.profile-row strong').textContent=user.displayName||'Administrator';document.querySelector('.profile-row small').textContent=email;onSnapshot(collection(db,'users'),snap=>renderUsers(snap.docs.map(d=>({id:d.id,data:d.data()}))),error=>adminToast('Could not load users: '+error.code));onSnapshot(collection(db,'requests'),snap=>renderRequests(snap.docs.map(d=>({id:d.id,data:d.data()}))),error=>{console.error(error);$('requestRows').innerHTML=empty('Unable to load requests. Check Firestore rules.');adminToast('Could not load requests: '+error.code)});onSnapshot(collection(db,'withdrawals'),snap=>renderWithdrawals(snap.docs.map(d=>({id:d.id,data:d.data()}))),error=>{console.error(error);$('withdrawalRows').innerHTML=empty('Unable to load withdrawals. Check Firestore rules.','fa-wallet');adminToast('Could not load withdrawals: '+error.code)});document.addEventListener('click',event=>{const btn=event.target.closest('[data-review]');if(btn)reviewRequest(btn.dataset.requestId,btn.dataset.review,user)});});
-  $('signOut').addEventListener('click',async()=>{try{await signOut(auth);location.replace('login.html')}catch(error){adminToast('Unable to sign out. Please try again.')}});
+<title>Sales Review | MailMart Admin</title>
+
+<meta name="theme-color" content="#020812">
+
+<link
+rel="icon"
+type="image/jpeg"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link
+rel="shortcut icon"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link
+href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+rel="stylesheet"
+>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{ width:100%; min-height:100%; overflow-x:hidden; }
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+
+    background:
+        radial-gradient(circle at 15% 0%,rgba(0,120,255,.17),transparent 35%),
+        radial-gradient(circle at 100% 100%,rgba(0,210,255,.10),transparent 35%),
+        #020812;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+        linear-gradient(rgba(0,190,255,.025) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,190,255,.025) 1px,transparent 1px);
+    background-size:50px 50px;
+}
+
+.shell{
+    position:relative;
+    z-index:1;
+    display:grid;
+    grid-template-columns:255px 1fr;
+    min-height:100vh;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+    padding:26px 18px;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,rgba(9,35,68,.55),rgba(3,13,27,.25));
+    border-right:1px solid rgba(0,205,255,.12);
+    backdrop-filter:blur(8px);
+}
+
+.side-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:4px 6px 26px;
+    border-bottom:1px solid rgba(0,205,255,.10);
+    margin-bottom:22px;
+}
+
+.side-logo{
+    width:42px; height:42px;
+    border-radius:13px;
+    object-fit:cover;
+    box-shadow:0 10px 28px rgba(0,160,255,.25);
+}
+
+.side-name{ font-size:17px; font-weight:800; letter-spacing:-.5px; }
+.side-name span{
+    background:linear-gradient(90deg,#fff,#35ddff,#087cff);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+.nav{ display:flex; flex-direction:column; gap:5px; flex:1; }
+
+.nav-label{
+    color:#5c758e; font-size:9px; font-weight:700;
+    letter-spacing:1.4px; text-transform:uppercase;
+    padding:14px 12px 6px;
+}
+
+.nav-item{
+    display:flex; align-items:center; gap:12px;
+    padding:11px 12px;
+    border-radius:12px;
+    color:#9bb2ca; font-size:12.5px; font-weight:600;
+    text-decoration:none; cursor:pointer; transition:.2s;
+}
+
+.nav-item .ic{ width:17px; height:17px; flex-shrink:0; opacity:.85; }
+
+.nav-item:hover{ background:rgba(0,130,255,.07); color:#dbe9f7; }
+
+.nav-item.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.10));
+    color:#fff; border:1px solid rgba(0,205,255,.25);
+    box-shadow:0 8px 24px rgba(0,150,255,.12);
+}
+
+.nav-item.active .ic{ opacity:1; }
+
+.side-foot{
+    border-top:1px solid rgba(0,205,255,.10);
+    padding-top:16px; margin-top:10px;
+}
+
+.logout-btn{
+    width:100%;
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    height:44px;
+    border:1px solid rgba(255,90,110,.22);
+    border-radius:12px;
+    background:rgba(255,50,80,.06);
+    color:#ff9aa9; font-family:inherit; font-size:12px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.logout-btn:hover{ background:rgba(255,50,80,.12); color:#ffc1cb; }
+
+/* ---------- Main ---------- */
+
+.main{ min-width:0; padding:26px 30px 40px; }
+
+.topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:18px; flex-wrap:wrap; margin-bottom:24px;
+}
+
+.head-left{ display:flex; align-items:center; gap:12px; }
+
+.menu-toggle{
+    display:none;
+    width:42px; height:42px;
+    border:1px solid rgba(0,205,255,.18);
+    border-radius:12px;
+    background:rgba(0,130,255,.06);
+    color:#bfe6ff; font-size:18px; cursor:pointer;
+}
+
+.page-title{ font-size:clamp(22px,3vw,28px); letter-spacing:-1px; margin-bottom:5px; }
+
+.page-sub{ color:#8ba3bd; font-size:12.5px; display:flex; align-items:center; gap:8px; }
+
+.live-dot{
+    width:8px; height:8px; border-radius:50%;
+    background:#69edb8;
+    box-shadow:0 0 0 3px rgba(0,220,150,.18);
+    animation:pulse 1.6s infinite;
+}
+
+@keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+/* ---------- Stats ---------- */
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+    margin-bottom:24px;
+}
+
+.stat{
+    padding:20px;
+    border-radius:20px;
+    background:linear-gradient(145deg,rgba(9,35,68,.96),rgba(3,13,27,.98));
+    border:1px solid rgba(0,205,255,.16);
+    box-shadow:0 22px 60px rgba(0,0,0,.35);
+}
+
+.stat .lbl{ color:#8ba3bd; font-size:11px; font-weight:600; margin-bottom:12px; }
+
+.stat .val{ font-size:26px; font-weight:800; letter-spacing:-1px; }
+
+.stat .val.green{ color:#69edb8; }
+.stat .val.amber{ color:#ffd479; }
+.stat .val.blue{ color:#6fe0ff; }
+.stat .val.red{ color:#ff9aa9; }
+
+/* ---------- Filters ---------- */
+
+.filters{
+    display:flex; flex-wrap:wrap; gap:9px;
+    margin-bottom:22px;
+}
+
+.filter{
+    padding:9px 15px;
+    border-radius:11px;
+    border:1px solid rgba(0,205,255,.16);
+    background:rgba(255,255,255,.035);
+    color:#bcd3e8; font-family:inherit; font-size:11.5px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.filter:hover{ background:rgba(255,255,255,.08); color:#fff; }
+
+.filter.active{
+    background:linear-gradient(135deg,rgba(8,124,255,.28),rgba(0,213,255,.12));
+    border-color:rgba(0,205,255,.4);
+    color:#fff;
+}
+
+.filter .c{
+    display:inline-block;
+    min-width:18px;
+    padding:1px 6px;
+    margin-left:6px;
+    border-radius:9px;
+    background:rgba(0,0,0,.25);
+    font-size:9.5px;
+}
+
+/* ---------- Sale cards ---------- */
+
+.list{ display:flex; flex-direction:column; gap:16px; }
+
+.sale-card{
+    padding:22px;
+    border-radius:20px;
+    background:linear-gradient(145deg,rgba(9,35,68,.92),rgba(3,13,27,.97));
+    border:1px solid rgba(0,205,255,.15);
+    box-shadow:0 22px 60px rgba(0,0,0,.32);
+}
+
+.sale-head{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:14px; margin-bottom:16px;
+}
+
+.sale-email{ font-size:17px; font-weight:800; letter-spacing:-.4px; word-break:break-all; }
+
+.sale-meta{ font-size:10.5px; color:#6e849c; margin-top:5px; }
+
+.pill{
+    flex-shrink:0;
+    display:inline-block;
+    padding:6px 13px;
+    border-radius:20px;
+    font-size:10px; font-weight:800;
+    letter-spacing:.4px; text-transform:uppercase;
+}
+
+.pill.pend{ color:#ffd479; background:rgba(255,190,60,.12); border:1px solid rgba(255,190,60,.3); }
+.pill.appr{ color:#6fe0ff; background:rgba(0,170,255,.12); border:1px solid rgba(0,205,255,.3); }
+.pill.paid{ color:#69edb8; background:rgba(0,220,150,.12); border:1px solid rgba(0,220,150,.3); }
+.pill.rej{ color:#ff9aa9; background:rgba(255,50,80,.12); border:1px solid rgba(255,50,80,.3); }
+
+.sale-row{
+    display:flex; align-items:center; gap:14px;
+    padding:12px 14px;
+    border-radius:13px;
+    background:rgba(0,0,0,.22);
+    border:1px solid rgba(255,255,255,.06);
+    margin-bottom:16px;
+}
+
+.sale-key{ font-size:11px; font-weight:700; color:#8ba3bd; width:80px; flex-shrink:0; }
+
+.sale-val{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; }
+
+.pw{ font-size:13px; color:#dfeaf6; font-family:ui-monospace,Menlo,Consolas,monospace; word-break:break-all; }
+
+.mini-btn{
+    flex-shrink:0;
+    padding:6px 12px;
+    border-radius:9px;
+    border:1px solid rgba(0,205,255,.2);
+    background:rgba(0,130,255,.07);
+    color:#bfe6ff; font-family:inherit; font-size:10px; font-weight:700;
+    cursor:pointer; transition:.2s;
+}
+
+.mini-btn:hover{ background:rgba(0,130,255,.14); color:#fff; }
+
+/* submissions */
+
+.subs-title{
+    font-size:11px; font-weight:700; color:#8ba3bd;
+    margin-bottom:11px;
+    display:flex; align-items:center; gap:8px;
+}
+
+.subs-title .num{
+    background:rgba(0,170,255,.14);
+    border:1px solid rgba(0,205,255,.25);
+    color:#6fe0ff;
+    border-radius:8px;
+    padding:2px 8px; font-size:9.5px;
+}
+
+.subs{ display:flex; flex-direction:column; gap:9px; margin-bottom:18px; }
+
+.sub-item{
+    display:flex; gap:11px; align-items:flex-start;
+    padding:11px 13px;
+    border-radius:12px;
+    background:rgba(0,0,0,.2);
+    border:1px solid rgba(255,255,255,.05);
+}
+
+.sub-badge{
+    flex-shrink:0;
+    font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;
+    color:#6fe0ff; background:rgba(0,170,255,.12);
+    border:1px solid rgba(0,205,255,.25);
+    padding:5px 9px; border-radius:9px; white-space:nowrap;
+}
+
+.sub-body{ flex:1; min-width:0; }
+
+.sub-text{ font-size:12px; color:#dfeaf6; line-height:1.55; word-break:break-word; }
+
+.sub-time{ font-size:10px; color:#6e849c; margin-top:4px; }
+
+.subs-empty{ font-size:11px; color:#6e849c; padding:4px 2px 14px; }
+
+/* actions */
+
+.actions{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+
+.act{
+    height:42px;
+    padding:0 18px;
+    border-radius:12px;
+    font-family:inherit; font-size:12px; font-weight:800;
+    cursor:pointer; transition:.2s;
+    border:0;
+}
+
+.act.approve{
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+}
+
+.act.approve:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,150,255,.25); }
+
+.act.reject{
+    border:1px solid rgba(255,90,110,.3);
+    background:rgba(255,50,80,.08);
+    color:#ff9aa9;
+}
+
+.act.reject:hover{ background:rgba(255,50,80,.16); color:#ffc1cb; }
+
+.pay{ display:flex; align-items:center; gap:8px; }
+
+.amt{
+    height:42px;
+    width:120px;
+    padding:0 12px;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;
+    background:rgba(0,0,0,.25);
+    color:#fff; font-family:inherit; font-size:12px;
+    outline:none;
+}
+
+.amt:focus{ border-color:#08bfff; }
+
+.act.pay-btn{
+    background:linear-gradient(135deg,#0fae6e,#39e6a0);
+    color:#04210f;
+}
+
+.act.pay-btn:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(0,200,140,.25); }
+
+.paid-note{
+    font-size:12px; font-weight:800; color:#69edb8;
+    display:flex; align-items:center; gap:7px;
+}
+
+.rej-note{ font-size:12px; font-weight:800; color:#ff9aa9; }
+
+/* empty */
+
+.empty{
+    text-align:center;
+    padding:60px 20px;
+    color:#6e849c;
+    font-size:13px;
+}
+
+.empty .big{ font-size:15px; font-weight:700; color:#9bb2ca; margin-bottom:8px; }
+
+/* ---------- Responsive ---------- */
+
+@media(max-width:1100px){
+    .stats{ grid-template-columns:repeat(2,1fr); }
+}
+
+@media(max-width:860px){
+    .shell{ grid-template-columns:1fr; }
+    .sidebar{
+        position:fixed; z-index:40; width:255px;
+        transform:translateX(-100%); transition:transform .3s ease;
+    }
+    body.nav-open .sidebar{ transform:translateX(0); }
+    body.nav-open::after{
+        content:""; position:fixed; inset:0; z-index:39; background:rgba(0,0,0,.55);
+    }
+    .menu-toggle{ display:flex; align-items:center; justify-content:center; }
+    .main{ padding:18px 16px 34px; }
+}
+
+@media(max-width:560px){
+    .stats{ grid-template-columns:1fr; }
+    .sale-row{ flex-direction:column; align-items:flex-start; gap:10px; }
+    .sale-key{ width:auto; }
+    .amt{ width:100%; }
+    .pay{ width:100%; }
+    .pay .act.pay-btn{ flex:1; }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="shell" id="shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+
+        <div class="side-brand">
+            <img class="side-logo"
+                 src="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_200/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+                 alt="MailMart">
+            <div class="side-name">Mail<span>Mart</span></div>
+        </div>
+
+        <nav class="nav">
+            <span class="nav-label">Store</span>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+                Dashboard
+            </a>
+
+            <a class="nav-item" href="email-sale.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                Sell Email
+            </a>
+
+            <span class="nav-label">Admin</span>
+
+            <a class="nav-item active" href="admin.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+                Sales Review
+            </a>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                Users
+            </a>
+
+            <a class="nav-item" href="dashboard.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
+                Settings
+            </a>
+        </nav>
+
+        <div class="side-foot">
+            <button class="logout-btn" id="logoutBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+                Log out
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="head-left">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <div>
+                    <div class="page-title">Sales Review</div>
+                    <div class="page-sub">
+                        <span class="live-dot"></span> Live · submitted emails from sellers
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Stats -->
+        <section class="stats">
+            <div class="stat">
+                <div class="lbl">Pending</div>
+                <div class="val amber" id="stPend">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Approved</div>
+                <div class="val blue" id="stAppr">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Paid</div>
+                <div class="val green" id="stPaid">0</div>
+            </div>
+            <div class="stat">
+                <div class="lbl">Total Payout</div>
+                <div class="val green" id="stPayout">$0.00</div>
+            </div>
+        </section>
+
+        <!-- Filters -->
+        <div class="filters" id="filters">
+            <button class="filter active" data-filter="all">All <span class="c" id="cAll">0</span></button>
+            <button class="filter" data-filter="pending">Pending <span class="c" id="cPend">0</span></button>
+            <button class="filter" data-filter="approved">Approved <span class="c" id="cAppr">0</span></button>
+            <button class="filter" data-filter="paid">Paid <span class="c" id="cPaid">0</span></button>
+            <button class="filter" data-filter="rejected">Rejected <span class="c" id="cRej">0</span></button>
+        </div>
+
+        <!-- List -->
+        <section class="list" id="list">
+            <div class="empty">
+                <div class="big">No submissions yet</div>
+                Emails submitted through the Sell Email page will appear here live.
+            </div>
+        </section>
+
+    </main>
+
+</div>
+
+<script type="module">
+
+import {
+initializeApp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+
+import {
+getAuth,
+onAuthStateChanged,
+signOut
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+import {
+getFirestore,
+collection,
+onSnapshot,
+query,
+orderBy,
+doc,
+updateDoc,
+serverTimestamp
+}
+from
+"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+
+const firebaseConfig={
+apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
+authDomain:"mailmartz.firebaseapp.com",
+projectId:"mailmartz",
+storageBucket:"mailmartz.firebasestorage.app",
+messagingSenderId:"802413654231",
+appId:"1:802413654231:web:4e5d87d23d6a2317724092",
+measurementId:"G-LKLEWS7RPF"
+};
+
+const app=initializeApp(firebaseConfig);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+/* ------------------------------------------------------------------
+   AUTH GUARD
+   Requires a signed-in user. For production, also verify the user is
+   an admin (e.g. Firebase custom claims, or an /admins/{uid} doc).
+   Example:
+     const snap = await getDoc(doc(db,"admins",user.uid));
+     if(!snap.exists()){ window.location.href="dashboard.html"; return; }
+------------------------------------------------------------------ */
+onAuthStateChanged(auth,(user)=>{
+    if(!user){
+        window.location.href="login.html";
+    }
+});
+
+document.getElementById("logoutBtn").addEventListener("click",async()=>{
+    try{ await signOut(auth); window.location.href="login.html"; }
+    catch(e){ console.error(e); }
+});
+
+document.getElementById("menuToggle").addEventListener("click",()=>{
+    document.body.classList.toggle("nav-open");
+});
+document.querySelectorAll(".nav-item").forEach(item=>{
+    item.addEventListener("click",()=>document.body.classList.remove("nav-open"));
+});
+
+/* ------------------------------------------------------------------
+   LIVE SALES FEED
+------------------------------------------------------------------ */
+const listEl=document.getElementById("list");
+
+let allSales=[];          // full snapshot
+let saleData={};          // id -> {password,...} kept in memory (not in DOM)
+let currentFilter="all";
+
+const q=query(collection(db,"sales"),orderBy("createdAt","desc"));
+
+onSnapshot(q,(snap)=>{
+
+    allSales=[];
+    saleData={};
+
+    snap.forEach(d=>{
+        const data=d.data();
+        allSales.push({ id:d.id, ...data });
+        saleData[d.id]={ password:data.password||"" };
+    });
+
+    render();
+
+},{err=>{
+    console.error("Firestore read failed:",err);
+    listEl.innerHTML=
+        '<div class="empty"><div class="big">Could not load sales</div>'+
+        'Check your Firestore security rules and that you are signed in.</div>';
+}});
+
+/* ---------- Render ---------- */
+
+function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g,c=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+    }[c]));
+}
+
+function fmtTime(ts){
+    if(!ts) return "just now";
+    let d=ts;
+    if(ts&&typeof ts.toDate==="function") d=ts.toDate();
+    try{ return d.toLocaleString(); }catch(e){ return "just now"; }
+}
+
+function pillClass(status){
+    return ({pending:"pend",approved:"appr",paid:"paid",rejected:"rej"})[status]||"pend";
+}
+
+function statusLabel(status){
+    return ({pending:"Pending",approved:"Approved",paid:"Paid",rejected:"Rejected"})[status]||"Pending";
+}
+
+function render(){
+
+    /* stats */
+    let pend=0,appr=0,paid=0,rej=0,payout=0;
+    allSales.forEach(s=>{
+        if(s.status==="pending") pend++;
+        else if(s.status==="approved") appr++;
+        else if(s.status==="paid"){ paid++; payout+=(Number(s.payout)||0); }
+        else if(s.status==="rejected") rej++;
+    });
+
+    document.getElementById("stPend").textContent=pend;
+    document.getElementById("stAppr").textContent=appr;
+    document.getElementById("stPaid").textContent=paid;
+    document.getElementById("stPayout").textContent="$"+payout.toFixed(2);
+
+    document.getElementById("cAll").textContent=allSales.length;
+    document.getElementById("cPend").textContent=pend;
+    document.getElementById("cAppr").textContent=appr;
+    document.getElementById("cPaid").textContent=paid;
+    document.getElementById("cRej").textContent=rej;
+
+    /* filter */
+    const rows=allSales.filter(s=>currentFilter==="all"||s.status===currentFilter);
+
+    if(rows.length===0){
+        listEl.innerHTML=
+            '<div class="empty"><div class="big">Nothing here</div>'+
+            'No sales match this filter.</div>';
+        return;
+    }
+
+    listEl.innerHTML=rows.map(cardHtml).join("");
+}
+
+function cardHtml(s){
+
+    const subs=(s.submissions||[]);
+
+    const subsHtml=subs.length
+        ? subs.map(sub=>
+            '<div class="sub-item">'+
+                '<span class="sub-badge">'+escapeHtml(sub.category||"Note")+'</span>'+
+                '<div class="sub-body">'+
+                    '<div class="sub-text">'+escapeHtml(sub.text||"")+'</div>'+
+                    '<div class="sub-time">'+(sub.time?escapeHtml(sub.time):"")+'</div>'+
+                '</div>'+
+            '</div>'
+          ).join("")
+        : '<div class="subs-empty">No additional submissions yet.</div>';
+
+    let actions="";
+
+    if(s.status==="pending"){
+        actions+='<button class="act approve" data-action="approve" data-id="'+s.id+'">Approve</button>';
+        actions+='<button class="act reject" data-action="reject" data-id="'+s.id+'">Reject</button>';
+    }
+
+    if(s.status==="pending"||s.status==="approved"){
+        actions+=
+            '<div class="pay">'+
+                '<input class="amt" id="amt-'+s.id+'" type="number" placeholder="Amount $" min="0" step="0.01">'+
+                '<button class="act pay-btn" data-action="pay" data-id="'+s.id+'">Send Payment</button>'+
+            '</div>';
+    }
+
+    if(s.status==="paid"){
+        actions+='<span class="paid-note">✓ Paid $'+(Number(s.payout)||0).toFixed(2)+'</span>';
+    }
+
+    if(s.status==="rejected"){
+        actions+='<span class="rej-note">✕ Rejected</span>';
+    }
+
+    return ''+
+    '<div class="sale-card" data-id="'+s.id+'">'+
+        '<div class="sale-head">'+
+            '<div>'+
+                '<div class="sale-email">'+escapeHtml(s.email||"")+'</div>'+
+                '<div class="sale-meta">Submitted '+fmtTime(s.createdAt)+'</div>'+
+            '</div>'+
+            '<span class="pill '+pillClass(s.status)+'">'+statusLabel(s.status)+'</span>'+
+        '</div>'+
+
+        '<div class="sale-row">'+
+            '<span class="sale-key">Password</span>'+
+            '<span class="sale-val">'+
+                '<span class="pw" data-shown="0">••••••••••</span>'+
+                '<button class="mini-btn" data-action="togglepw" data-id="'+s.id+'">Show</button>'+
+            '</span>'+
+        '</div>'+
+
+        '<div class="subs-title">Additional submissions <span class="num">'+subs.length+'</span></div>'+
+        '<div class="subs">'+subsHtml+'</div>'+
+
+        '<div class="actions">'+actions+'</div>'+
+    '</div>';
+}
+
+/* ---------- Filters ---------- */
+
+document.getElementById("filters").addEventListener("click",(e)=>{
+    const btn=e.target.closest(".filter");
+    if(!btn) return;
+    document.querySelectorAll(".filter").forEach(f=>f.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter=btn.dataset.filter;
+    render();
+});
+
+/* ---------- Actions (event delegation) ---------- */
+
+listEl.addEventListener("click",async(e)=>{
+
+    const btn=e.target.closest("[data-action]");
+    if(!btn) return;
+
+    const id=btn.dataset.id;
+    const action=btn.dataset.action;
+
+    if(action==="togglepw"){
+        const card=e.target.closest(".sale-card");
+        const span=card.querySelector(".pw");
+        const showBtn=card.querySelector('[data-action="togglepw"]');
+        if(span.dataset.shown==="1"){
+            span.textContent="••••••••••";
+            span.dataset.shown="0";
+            showBtn.textContent="Show";
+        }else{
+            span.textContent=saleData[id]?saleData[id].password:"";
+            span.dataset.shown="1";
+            showBtn.textContent="Hide";
+        }
+        return;
+    }
+
+    if(action==="approve"){
+        await updateDoc(doc(db,"sales",id),{ status:"approved", updatedAt:serverTimestamp() });
+        return;
+    }
+
+    if(action==="reject"){
+        await updateDoc(doc(db,"sales",id),{ status:"rejected", updatedAt:serverTimestamp() });
+        return;
+    }
+
+    if(action==="pay"){
+        const amtInput=document.getElementById("amt-"+id);
+        const amount=parseFloat(amtInput.value);
+        if(!amount||amount<=0){
+            alert("Enter a valid payment amount.");
+            amtInput.focus();
+            return;
+        }
+        if(!confirm("Send payment of $"+amount.toFixed(2)+" for this email?")) return;
+        await updateDoc(doc(db,"sales",id),{
+            status:"paid",
+            payout:amount,
+            paidAt:serverTimestamp(),
+            updatedAt:serverTimestamp()
+        });
+        return;
+    }
+
+});
+
 </script>
-<script>
- const side=document.getElementById('side'),toast=document.getElementById('toast'),toastText=document.getElementById('toastText');let timer;function notice(text){toastText.textContent=text;toast.classList.add('show');clearTimeout(timer);timer=setTimeout(()=>toast.classList.remove('show'),3800)}
- document.querySelectorAll('[data-message]').forEach(x=>x.addEventListener('click',()=>notice(x.dataset.message)));
- const names={overview:'Admin overview',requests:'Request queue',withdrawals:'Withdrawal review',users:'User management',settings:'Platform settings'};function view(id){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('.nav button[data-view]').forEach(x=>x.classList.toggle('active',x.dataset.view===id));document.getElementById('topTitle').textContent=names[id];if(innerWidth<=840)side.classList.remove('open');window.scrollTo({top:0,behavior:'smooth'})}document.querySelectorAll('[data-view]').forEach(x=>x.addEventListener('click',()=>view(x.dataset.view)));document.getElementById('menu').addEventListener('click',()=>side.classList.toggle('open'));document.addEventListener('click',e=>{if(innerWidth<=840&&side.classList.contains('open')&&!side.contains(e.target)&&!document.getElementById('menu').contains(e.target))side.classList.remove('open')});document.getElementById('notifications').addEventListener('click',()=>notice('No new administrator notifications.'));
-</script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a301d45f3f28f533',t:'MTc4NzU2ODk3Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</body>
 </html>
