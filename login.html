@@ -1000,64 +1000,9 @@ class="home"
 
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "./js/supabase.js";
 
-
-import {
-getAuth,
-signInWithEmailAndPassword,
-GoogleAuthProvider,
-signInWithPopup,
-sendPasswordResetEmail,
-setPersistence,
-browserLocalPersistence,
-browserSessionPersistence
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-
-const firebaseConfig={
-
-apiKey:
-"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-
-authDomain:
-"mailmartz.firebaseapp.com",
-
-projectId:
-"mailmartz",
-
-storageBucket:
-"mailmartz.firebasestorage.app",
-
-messagingSenderId:
-"802413654231",
-
-appId:
-"1:802413654231:web:4e5d87d23d6a2317724092",
-
-measurementId:
-"G-LKLEWS7RPF"
-
-};
-
-
-const app=
-initializeApp(firebaseConfig);
-
-
-const auth=
-getAuth(app);
-
-
-const provider=
-new GoogleAuthProvider();
-
+const provider=new GoogleAuthProvider();
 
 provider.setCustomParameters({
 
@@ -1197,7 +1142,7 @@ loginLoading.style.display=
 }
 
 
-function firebaseError(error){
+function supabaseError(error){
 
 switch(error.code){
 
@@ -1239,7 +1184,7 @@ return "Your browser blocked the Google login window.";
 
 case "auth/operation-not-allowed":
 
-return "This sign-in method is not enabled in Firebase.";
+return "This sign-in method is not enabled in Supabase.";
 
 default:
 
@@ -1349,7 +1294,7 @@ window.location.href=
 }catch(error){
 
 showError(
-firebaseError(error)
+supabaseError(error)
 );
 
 loading(false);
@@ -1410,7 +1355,7 @@ window.location.href=
 }catch(error){
 
 showError(
-firebaseError(error)
+supabaseError(error)
 );
 
 loading(false);
@@ -1465,7 +1410,7 @@ showSuccess(
 }catch(error){
 
 showError(
-firebaseError(error)
+supabaseError(error)
 );
 
 }

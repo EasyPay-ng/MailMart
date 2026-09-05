@@ -1138,76 +1138,9 @@ class="home"
 
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, doc, setDoc, serverTimestamp } from "./js/supabase.js";
 
-
-import {
-getAuth,
-createUserWithEmailAndPassword,
-GoogleAuthProvider,
-signInWithPopup,
-setPersistence,
-browserLocalPersistence
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-
-import {
-getFirestore,
-doc,
-setDoc,
-serverTimestamp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-
-const firebaseConfig={
-
-apiKey:
-"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-
-authDomain:
-"mailmartz.firebaseapp.com",
-
-projectId:
-"mailmartz",
-
-storageBucket:
-"mailmartz.firebasestorage.app",
-
-messagingSenderId:
-"802413654231",
-
-appId:
-"1:802413654231:web:4e5d87d23d6a2317724092",
-
-measurementId:
-"G-LKLEWS7RPF"
-
-};
-
-
-const app=
-initializeApp(firebaseConfig);
-
-
-const auth=
-getAuth(app);
-
-
-const db=
-getFirestore(app);
-
-
-const provider=
-new GoogleAuthProvider();
-
+const provider=new GoogleAuthProvider();
 
 provider.setCustomParameters({
 prompt:"select_account"
@@ -1374,7 +1307,7 @@ registerLoading.style.display=
 }
 
 
-function firebaseError(error){
+function supabaseError(error){
 
 switch(error.code){
 
@@ -1404,7 +1337,7 @@ return"Your browser blocked the Google registration window.";
 
 case"auth/operation-not-allowed":
 
-return"This registration method is not enabled in Firebase.";
+return"This registration method is not enabled in Supabase.";
 
 default:
 
@@ -1722,7 +1655,7 @@ window.location.href=
 }catch(error){
 
 showError(
-firebaseError(error)
+supabaseError(error)
 );
 
 loading(false);
@@ -1841,7 +1774,7 @@ window.location.href=
 }catch(error){
 
 showError(
-firebaseError(error)
+supabaseError(error)
 );
 
 loading(false);

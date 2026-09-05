@@ -1039,7 +1039,7 @@ body::before{
 
 <body>
 
-<!-- Loading gate (shown until Firebase confirms auth) -->
+<!-- Loading gate (shown until Supabase confirms auth) -->
 <div class="loading-screen" id="loadingScreen">
     <div class="spinner"></div>
     <div class="txt">Verifying your session…</div>
@@ -1391,32 +1391,7 @@ body::before{
 
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getAuth,
-onAuthStateChanged,
-signOut
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-const firebaseConfig={
-apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-authDomain:"mailmartz.firebaseapp.com",
-projectId:"mailmartz",
-storageBucket:"mailmartz.firebasestorage.app",
-messagingSenderId:"802413654231",
-appId:"1:802413654231:web:4e5d87d23d6a2317724092",
-measurementId:"G-LKLEWS7RPF"
-};
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
+import { auth, onAuthStateChanged, signOut } from "./js/supabase.js";
 
 const loadingScreen=document.getElementById("loadingScreen");
 const shell=document.getElementById("shell");
@@ -1480,7 +1455,7 @@ document.querySelectorAll(".nav-item").forEach(item=>{
 .forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.addEventListener("click",()=>{
-        alert("This is a demo dashboard. Wire this action to your backend / Firestore.");
+        alert("This is a demo dashboard. Wire this action to your Supabase backend.");
     });
 });
 

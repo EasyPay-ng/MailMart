@@ -563,51 +563,12 @@ body::before{
 
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getAuth,
-onAuthStateChanged,
-signOut
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-import {
-getFirestore,
-collection,
-onSnapshot,
-query,
-orderBy,
-doc,
-updateDoc,
-serverTimestamp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-const firebaseConfig={
-apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-authDomain:"mailmartz.firebaseapp.com",
-projectId:"mailmartz",
-storageBucket:"mailmartz.firebasestorage.app",
-messagingSenderId:"802413654231",
-appId:"1:802413654231:web:4e5d87d23d6a2317724092",
-measurementId:"G-LKLEWS7RPF"
-};
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from "./js/supabase.js";
 
 /* ------------------------------------------------------------------
    AUTH GUARD
    Requires a signed-in user. For production, also verify the user is
-   an admin (e.g. Firebase custom claims, or an /admins/{uid} doc).
+   an admin (enforced by the users.is_admin flag and row-level security).
    Example:
      const snap = await getDoc(doc(db,"admins",user.uid));
      if(!snap.exists()){ window.location.href="dashboard.html"; return; }
@@ -654,12 +615,12 @@ onSnapshot(q,(snap)=>{
 
     render();
 
-},{err=>{
-    console.error("Firestore read failed:",err);
+},err=>{
+    console.error("Supabase read failed:",err);
     listEl.innerHTML=
         '<div class="empty"><div class="big">Could not load sales</div>'+
-        'Check your Firestore security rules and that you are signed in.</div>';
-}});
+        'Check your Supabase security rules and that you are signed in.</div>';
+});
 
 /* ---------- Render ---------- */
 
