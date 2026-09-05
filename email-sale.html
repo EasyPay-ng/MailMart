@@ -990,49 +990,7 @@ body::before{
 
 <script type="module">
 
-import {
-initializeApp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-
-import {
-getAuth,
-onAuthStateChanged,
-signOut
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-
-import {
-getFirestore,
-collection,
-addDoc,
-doc,
-getDocs,
-query,
-where,
-updateDoc,
-onSnapshot,
-arrayUnion,
-serverTimestamp
-}
-from
-"https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-
-const firebaseConfig={
-apiKey:"AIzaSyCc-0Gtmh7dIFWgnWglIQfjq-PlJu07IKE",
-authDomain:"mailmartz.firebaseapp.com",
-projectId:"mailmartz",
-storageBucket:"mailmartz.firebasestorage.app",
-messagingSenderId:"802413654231",
-appId:"1:802413654231:web:4e5d87d23d6a2317724092",
-measurementId:"G-LKLEWS7RPF"
-};
-
-const app=initializeApp(firebaseConfig);
-const auth=getAuth(app);
-const db=getFirestore(app);
+import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/supabase.js";
 
 /* Auth guard — same pattern as the dashboard */
 onAuthStateChanged(auth,(user)=>{
@@ -1076,7 +1034,7 @@ document.getElementById("contactAdmin").addEventListener("click",()=>{
     alert("Demo: open live chat or email admin@mailmart.com to complete your sale.");
 });
 
-/* Track the submitted email + chosen category + firestore doc id */
+/* Track the submitted email + chosen category + Supabase row id */
 let submittedEmail="";
 let chosenCat="OTP";
 let saleId=null;
@@ -1137,7 +1095,7 @@ saleForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* save to Firestore so the admin receives it */
+    /* save to Supabase so the admin receives it */
     try{
         const ref=await addDoc(collection(db,"sales"),{
             email:emailVal,
@@ -1155,7 +1113,7 @@ saleForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not save your submission. Check your Firestore security rules.");
+        alert("Could not save your submission. Check your Supabase security rules.");
         return;
     }
 
@@ -1251,7 +1209,7 @@ addForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* push the follow-up into the same Firestore sale doc */
+    /* push the follow-up into the same Supabase sale doc */
     try{
         await updateDoc(doc(db,"sales",saleId),{
             submissions:arrayUnion({
@@ -1263,7 +1221,7 @@ addForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not send to admin. Check your Firestore security rules.");
+        alert("Could not send to admin. Check your Supabase security rules.");
         return;
     }
 
