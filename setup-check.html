@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Setup check | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link
+rel="icon"
+type="image/jpeg"
+href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg"
+>
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.result{
+    display:flex;
+    gap:11px;
+    align-items:flex-start;
+
+    padding:12px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+}
+.result:last-child{border-bottom:none}
+
+.result .dot{
+    width:9px;height:9px;border-radius:50%;
+    margin-top:6px;flex-shrink:0;
+    background:#8ba3bd;
+}
+.result.pass .dot{background:#69edb8}
+.result.fail .dot{background:#ff9aa9}
+.result.warn .dot{background:#ffd479}
+
+.result .body{flex:1;min-width:0}
+.result .nm{font-size:13.5px;font-weight:700;color:#fff}
+.result .dt{font-size:12.5px;line-height:1.6;color:#8ba3bd;margin-top:3px;word-break:break-word}
+.result .dt code{
+    background:rgba(255,255,255,.06);
+    padding:1px 5px;border-radius:5px;
+    font-size:11.5px;
+}
+.result .dt a{color:#39c9ff}
+
+.result .tag{
+    font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+    padding:3px 8px;border-radius:999px;flex-shrink:0;
+    background:rgba(139,163,189,.16);color:#9bb2ca;
+}
+.result.pass .tag{background:rgba(105,237,184,.14);color:#69edb8}
+.result.fail .tag{background:rgba(255,154,169,.14);color:#ff9aa9}
+.result.warn .tag{background:rgba(255,212,121,.14);color:#ffd479}
+
+.cmd{
+    margin-top:10px;
+    background:rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:10px;
+    padding:10px 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12px;
+    color:#9be3ff;
+    overflow-x:auto;
+    white-space:pre;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot"></span> MailMart · Setup check</div>
+        <div class="actions">
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+            <button class="back-link" id="signOutBtn" style="cursor:pointer">Log out</button>
+        </div>
+    </div>
+
+    <!-- What this page is for, in one line -->
+    <div class="card">
+        <h3>What this page does</h3>
+        <p class="hint">
+            Every page in MailMart talks to Cloud Firestore directly, so a page can only work
+            when the security rules in <b>firestore.rules</b> are deployed to the project and the
+            composite indexes in <b>firestore.indexes.json</b> exist. When either is missing, the
+            pages print "Check your Firestore security rules…". This page asks Firestore the same
+            questions the pages do, one at a time, and reports the answer it actually gives.
+        </p>
+
+        <div class="notice info" id="projectInfo">
+            Project: <b id="projectId">…</b>
+        </div>
+    </div>
+
+    <!-- Verdict -->
+    <div class="card" id="verdictCard" style="margin-top:16px">
+        <h3>Verdict</h3>
+        <div id="verdict"><p class="hint">Running checks…</p></div>
+    </div>
+
+    <!-- One row per check -->
+    <div class="card" style="margin-top:16px">
+        <h3>Checks</h3>
+        <div id="results">
+            <div class="empty"><div class="big">Waiting for sign-in…</div>
+                <p>Reading the current session.</p></div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import {
+    auth, db, doc, getDoc, getDocs, collection, query, where, orderBy, limit,
+    onAuthStateChanged, signOut, firestoreErrorInfo
+} from "./js/firebase.js";
+import { isAdminEmail } from "./js/admin.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const DEPLOY = "firebase deploy --only firestore:rules,firestore:indexes";
+
+$("projectId").textContent = auth.app.options.projectId || "(unknown)";
+
+$("signOutBtn").addEventListener("click", async () => {
+    try { await signOut(auth); } catch (err) { console.error(err); }
+    window.location.href = "login.html";
+});
+
+/* ------------------------------------------------------------------ */
+/* reporting                                                           */
+/* ------------------------------------------------------------------ */
+const results = [];
+
+function report(name, status, detail) {
+    results.push({ name, status, detail });
+    renderResults();
+}
+
+function renderResults() {
+    if (!results.length) return;
+
+    $("results").innerHTML = results.map((r) => `
+        <div class="result ${esc(r.status)}">
+            <span class="dot"></span>
+            <div class="body">
+                <div class="nm">${esc(r.name)}</div>
+                <div class="dt">${r.detail}</div>
+            </div>
+            <span class="tag">${esc(r.status === "pass" ? "ok" : r.status)}</span>
+        </div>`).join("");
+
+    renderVerdict();
+}
+
+function renderVerdict() {
+    const failed = results.filter((r) => r.status === "fail");
+    const warned = results.filter((r) => r.status === "warn");
+    const box = $("verdict");
+
+    if (!failed.length && !warned.length) {
+        box.innerHTML =
+            '<div class="notice good"><b>Everything the pages need is reachable.</b> ' +
+            "Firestore allowed every read a signed-in page makes, and the composite indexes " +
+            "are in place. If a page still shows an error, the message on that page now names " +
+            "the exact Firebase code.</div>";
+        return;
+    }
+
+    const denied = results.filter((r) => (r.detail || "").includes("permission-denied"));
+    const indexed = results.filter((r) => (r.detail || "").includes("failed-precondition"));
+
+    let html = "";
+
+    if (denied.length) {
+        html +=
+            '<div class="notice bad"><b>Firestore is refusing reads that the app needs.</b> ' +
+            "The rules in <b>firestore.rules</b> are almost certainly not deployed to this " +
+            "project: a Firestore database with no rules deployed runs the default deny-all " +
+            "ruleset, which refuses every read and write and leaves every page showing " +
+            "&ldquo;Check your Firestore security rules…&rdquo;. Deploy them once, from the " +
+            "folder that holds firebase.json, then reload this page:" +
+            `<div class="cmd">${esc(DEPLOY)}</div>` +
+            "If some checks pass and others are refused, then the rules are live and the " +
+            "refused ones are a permissions question for this account instead." +
+            "</div>";
+    }
+
+    if (indexed.length) {
+        html +=
+            '<div class="notice warn"><b>A composite index is missing.</b> ' +
+            "Firebase will create it from the link on the failing check below, or deploy the " +
+            "indexes that ship with the app:" +
+            '<div class="cmd">firebase deploy --only firestore:indexes</div></div>';
+    }
+
+    /* Everything else that did not pass — a failure for another reason or a
+       warning — listed verbatim, so no check disappears from the verdict. */
+    const covered = new Set([...denied, ...indexed]);
+
+    html += results
+        .filter((r) => r.status !== "pass" && r.status !== "skip" && !covered.has(r))
+        .map((r) => `<div class="notice ${r.status === "fail" ? "bad" : "warn"}"><b>${esc(r.name)}</b> — ${r.detail}</div>`)
+        .join("");
+
+    box.innerHTML = html;
+}
+
+/**
+ * Run one probe. `skip` explains why it does not apply to this account, so a
+ * skipped check is not mistaken for a passing one.
+ */
+async function probe(name, run, skip) {
+    if (skip) return report(name, "skip", esc(skip));
+
+    try {
+        const detail = await run();
+        report(name, "pass", detail || "Allowed.");
+    } catch (err) {
+        const info = firestoreErrorInfo(err, name);
+        const link = info.indexUrl
+            ? ` <a href="${esc(info.indexUrl)}" target="_blank" rel="noopener">Create the index →</a>`
+            : "";
+        report(
+            name,
+            info.isPermissionDenied ? "fail" : "warn",
+            `<code>${esc(info.code)}</code> — ${esc(info.hint)}${link}`
+        );
+        console.error(name, err);
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* the checks                                                          */
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, async (user) => {
+
+    if (!user) {
+        report("Signed in", "fail",
+            "<code>auth/no-user</code> — nobody is signed in, and the rules refuse every " +
+            'request without a session. <a href="login.html">Sign in</a> and come back.');
+        return;
+    }
+
+    report("Signed in", "pass", `${esc(user.email || "(no email)")} · uid <code>${esc(user.uid)}</code>`);
+
+    /* 1. Is the ruleset that ships with the app actually live? The rules let
+       every signed-in user read settings/platform, so if that read is refused
+       while this account is signed in, the deployed ruleset is not ours. */
+    await probe("Security rules deployed (settings/platform readable)", async () => {
+        await getDoc(doc(db, "settings", "platform"));
+        return "The signed-in read the app expects was allowed — the deployed ruleset is live.";
+    });
+
+    /* 2. The caller's own profile document and the flags the app keys off. */
+    let profile = null;
+    await probe("Own profile document (users/{uid})", async () => {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!snap.exists()) {
+            throw Object.assign(
+                new Error("The document does not exist."),
+                { code: "app/missing-profile" }
+            );
+        }
+        profile = snap.data();
+        const flags = [
+            `balance ${Number(profile.balance || 0)}`,
+            profile.isSeller === true ? "seller" : null,
+            profile.isAdmin === true ? "isAdmin" : null,
+            profile.isSubAdmin === true ? "subAdmin" : null
+        ].filter(Boolean).join(" · ");
+        return `Found. ${esc(flags)}`;
+    });
+
+    /* The same rule firestore.rules applies: the email list, or the flag. */
+    const isAdmin = !!(profile && profile.isAdmin === true) || isAdminEmail(user.email);
+    const isSubAdmin = !!(profile && profile.isSubAdmin === true);
+
+    /* 3. Every composite-indexed query the pages open, in the order the pages
+       open them. limit(1) keeps each one to a single document. */
+    const me = user.uid;
+
+    await probe("listings — active, newest first (marketplace.html)", async () => {
+        await getDocs(query(collection(db, "listings"),
+            where("status", "==", "active"), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed and indexed.";
+    });
+
+    await probe("transactions — mine, newest first (wallet.html)", async () => {
+        await getDocs(query(collection(db, "transactions"),
+            where("uid", "==", me), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed and indexed.";
+    });
+
+    await probe("orders — mine as buyer (orders.html)", async () => {
+        await getDocs(query(collection(db, "orders"),
+            where("buyerUid", "==", me), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed and indexed.";
+    });
+
+    await probe("orders — mine as seller (orders.html)", async () => {
+        await getDocs(query(collection(db, "orders"),
+            where("sellerUid", "==", me), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed and indexed.";
+    });
+
+    await probe("sales — my own submissions (email-sale.html)", async () => {
+        await getDocs(query(collection(db, "sales"),
+            where("uid", "==", me), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed and indexed.";
+    });
+
+    await probe("kyc — my own application (sell.html)", async () => {
+        await getDoc(doc(db, "kyc", me));
+        return "Allowed.";
+    });
+
+    /* 4. Administrator-only reads (admin.html, admin-wallet.html,
+       admin-marketplace.html, admin-team.html). */
+    await probe("sales — whole queue, newest first (admin.html)", async () => {
+        await getDocs(query(collection(db, "sales"), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed.";
+    }, isAdmin ? null : "Not an administrator account — the rules refuse this on purpose.");
+
+    await probe("transactions — every request (admin-wallet.html)", async () => {
+        await getDocs(query(collection(db, "transactions"), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed.";
+    }, isAdmin ? null : "Not an administrator account.");
+
+    await probe("orders / listings — every row (admin-marketplace.html)", async () => {
+        await getDocs(query(collection(db, "orders"), orderBy("createdAt", "desc"), limit(1)));
+        await getDocs(query(collection(db, "listings"), orderBy("createdAt", "desc"), limit(1)));
+        return "Allowed.";
+    }, isAdmin ? null : "Not an administrator account.");
+
+    await probe("kyc queue — pending, oldest first (admin-marketplace.html)", async () => {
+        await getDocs(query(collection(db, "kyc"),
+            where("status", "==", "pending"), orderBy("createdAt", "asc"), limit(1)));
+        return "Allowed and indexed.";
+    }, isAdmin ? null : "Not an administrator account.");
+
+    await probe("users — roster and search (admin-team.html)", async () => {
+        await getDocs(query(collection(db, "users"), limit(1)));
+        return "Allowed.";
+    }, isAdmin ? null : "Not an administrator account.");
+
+    /* 5. Desk reads (subadmin-desk.html). */
+    const desk = isAdmin || isSubAdmin;
+    await probe("sales — unclaimed queue (subadmin-desk.html)", async () => {
+        await getDocs(query(collection(db, "sales"),
+            where("claimedBy", "==", null), orderBy("createdAt", "asc"), limit(1)));
+        return "Allowed and indexed.";
+    }, desk ? null : "This account is not on the mail desk.");
+
+    await probe("presence — who is on the desk (subadmin-desk.html)", async () => {
+        await getDocs(query(collection(db, "presence"), limit(1)));
+        return "Allowed.";
+    }, desk ? null : "This account is not on the mail desk.");
+
+    /* 6. Things the rules deny by design — worth stating so nobody "fixes" it. */
+    report("mail — order notices", "skip",
+        "Write-only by design: the rules let a buyer queue one notice per order and refuse " +
+        "all reads, so there is nothing safe to probe from here.");
+    report("presence — own heartbeat", "skip",
+        "Written by the desk page every 45 seconds; this page does not write on purpose.");
+
+    renderResults();
+});
+
+</script>
+
+</body>
+</html>

@@ -155,8 +155,10 @@
 
 <script type="module">
 
-import { auth, signOut, onAuthStateChanged } from "./js/firebase.js";
-import { isAdminUser } from "./js/admin.js";
+import {
+    auth, signOut, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary
+} from "./js/firebase.js";
+import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import { formatDate } from "./js/wallet.js";
 import {
     watchQueue,
@@ -198,11 +200,20 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    const admin = await isAdminUser(user);
-    if (!admin) {
-        const snap = await getDoc(doc(db, "users", user.uid)).catch(() => null);
+    const status = await adminStatus(user);
+    if (!status.isAdmin) {
+        let snap = null;
+        let readError = status.error;
+        try {
+            snap = await getDoc(doc(db, "users", user.uid));
+        } catch (err) {
+            readError = err;
+        }
         const isSub = !!(snap && snap.exists() && snap.data().isSubAdmin === true);
         if (!isSub) {
+            /* If the lookup itself was refused, this is not "you are not on the
+               desk" — it is "the desk could not be reached". Say which. */
+            if (readError) return showAccessCheckFailure(readError, "desk access");
             window.location.href = "dashboard.html";
             return;
         }
@@ -228,19 +239,26 @@ function start(user) {
     watchQueue(renderQueue, (err) => {
         console.error(err);
         $("queueList").innerHTML =
-            '<div class="empty"><div class="big">Could not load the queue</div>' +
-            "<p>Check your Firestore security rules and that you are on the desk.</p></div>";
+            `<div class="empty">${firestoreErrorHtml(err, "the mail queue")}</div>`;
     });
 
     watchMyClaims((rows) => {
         held = rows;
         renderWork();
-    }, (err) => console.error("claims:", err));
+    }, (err) => {
+        console.error("claims:", err);
+        $("workList").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "the mail you are holding")}</div>`;
+    });
 
     watchPresence((rows) => {
         presence = rows;
         renderPresence();
-    }, (err) => console.error("presence:", err));
+    }, (err) => {
+        console.error("presence:", err);
+        $("presenceList").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "who is on the desk")}</div>`;
+    });
 
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";

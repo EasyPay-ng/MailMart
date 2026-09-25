@@ -60,6 +60,17 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(uid())).data.isSubAdmin == true;
     }
 
+    // ---------- money ------------------------------------------------------
+    // Prices are IEEE doubles on both sides of the wire. The browser rounds its
+    // quote to the nearest kobo before storing it, so the server recomputes the
+    // same figure and allows a difference smaller than one kobo — and nothing
+    // more. A tampered page still cannot buy below the asking price: the gap
+    // would have to be under a kobo to slip through.
+    function sameMoney(requested, expected) {
+      return requested == expected
+        || (requested < expected + 0.01 && requested > expected - 0.01);
+    }
+
     // ---------- users ----------------------------------------------------
     match /users/{userId} {
 
@@ -97,11 +108,14 @@ service cloud.firestore {
         && request.resource.data.photoURL.size() < 800000;
 
       // Owners may tidy their own profile; administrators may edit anyone.
-      // Neither can mint an administrator who is not on the list above.
+      // Neither can mint an administrator who is not on the list above: an
+      // administrator can leave isAdmin as it was, or set it to exactly what
+      // the email list says, and nothing else.
       allow update: if signedIn() && (
         (userId == uid() && ownProfileEdit())
         || (isAdmin()
-            && request.resource.data.isAdmin == emailIsAdmin(resource.data.email))
+            && (request.resource.data.isAdmin == resource.data.isAdmin
+                || request.resource.data.isAdmin == emailIsAdmin(resource.data.email)))
       );
 
       allow delete: if false;
@@ -362,10 +376,18 @@ service cloud.firestore {
 
       // Tolerate a platform that has not saved settings yet: no settings
       // document means no fee has been configured, so zero is the right value.
+      // The same goes for a settings document that exists but has never had a
+      // service fee saved on it — admin-wallet.html writes the deposit details
+      // there without touching the fee, and an unset fee must not block buying.
+      function storedServiceFee() {
+        let fee = get(/databases/$(database)/documents/settings/platform).data.get('serviceFee', 0);
+        return fee is number ? fee : 0;
+      }
+
       function serviceFeeMatches() {
         let path = /databases/$(database)/documents/settings/platform;
         return exists(path)
-          ? request.resource.data.serviceFee == get(path).data.serviceFee
+          ? sameMoney(request.resource.data.serviceFee, storedServiceFee())
           : request.resource.data.serviceFee == 0;
       }
 
@@ -376,17 +398,18 @@ service cloud.firestore {
         let unit = unitPriceOf(listing);
         return listing.status == 'active'
           && request.resource.data.quantity >= 1
-          && request.resource.data.itemPrice == unit
-          && request.resource.data.subtotal == unit * request.resource.data.quantity
-          && request.resource.data.deliveryFee
-               == deliveryFeeOf(listing, request.resource.data.address.state)
+          && sameMoney(request.resource.data.itemPrice, unit)
+          && sameMoney(request.resource.data.subtotal,
+                       unit * request.resource.data.quantity)
+          && sameMoney(request.resource.data.deliveryFee,
+                       deliveryFeeOf(listing, request.resource.data.address.state))
           && serviceFeeMatches()
-          && request.resource.data.total
-               == request.resource.data.subtotal
-                  + request.resource.data.deliveryFee
-                  + request.resource.data.serviceFee
-          && request.resource.data.sellerPayout
-               == request.resource.data.subtotal + request.resource.data.deliveryFee
+          && sameMoney(request.resource.data.total,
+                       request.resource.data.subtotal
+                         + request.resource.data.deliveryFee
+                         + request.resource.data.serviceFee)
+          && sameMoney(request.resource.data.sellerPayout,
+                       request.resource.data.subtotal + request.resource.data.deliveryFee)
           && request.resource.data.sellerUid == listing.sellerUid
           && request.resource.data.sellerEmail == listing.sellerEmail;
       }

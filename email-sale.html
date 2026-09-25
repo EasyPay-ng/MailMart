@@ -828,17 +828,17 @@ body::before{
                 Dashboard
             </a>
 
-            <a class="nav-item" data-page="Orders" href="dashboard.html">
+            <a class="nav-item" data-page="Orders" href="orders.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 Orders
             </a>
 
-            <a class="nav-item" data-page="Services" href="dashboard.html">
+            <a class="nav-item" data-page="Services" href="dashboard.html#services">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
                 Services
             </a>
 
-            <a class="nav-item" data-page="Wallet" href="dashboard.html">
+            <a class="nav-item" data-page="Wallet" href="wallet.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
                 Wallet
             </a>
@@ -850,12 +850,12 @@ body::before{
 
             <span class="nav-label">Account</span>
 
-            <a class="nav-item" data-page="Profile" href="dashboard.html">
+            <a class="nav-item" data-page="Profile" href="dashboard.html#profile">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
                 Profile
             </a>
 
-            <a class="nav-item" data-page="Settings" href="dashboard.html">
+            <a class="nav-item" data-page="Settings" href="dashboard.html#settings">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
                 Settings
             </a>
@@ -1029,7 +1029,7 @@ body::before{
 
 <script type="module">
 
-import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/firebase.js";
+import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp, firestoreErrorText } from "./js/firebase.js";
 import { submitVerification } from "./js/emaildesk.js";
 
 /* Auth guard — same pattern as the dashboard */
@@ -1161,7 +1161,7 @@ saleForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not save your submission. Check your Firestore security rules.");
+        alert(firestoreErrorText(err,"your submission"));
         return;
     }
 
@@ -1180,7 +1180,14 @@ async function restoreLatestSale(uid){
         });
         if(best) loadSale(best.id,best.data);
     }catch(err){
-        console.error("Could not restore sale:",err);
+        console.error("Could not restore the previous sale:",err);
+        /* The seller keeps a usable page — they can still submit a new mail —
+           but the reason the old one is missing must not be swallowed. */
+        statusCard.classList.add("show");
+        document.getElementById("statusEmail").textContent="—";
+        document.getElementById("statusNote").innerHTML=
+            escapeHtml(firestoreErrorText(err,"your previous submission"))
+                .replace(/\n/g,"<br>");
     }
 }
 
@@ -1274,7 +1281,7 @@ addForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not send to admin. Check your Firestore security rules.");
+        alert(firestoreErrorText(err,"the follow-up for this mail"));
         return;
     }
 
@@ -1434,7 +1441,7 @@ document.getElementById("verifyForm").addEventListener("submit",async(e)=>{
         success.classList.add("show");
     }catch(err){
         console.error(err);
-        alert(err.message||"Could not send that. The agent has to ask for it first.");
+        alert(firestoreErrorText(err,"that verification reply"));
     }finally{
         btn.disabled=false;
         btn.textContent="Send to the agent";

@@ -147,7 +147,10 @@
 
 <script type="module">
 
-import { auth, db, doc, onSnapshot, onAuthStateChanged } from "./js/firebase.js";
+import {
+    auth, db, doc, onSnapshot, onAuthStateChanged,
+    firestoreErrorHtml, firestoreErrorSummary
+} from "./js/firebase.js";
 import { STATES, lgasFor } from "./js/data/nigeria.js";
 import { fileToBase64 } from "./js/image.js";
 import { formatNaira } from "./js/wallet.js";
@@ -193,11 +196,21 @@ function start() {
         kyc = value;
         renderKyc();
         renderBanner();
+    }, (err) => {
+        /* Without this the verification card simply stayed blank, which looks
+           like "not submitted" rather than "could not be read". */
+        console.error("Could not load the verification record:", err);
+        $("kycCard").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "your verification record")}</div>`;
     });
 
     watchMyListings((rows) => {
         myListings = rows;
         renderMyListings();
+    }, (err) => {
+        console.error("Could not load your listings:", err);
+        $("myGrid").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "your listings")}</div>`;
     });
 
     $("loadingScreen").style.display = "none";
@@ -376,7 +389,7 @@ async function submitApplication() {
             '<div class="notice good">Submitted. An administrator will review it shortly.</div>';
     } catch (err) {
         console.error(err);
-        kycFail(err.message);
+        kycFail(firestoreErrorSummary(err, "your application"));
     } finally {
         btn.disabled = false;
         btn.textContent = kyc ? "Resubmit application" : "Submit for verification";
@@ -468,7 +481,7 @@ $("postBtn").addEventListener("click", async () => {
         switchTab("listings");
     } catch (err) {
         console.error(err);
-        postFail(err.message);
+        postFail(firestoreErrorSummary(err, "that listing"));
     } finally {
         btn.disabled = false;
         btn.textContent = "Post item";
@@ -555,7 +568,7 @@ $("myGrid").addEventListener("click", async (e) => {
         }
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not update that listing.");
+        alert(firestoreErrorSummary(err, "that listing"));
     }
 });
 
