@@ -213,8 +213,8 @@
 
 <script type="module">
 
-import { auth, onAuthStateChanged } from "./js/firebase.js";
-import { isAdminUser } from "./js/admin.js";
+import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
+import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import { fileToBase64 } from "./js/image.js";
 import { loadSettings, saveSettings, formatNaira, formatDate } from "./js/wallet.js";
 import {
@@ -249,7 +249,11 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "login.html";
         return;
     }
-    if (!(await isAdminUser(user))) {
+    const status = await adminStatus(user);
+    if (!status.isAdmin) {
+        /* "Not an administrator" and "could not ask" are different answers:
+           say the second one instead of bouncing silently to the dashboard. */
+        if (status.error) return showAccessCheckFailure(status.error);
         window.location.href = "dashboard.html";
         return;
     }
@@ -270,19 +274,26 @@ async function start() {
     }, (err) => {
         console.error(err);
         $("awaiting").innerHTML =
-            '<div class="empty"><div class="big">Could not load orders</div>' +
-            "<p>Check your Firestore security rules.</p></div>";
+            `<div class="empty">${firestoreErrorHtml(err, "the orders")}</div>`;
     });
 
     watchAllListings((rows) => {
         listings = rows;
         renderListings();
-    }, (err) => console.error("listings:", err));
+    }, (err) => {
+        console.error("listings:", err);
+        $("adminListings").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "the listings")}</div>`;
+    });
 
     watchKycQueue((rows) => {
         kycRows = rows;
         renderKyc();
-    }, (err) => console.error("kyc:", err));
+    }, (err) => {
+        console.error("kyc:", err);
+        $("kycQueue").innerHTML =
+            `<div class="empty">${firestoreErrorHtml(err, "the verification queue")}</div>`;
+    });
 
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";
@@ -373,7 +384,7 @@ $("awaiting").addEventListener("click", async (e) => {
         }
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not update that order.");
+        alert(firestoreErrorSummary(err, "that order"));
     }
 });
 
@@ -401,7 +412,7 @@ $("orderTable").addEventListener("click", async (e) => {
     try {
         await refundOrder(order, adminUser);
     } catch (err) {
-        alert(err.message || "Could not refund that order.");
+        alert(firestoreErrorSummary(err, "that refund"));
     }
 });
 
@@ -461,7 +472,7 @@ $("kycQueue").addEventListener("click", async (e) => {
         }
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not update that application.");
+        alert(firestoreErrorSummary(err, "that application"));
     }
 });
 
@@ -509,7 +520,7 @@ $("adminListings").addEventListener("click", async (e) => {
     try {
         await setListingStatus(btn.dataset.id, "soldout");
     } catch (err) {
-        alert(err.message || "Could not remove that listing.");
+        alert(firestoreErrorSummary(err, "that listing"));
     }
 });
 
@@ -565,7 +576,7 @@ $("aPostBtn").addEventListener("click", async () => {
         $("aDropLabel").textContent = "Choose a photo";
     } catch (err) {
         console.error(err);
-        postFail(err.message);
+        postFail(firestoreErrorSummary(err, "that listing"));
     } finally {
         btn.disabled = false;
     }
@@ -589,21 +600,33 @@ $("saveFeeBtn").addEventListener("click", async () => {
             `<div class="notice good">Saved. Buyers are now charged ${esc(formatNaira(value))} per order.</div>`;
     } catch (err) {
         console.error(err);
-        $("feeMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+        $("feeMsg").innerHTML =
+            `<div class="notice bad">${esc(firestoreErrorSummary(err, "the service fee"))}</div>`;
     } finally {
         btn.disabled = false;
     }
 });
 
 /* ------------------------------------------------------------------ */
+function showTab(name) {
+    const tab = document.querySelector(`.tab[data-tab="${name}"]`);
+    if (!tab) return;
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
+    document.querySelectorAll(".panel").forEach((p) =>
+        p.classList.toggle("active", p.id === `panel-${name}`));
+}
+
 document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((t) =>
-            t.classList.toggle("active", t === tab));
-        document.querySelectorAll(".panel").forEach((p) =>
-            p.classList.toggle("active", p.id === `panel-${tab.dataset.tab}`));
+        showTab(tab.dataset.tab);
+        /* keep the address bar in step, so a panel can be linked to */
+        history.replaceState(null, "", `#${tab.dataset.tab}`);
     });
 });
+
+/* Links such as "Settings" in the admin sidebar come in as #settings. */
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+if (location.hash) showTab(location.hash.slice(1));
 
 </script>
 

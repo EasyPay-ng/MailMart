@@ -13,6 +13,10 @@ Firestore Security Rules.
    ```sh
    firebase deploy --only firestore:rules,firestore:indexes
    ```
+
+   Until this step runs, the database uses the default deny-all rules and every
+   page that reads Firestore fails. `.firebaserc` pins the project (`mailmartz`)
+   so the command targets the right one; `setup-check.html` confirms it worked.
 4. Add your domain to **Authentication → Settings → Authorized domains**,
    otherwise Google sign-in is blocked and sign-in emails are rejected.
 5. Register the administrator accounts. The addresses in `ADMIN_EMAILS` land on
@@ -176,16 +180,61 @@ Serve the repository over HTTP (ES modules do not work reliably through
 
 ```sh
 python3 -m http.server 8000
+# or: npm run serve
 ```
 
 Then open `http://localhost:8000`.
+
+## "Check your Firestore security rules…" — what that means
+
+Most pages used to show one sentence for every failure:
+
+> Could not load … Check your Firestore security rules and that you are signed in.
+> Could not load … Check your Firestore security rules and that you are an administrator.
+
+That sentence is now gone from the pages: each one reports the error code
+Firebase actually returned plus what to do about it. The three things that
+produce it, in the order they are worth checking:
+
+1. **The rules were never deployed.** A Firestore database runs the default
+   *deny-all* ruleset until `firestore.rules` is deployed, and then **every**
+   read and write from a page is refused — signed in or not, admin or not. This
+   is the usual cause when *most* pages fail at once. Fix it from the folder
+   that contains `firebase.json`:
+
+   ```sh
+   npm i -g firebase-tools     # once
+   firebase login              # once
+   firebase deploy --only firestore:rules,firestore:indexes
+   ```
+
+   The same applies if the project was left in Firestore's "test mode": those
+   rules allow everything for 30 days and then start refusing everything.
+
+2. **A composite index is missing.** That arrives as `failed-precondition`, not
+   `permission-denied`, and Firebase prints a one-click create-index link in the
+   browser console. `firebase deploy --only firestore:indexes` creates the ones
+   the pages need (see `firestore.indexes.json`).
+
+3. **The account genuinely is not allowed.** `permission-denied` on an
+   admin-only screen, while the ordinary pages work, means the rules are live
+   and simply do not grant that account the privilege — check `ADMIN_EMAILS` in
+   `js/admin.js` and `adminEmails()` in `firestore.rules`, or the `isAdmin` /
+   `isSeller` / `isSubAdmin` fields on the user's document.
+
+`setup-check.html` answers the question directly. Open it while signed in: it
+runs the same reads the pages run, one at a time, and prints the verdict — rules
+live or not, which documents this account may read, and which composite indexes
+exist. It is safe to run at any time and writes nothing except a skipped check's
+note.
 
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
-| `js/firebase.js` | Firebase app, Auth and Firestore clients |
-| `js/admin.js` | Administrator list and post-login redirect |
+| `js/firebase.js` | Firebase app, Auth and Firestore clients, error diagnostics |
+| `js/admin.js` | Administrator list, access check, post-login redirect |
+| `setup-check.html` | Reports which Firestore rules/indexes/session the app has |
 | `js/image.js` | Image → base64 helper (not wired into a page yet) |
 | `firestore.rules` | Server-side access control |
 | `scripts/` | Optional Admin SDK helpers |

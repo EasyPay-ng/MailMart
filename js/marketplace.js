@@ -113,7 +113,13 @@ export function quoteFor(listing, quantity, state, settings) {
   const qty = Math.max(1, Math.floor(Number(quantity) || 1));
   const subtotal = round2(unit * qty);
   const deliveryFee = round2(deliveryFeeFor(listing, state));
-  const serviceFee = round2(Number(settings?.serviceFee || 0));
+  // firestore.rules recomputes this quote and only accepts a stored fee that is
+  // actually a number; an unset (or malformed) fee has to quote as zero here too.
+  const serviceFee = round2(
+    typeof settings?.serviceFee === "number" && Number.isFinite(settings.serviceFee)
+      ? settings.serviceFee
+      : 0
+  );
   return {
     unitPrice: unit,
     quantity: qty,

@@ -331,8 +331,8 @@ a{color:inherit;text-decoration:none}
 
 <script type="module">
 
-import { auth, onAuthStateChanged, signOut } from "./js/firebase.js";
-import { isAdminUser } from "./js/admin.js";
+import { auth, onAuthStateChanged, signOut, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
+import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import {
     loadSettings,
     saveSettings,
@@ -364,8 +364,9 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "login.html";
         return;
     }
-    const ok = await isAdminUser(user);
-    if (!ok) {
+    const status = await adminStatus(user);
+    if (!status.isAdmin) {
+        if (status.error) return showAccessCheckFailure(status.error);
         window.location.href = "dashboard.html";
         return;
     }
@@ -391,8 +392,7 @@ async function start() {
     watchAllTransactions(render, (err) => {
         console.error("Could not load transactions:", err);
         $("pendingDeposits").innerHTML =
-            '<div class="empty"><div class="big">Could not load requests</div>' +
-            "<p>Check your Firestore security rules and that you are an administrator.</p></div>";
+            `<div class="empty">${firestoreErrorHtml(err, "the wallet requests")}</div>`;
     });
 
     $("loadingScreen").style.display = "none";
@@ -408,7 +408,7 @@ async function act(tx, action, reason = "") {
         else await rejectTransaction(tx, adminUser, reason);
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not update that request.");
+        alert(firestoreErrorSummary(err, "that request"));
     }
 }
 
@@ -473,7 +473,7 @@ $("saveSettingsBtn").addEventListener("click", async () => {
         notice($("msgSettings"), "good", "Saved. Users will see these details immediately.");
     } catch (err) {
         console.error(err);
-        notice($("msgSettings"), "bad", esc(err.message));
+        notice($("msgSettings"), "bad", esc(firestoreErrorSummary(err, "the settings")));
     } finally {
         btn.disabled = false;
         btn.textContent = "Save settings";
@@ -601,14 +601,25 @@ function renderTable(rows) {
 /* ------------------------------------------------------------------ */
 /* tabs                                                                */
 /* ------------------------------------------------------------------ */
+function showTab(name) {
+    const tab = document.querySelector(`.tab[data-tab="${name}"]`);
+    if (!tab) return;
+    document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
+    document.querySelectorAll(".panel").forEach((p) =>
+        p.classList.toggle("active", p.id === `panel-${name}`));
+}
+
 document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
-        document.querySelectorAll(".tab").forEach((t) =>
-            t.classList.toggle("active", t === tab));
-        document.querySelectorAll(".panel").forEach((p) =>
-            p.classList.toggle("active", p.id === `panel-${tab.dataset.tab}`));
+        showTab(tab.dataset.tab);
+        /* keep the address bar in step, so a panel can be linked to */
+        history.replaceState(null, "", `#${tab.dataset.tab}`);
     });
 });
+
+/* Links such as "Settings" in the admin sidebar come in as #settings. */
+window.addEventListener("hashchange", () => showTab(location.hash.slice(1)));
+if (location.hash) showTab(location.hash.slice(1));
 
 </script>
 

@@ -500,12 +500,16 @@ body::before{
                 Desk Team
             </a>
 
-            <a class="nav-item" href="dashboard.html">
+            <!-- The roster, the promote-by-email box and the work figures all
+                 live on admin-team.html; "Desk Team" opens the same page. -->
+            <a class="nav-item" href="admin-team.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
                 Users
             </a>
 
-            <a class="nav-item" href="dashboard.html">
+            <!-- Platform settings: the service fee on the marketplace page,
+                 the deposit account on the wallet page. -->
+            <a class="nav-item" href="admin-marketplace.html#settings">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
                 Settings
             </a>
@@ -580,13 +584,13 @@ body::before{
 
 <script type="module">
 
-import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from "./js/firebase.js";
-import { isAdminUser } from "./js/admin.js";
+import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
+import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 
 /* ------------------------------------------------------------------
    AUTH GUARD
    Requires a signed-in user who is flagged as an administrator.
-   isAdminUser() reads users/{uid}.isAdmin from Firestore; firestore.rules
+   adminStatus() reads users/{uid}.isAdmin from Firestore; firestore.rules
    is the real enforcement point, so a tampered client gains nothing by
    deleting this check.
 ------------------------------------------------------------------ */
@@ -597,9 +601,11 @@ onAuthStateChanged(auth,async(user)=>{
         return;
     }
 
-    const ok=await isAdminUser(user);
+    const status=await adminStatus(user);
 
-    if(!ok){
+    if(!status.isAdmin){
+        /* A refused lookup is not the same as "not an administrator". */
+        if(status.error) return showAccessCheckFailure(status.error);
         window.location.href="dashboard.html";
         return;
     }
@@ -655,9 +661,7 @@ onSnapshot(q,(snap)=>{
 
 },err=>{
     console.error("Firestore read failed:",err);
-    listEl.innerHTML=
-        '<div class="empty"><div class="big">Could not load sales</div>'+
-        'Check your Firestore security rules and that you are an administrator.</div>';
+    listEl.innerHTML='<div class="empty">'+firestoreErrorHtml(err,"the sales queue")+'</div>';
 });
 
 }
@@ -821,6 +825,10 @@ listEl.addEventListener("click",async(e)=>{
         return;
     }
 
+    /* A refused write must say why — a silent unhandled rejection here looked
+       exactly like a dead button. */
+    try{
+
     if(action==="approve"){
         await updateDoc(doc(db,"sales",id),{ status:"approved", updatedAt:serverTimestamp() });
         return;
@@ -847,6 +855,11 @@ listEl.addEventListener("click",async(e)=>{
             updatedAt:serverTimestamp()
         });
         return;
+    }
+
+    }catch(err){
+        console.error(err);
+        alert(firestoreErrorSummary(err,"that sale"));
     }
 
 });

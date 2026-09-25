@@ -83,6 +83,40 @@ body::before{
     background-size:50px 50px;
 }
 
+/* ---------- Account blocks (profile / settings) ---------- */
+
+.acct{
+    display:flex;
+    flex-direction:column;
+}
+
+.kv{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+
+    padding:10px 0;
+
+    border-bottom:1px solid rgba(255,255,255,.06);
+
+    font-size:13.5px;
+}
+
+.kv:last-child{ border-bottom:none; }
+.kv span{ color:#8fa6bd; }
+.kv b{ color:#eaf4ff; font-weight:600; word-break:break-all; text-align:right; }
+
+.msg{
+    margin-top:12px;
+    font-size:12.5px;
+    line-height:1.6;
+    color:#8fa6bd;
+}
+.msg.bad{ color:#ff9fb0; }
+.msg.good{ color:#7ef2b0; }
+.msg a{ color:#39c9ff; text-decoration:none; }
+
 /* ---------- Layout ---------- */
 
 .shell{
@@ -1070,7 +1104,7 @@ body::before{
                 Orders
             </a>
 
-            <a class="nav-item" data-page="Services">
+            <a class="nav-item" href="#services" data-page="Services">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
                 Services
             </a>
@@ -1097,12 +1131,12 @@ body::before{
 
             <span class="nav-label">Account</span>
 
-            <a class="nav-item" data-page="Profile">
+            <a class="nav-item" href="#profile" data-page="Profile">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
                 Profile
             </a>
 
-            <a class="nav-item" data-page="Settings">
+            <a class="nav-item" href="#settings" data-page="Settings">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 7 19.4a1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 14.1H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7a1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 3.6V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a2 2 0 1 1 0 4Z"/></svg>
                 Settings
             </a>
@@ -1252,7 +1286,7 @@ body::before{
             <div class="panel">
                 <div class="panel-head">
                     <h2>My Wallet</h2>
-                    <a class="link" id="walletLink">Manage</a>
+                    <a class="link" id="walletLink" href="wallet.html">Manage</a>
                 </div>
 
                 <div class="wallet">
@@ -1266,16 +1300,16 @@ body::before{
 
                 <div class="mini-list" id="miniList">
                     <div class="mini">
-                        <div class="left"><span class="d">$</span> Last deposit</div>
-                        <div class="amt">+ $50.00</div>
+                        <div class="left"><span class="d">₦</span> Wallet</div>
+                        <div class="amt" id="miniWallet">—</div>
                     </div>
                     <div class="mini">
-                        <div class="left"><span class="d">↻</span> Order payment</div>
-                        <div class="amt neg">− $12.40</div>
+                        <div class="left"><span class="d">✓</span> Seller</div>
+                        <div class="amt" id="miniSeller">—</div>
                     </div>
                     <div class="mini">
-                        <div class="left"><span class="d">✓</span> Email payout</div>
-                        <div class="amt">+ $8.75</div>
+                        <div class="left"><span class="d">★</span> Administrator</div>
+                        <div class="amt" id="miniAdmin">—</div>
                     </div>
                 </div>
             </div>
@@ -1283,9 +1317,9 @@ body::before{
         </section>
 
         <!-- Services -->
-        <div class="section-title">
+        <div class="section-title" id="services">
             <h2>Our Services</h2>
-            <a class="link">View all</a>
+            <a class="link" href="marketplace.html">View all</a>
         </div>
 
         <section class="services">
@@ -1331,7 +1365,7 @@ body::before{
         <!-- Recent Orders -->
         <div class="section-title">
             <h2>Recent Orders</h2>
-            <a class="link">See all orders</a>
+            <a class="link" href="orders.html">See all orders</a>
         </div>
 
         <section class="panel">
@@ -1395,13 +1429,68 @@ body::before{
             </table>
         </section>
 
+        <!-- Profile (the sidebar "Profile" item lands here) -->
+        <div class="section-title" id="profile">
+            <h2>Your account</h2>
+            <a class="link" href="setup-check.html">Setup check</a>
+        </div>
+
+        <section class="grid-2">
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Profile</h2>
+                </div>
+
+                <div class="acct">
+                    <div class="kv"><span>Signed in as</span><b id="acctEmail">—</b></div>
+                    <div class="kv"><span>Name on file</span><b id="acctName">—</b></div>
+                    <div class="kv"><span>Phone</span><b id="acctPhone">—</b></div>
+                    <div class="kv"><span>Account ID</span><b id="acctUid">—</b></div>
+                </div>
+
+                <div class="msg" id="profileMsg"></div>
+            </div>
+
+            <!-- Settings (the sidebar "Settings" item lands here) -->
+            <div class="panel" id="settings">
+                <div class="panel-head">
+                    <h2>Settings</h2>
+                </div>
+
+                <div class="acct">
+                    <div class="kv"><span>Wallet balance</span><b id="setBalance">—</b></div>
+                    <div class="kv"><span>Seller account</span><b id="setSeller">—</b></div>
+                    <div class="kv"><span>Administrator</span><b id="setAdmin">—</b></div>
+                </div>
+
+                <div class="wallet-actions">
+                    <button class="btn-fill" id="resetBtn">Send password reset</button>
+                    <button class="btn-ghost" id="logoutBtn2">Log out</button>
+                </div>
+
+                <div class="msg" id="settingsMsg"></div>
+            </div>
+
+        </section>
+
     </main>
 
 </div>
 
 <script type="module">
 
-import { auth, onAuthStateChanged, signOut } from "./js/firebase.js";
+import {
+    auth, db, doc, onSnapshot, onAuthStateChanged, signOut,
+    sendPasswordResetEmail, firestoreErrorHtml
+} from "./js/firebase.js";
+import { adminStatus } from "./js/admin.js";
+import { formatNaira } from "./js/wallet.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
 const loadingScreen=document.getElementById("loadingScreen");
 const shell=document.getElementById("shell");
@@ -1429,9 +1518,102 @@ onAuthStateChanged(auth,(user)=>{
     document.getElementById("greeting").textContent=
         "Welcome back, "+name;
 
+    $("acctEmail").textContent=email;
+    $("acctUid").textContent=user.uid;
+
     loadingScreen.style.display="none";
     shell.style.display="grid";
 
+    startAccount(user);
+
+});
+
+/* ------------------------------------------------------------------
+   Live account details.
+   The dashboard used to be pure markup: a hard-coded $0.00 and no
+   Firestore read at all, so a refused read or a signed-out session was
+   invisible here. Everything below reports what Firestore actually says.
+------------------------------------------------------------------ */
+function startAccount(user){
+
+    onSnapshot(doc(db,"users",user.uid),(snap)=>{
+
+        const data=snap.exists()?snap.data():{};
+        const balance=Number(data.balance||0);
+
+        $("statBalance").textContent=formatNaira(balance);
+        $("walletAv").textContent=formatNaira(balance);
+        $("miniWallet").textContent=formatNaira(balance);
+        $("setBalance").textContent=formatNaira(balance);
+
+        $("acctName").textContent=data.displayName||data.username||"—";
+        $("acctPhone").textContent=data.phone||"—";
+
+        const seller=data.isSeller===true?"verified":"not verified";
+        const adminFlag=data.isAdmin===true?"yes":"no";
+        $("setSeller").textContent=seller;
+        $("setAdmin").textContent=adminFlag;
+        $("miniSeller").textContent=seller;
+        $("miniAdmin").textContent=adminFlag;
+
+        $("profileMsg").innerHTML=
+            snap.exists()
+                ? ""
+                : '<div class="msg bad">No profile document yet. Anything that reads '+
+                  'your balance will treat it as zero until one is written.</div>';
+
+    },(err)=>{
+        console.error("Could not read your account:",err);
+        $("profileMsg").innerHTML=
+            `<div class="msg bad">${firestoreErrorHtml(err,"your account")}</div>`;
+        $("settingsMsg").innerHTML=
+            `<div class="msg bad">${esc(err.code||"error")} — the balance shown above may be stale.</div>`;
+    });
+
+    /* An administrator lands on admin.html, but the dashboard still says which
+       account it is looking at — useful when more than one is signed in. */
+    adminStatus(user).then((status)=>{
+        if(status.error){
+            $("settingsMsg").innerHTML=
+                `<div class="msg bad">${esc(status.error.code||"error")} — `+
+                "could not confirm administrator rights for this account.</div>";
+        }
+    });
+
+}
+
+/* Password reset straight from the settings block */
+$("resetBtn").addEventListener("click",async()=>{
+    const user=auth.currentUser;
+    if(!user||!user.email) return;
+    const btn=$("resetBtn");
+    btn.disabled=true;
+    try{
+        await sendPasswordResetEmail(auth,user.email);
+        $("settingsMsg").innerHTML=
+            `<div class="msg good">Reset email sent to ${esc(user.email)}.</div>`;
+    }catch(err){
+        console.error(err);
+        $("settingsMsg").innerHTML=
+            `<div class="msg bad">${esc(err.message||"Could not send the reset email.")}</div>`;
+    }finally{
+        btn.disabled=false;
+    }
+});
+
+$("logoutBtn2").addEventListener("click",async()=>{
+    try{ await signOut(auth); window.location.href="login.html"; }
+    catch(e){ console.error(e); }
+});
+
+/* The wallet buttons used to do nothing at all */
+["depositBtn","addFundsBtn","withdrawBtn"].forEach((id)=>{
+    const el=$(id);
+    if(el) el.addEventListener("click",()=>{ window.location.href="wallet.html"; });
+});
+
+$("profileChip").addEventListener("click",()=>{
+    document.getElementById("profile").scrollIntoView({behavior:"smooth",block:"start"});
 });
 
 /* Logout */
@@ -1449,10 +1631,16 @@ document.getElementById("menuToggle").addEventListener("click",()=>{
     document.body.classList.toggle("nav-open");
 });
 
-/* Sidebar nav (visual state only) */
+/* Sidebar nav
+   This handler used to call preventDefault() on every item, which killed the
+   hrefs on Orders, Marketplace, Sell, Wallet and Buy Emails: the highlight
+   moved and the page never did. Only items without a destination (the page you
+   are already on) are inert now. */
 document.querySelectorAll(".nav-item").forEach(item=>{
     item.addEventListener("click",(e)=>{
-        e.preventDefault();
+        const href=item.getAttribute("href");
+        if(!href) e.preventDefault();
+
         document.querySelectorAll(".nav-item")
             .forEach(n=>n.classList.remove("active"));
         item.classList.add("active");

@@ -104,10 +104,11 @@
 <script type="module">
 
 import {
-    auth, db, collection, query, where, onSnapshot, getDocs, onAuthStateChanged
+    auth, db, collection, query, where, onSnapshot, getDocs, onAuthStateChanged,
+    firestoreErrorHtml, firestoreErrorSummary
 } from "./js/firebase.js";
 
-import { isAdminUser } from "./js/admin.js";
+import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import { formatDate } from "./js/wallet.js";
 import {
     findUsersByEmail,
@@ -126,6 +127,7 @@ let me = null;
 let team = [];
 let presence = [];
 let sales = [];
+let presenceError = null;   // why the online list is missing, if it is
 
 /* ------------------------------------------------------------------ */
 onAuthStateChanged(auth, async (user) => {
@@ -133,7 +135,9 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "login.html";
         return;
     }
-    if (!(await isAdminUser(user))) {
+    const status = await adminStatus(user);
+    if (!status.isAdmin) {
+        if (status.error) return showAccessCheckFailure(status.error);
         window.location.href = "dashboard.html";
         return;
     }
@@ -151,20 +155,25 @@ function start() {
         (err) => {
             console.error(err);
             $("teamList").innerHTML =
-                '<div class="empty"><div class="big">Could not load the team</div>' +
-                "<p>Check your Firestore security rules.</p></div>";
+                `<div class="empty">${firestoreErrorHtml(err, "the desk team")}</div>`;
         }
     );
 
     watchPresence((rows) => {
         presence = rows;
         renderTeam();
-    }, (err) => console.error("presence:", err));
+    }, (err) => {
+        /* online status is advisory: renderTeam() falls back to the roster
+           when presence cannot be read, so this only reports the reason */
+        console.error("presence:", err);
+        presenceError = err;
+        renderTeam();
+    });
 
     watchAllSales((rows) => {
         sales = rows;
         renderTeam();
-    }, (err) => console.error("sales:", err));
+    }, (err) => console.error("sales:", err));  // work figures are advisory
 
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";
@@ -206,7 +215,8 @@ async function doFind() {
             </div>`).join("");
     } catch (err) {
         console.error(err);
-        box.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+        box.innerHTML =
+            `<div class="notice bad">${esc(firestoreErrorSummary(err, "that search"))}</div>`;
     }
 }
 
@@ -221,7 +231,7 @@ $("findResult").addEventListener("click", async (e) => {
         $("findEmail").value = "";
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not add them.");
+        alert(firestoreErrorSummary(err, "that change"));
         btn.disabled = false;
     }
 });
@@ -243,6 +253,12 @@ function renderTeam() {
     const now = Date.now();
     const online = presence.filter((p) => isOnline(p, now));
 
+    /* Presence is read from its own collection; if that read is refused the
+       roster still renders, but say why nobody shows as online. */
+    const presenceNotice = presenceError
+        ? `<div class="notice bad">${esc(firestoreErrorSummary(presenceError, "who is online"))}</div>`
+        : "";
+
     $("statTotal").textContent = String(team.length);
     $("statOnline").textContent = String(online.length);
     $("statHandled").textContent = String(
@@ -252,13 +268,13 @@ function renderTeam() {
     $("teamCount").textContent = team.length ? `${team.length}` : "";
 
     if (!team.length) {
-        $("teamList").innerHTML =
+        $("teamList").innerHTML = presenceNotice +
             '<div class="empty"><div class="big">Nobody on the desk yet</div>' +
             "<p>Find a registered user above and add them.</p></div>";
         return;
     }
 
-    $("teamList").innerHTML = team.map((u) => {
+    $("teamList").innerHTML = presenceNotice + team.map((u) => {
         const p = presence.find((x) => x.uid === u.uid);
         const on = isOnline(p, now);
         const s = statsFor(u.uid);
@@ -300,7 +316,7 @@ $("teamList").addEventListener("click", async (e) => {
         await setSubAdmin(uid, false);
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not remove them.");
+        alert(firestoreErrorSummary(err, "that change"));
         btn.disabled = false;
     }
 });

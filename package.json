@@ -1,0 +1,12 @@
+{
+  "name": "mailmart",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MailMart — static Firebase app. There is no build step: the HTML files are the app.",
+  "scripts": {
+    "serve": "npx --yes serve . -l 5000",
+    "deploy": "npx --yes firebase-tools deploy --only firestore:rules,firestore:indexes,hosting",
+    "deploy:rules": "npx --yes firebase-tools deploy --only firestore:rules,firestore:indexes",
+    "deploy:hosting": "npx --yes firebase-tools deploy --only hosting"
+  }
+}

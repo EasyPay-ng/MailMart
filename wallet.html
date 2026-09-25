@@ -354,7 +354,8 @@ a{color:inherit;text-decoration:none}
 <script type="module">
 
 import {
-    auth, db, doc, onSnapshot, onAuthStateChanged, signOut
+    auth, db, doc, onSnapshot, onAuthStateChanged, signOut,
+    firestoreErrorHtml, firestoreErrorSummary
 } from "./js/firebase.js";
 
 import { BANKS } from "./js/data/nigeria.js";
@@ -423,9 +424,7 @@ async function start(user) {
 
     watchMyTransactions(renderHistory, (err) => {
         console.error("Could not load transactions:", err);
-        $("historyList").innerHTML =
-            '<div class="empty"><div class="big">Could not load history</div>' +
-            "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+        $("historyList").innerHTML = `<div class="empty">${firestoreErrorHtml(err, "your history")}</div>`;
     });
 
     $("loadingScreen").style.display = "none";
@@ -568,7 +567,7 @@ $("depositBtn").addEventListener("click", async () => {
         switchTab("history");
     } catch (err) {
         console.error(err);
-        notice($("depositMsg"), "bad", esc(err.message));
+        notice($("depositMsg"), "bad", esc(firestoreErrorSummary(err, "your deposit")));
     } finally {
         btn.disabled = false;
         btn.textContent = "Submit deposit";
@@ -632,7 +631,7 @@ $("withdrawBtn").addEventListener("click", async () => {
         switchTab("history");
     } catch (err) {
         console.error(err);
-        notice($("withdrawMsg"), "bad", esc(err.message));
+        notice($("withdrawMsg"), "bad", esc(firestoreErrorSummary(err, "your withdrawal")));
     } finally {
         btn.disabled = false;
         btn.textContent = "Request withdrawal";

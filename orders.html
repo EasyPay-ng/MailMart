@@ -92,7 +92,7 @@
 
 <script type="module">
 
-import { auth, onAuthStateChanged } from "./js/firebase.js";
+import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { formatNaira, formatDate } from "./js/wallet.js";
 import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder } from "./js/marketplace.js";
 
@@ -135,9 +135,7 @@ function start() {
 
 function listError(el, err) {
     console.error(err);
-    el.innerHTML =
-        '<div class="empty"><div class="big">Could not load orders</div>' +
-        "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+    el.innerHTML = `<div class="empty">${firestoreErrorHtml(err, "your orders")}</div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -227,7 +225,7 @@ async function onAction(target, act) {
         await advanceOrder(row, act, currentUser.email);
     } catch (err) {
         console.error(err);
-        alert(err.message || "Could not update that order.");
+        alert(firestoreErrorSummary(err, "that order"));
     }
 }
 

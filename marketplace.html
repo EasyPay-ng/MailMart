@@ -130,7 +130,7 @@
 
 <script type="module">
 
-import { auth, db, doc, onSnapshot, onAuthStateChanged, signOut } from "./js/firebase.js";
+import { auth, db, doc, onSnapshot, onAuthStateChanged, signOut, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { STATES, lgasFor } from "./js/data/nigeria.js";
 import { loadSettings, formatNaira } from "./js/wallet.js";
 import {
@@ -186,9 +186,7 @@ async function start(user) {
         render();
     }, (err) => {
         console.error("Could not load listings:", err);
-        $("grid").innerHTML =
-            '<div class="empty"><div class="big">Could not load listings</div>' +
-            "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+        $("grid").innerHTML = `<div class="empty">${firestoreErrorHtml(err, "the listings")}</div>`;
     });
 
     $("loadingScreen").style.display = "none";
@@ -382,7 +380,7 @@ $("mBuy").addEventListener("click", async () => {
         setTimeout(closeModal, 1400);
     } catch (err) {
         console.error(err);
-        fail(err.message);
+        fail(firestoreErrorSummary(err, "your order"));
     } finally {
         btn.disabled = false;
         btn.textContent = "Place order";

@@ -12,7 +12,10 @@
       "README.md",
       "scripts/**",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      ".firebaserc",
+      "package.json",
+      "package-lock.json"
     ]
   }
 }
