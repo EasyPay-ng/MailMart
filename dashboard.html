@@ -1075,7 +1075,7 @@ body::before{
                 Services
             </a>
 
-            <a class="nav-item" data-page="Wallet">
+            <a class="nav-item" href="wallet.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
                 Wallet
             </a>
@@ -1450,12 +1450,12 @@ document.querySelectorAll(".nav-item").forEach(item=>{
     });
 });
 
-/* Placeholder buttons */
-["depositBtn","addFundsBtn","walletLink","withdrawBtn","profileChip"]
+/* Wallet actions go to the real wallet page */
+["depositBtn","addFundsBtn","walletLink","withdrawBtn"]
 .forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.addEventListener("click",()=>{
-        alert("This is a demo dashboard. Wire this action to your Firebase backend.");
+        window.location.href="wallet.html";
     });
 });
 

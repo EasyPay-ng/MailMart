@@ -135,6 +135,64 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- platform settings ---------------------------------------
+    // Administrator writes, every signed-in user reads: the deposit account
+    // has to be visible on the deposit screen.
+    match /settings/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ---------- transactions --------------------------------------------
+    // Append-only ledger. Owners raise pending requests; only an
+    // administrator can settle one, and settling is what moves money.
+    match /transactions/{txId} {
+
+      // A withdrawal can never be raised for more than the wallet holds.
+      function withdrawalIsFunded() {
+        return get(/databases/$(database)/documents/users/$(uid())).data.balance
+                 >= request.resource.data.amount;
+      }
+
+      function ownPendingRequest() {
+        return request.resource.data.uid == uid()
+          && request.resource.data.status == 'pending'
+          && ['deposit', 'withdrawal'].hasAny([request.resource.data.type])
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.createdAt == request.time
+          && (request.resource.data.type != 'withdrawal'
+              || (request.resource.data.keys().hasAll(
+                    ['bankName', 'accountNumber', 'accountName'])
+                  && withdrawalIsFunded()))
+          && (request.resource.data.type != 'deposit'
+              || (request.resource.data.depositorName is string
+                  && request.resource.data.proofImage is string
+                  && request.resource.data.proofImage.size() < 800000));
+      }
+
+      // Administrators may only move a request along its allowed path, and the
+      // reviewer recorded on it must be whoever is signed in.
+      function adminSettlement() {
+        return isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'reviewedBy', 'reviewedAt',
+                         'rejectionReason', 'updatedAt', 'balanceAfter'])
+          && ((resource.data.status == 'pending'
+               && ['approved', 'rejected'].hasAny([request.resource.data.status]))
+              || (resource.data.status == 'approved'
+                  && request.resource.data.status == 'completed'))
+          && request.resource.data.reviewedBy == tokenEmail();
+      }
+
+      allow read: if signedIn()
+        && (resource.data.uid == uid() || isAdmin());
+
+      allow create: if signedIn() && ownPendingRequest();
+      allow update: if signedIn() && adminSettlement();
+      allow delete: if false;
+    }
+
     // No catch-all match: rules deny by default, so any other collection the
     // client might invent is refused.
   }

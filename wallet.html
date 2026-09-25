@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Wallet | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html{width:100%;min-height:100%}
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+    background:
+        radial-gradient(circle at 15% 0%,rgba(0,120,255,.17),transparent 35%),
+        radial-gradient(circle at 100% 100%,rgba(0,210,255,.10),transparent 35%),
+        #020812;
+}
+
+a{color:inherit;text-decoration:none}
+
+/* ---------- loading gate ---------- */
+#loadingScreen{
+    position:fixed;inset:0;z-index:999;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+    background:#020812;
+}
+.spinner{
+    width:42px;height:42px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.12);
+    border-top-color:#00d5ff;
+    animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingScreen p{color:#8ba3bd;font-size:13px}
+
+/* ---------- shell ---------- */
+.wrap{max-width:1080px;margin:0 auto;padding:22px 18px 80px}
+
+.topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:14px;margin-bottom:24px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.3px}
+.brand .dot{
+    width:26px;height:26px;border-radius:9px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;
+}
+.back-link{
+    font-size:12.5px;font-weight:700;color:#8ba3bd;
+    padding:9px 15px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.03);
+    transition:.2s;
+}
+.back-link:hover{color:#fff;border-color:rgba(0,213,255,.4)}
+
+/* ---------- balance card ---------- */
+.balance-card{
+    position:relative;overflow:hidden;
+    border-radius:20px;padding:26px 26px 24px;margin-bottom:22px;
+    border:1px solid rgba(255,255,255,.09);
+    background:
+        radial-gradient(circle at 90% 0%,rgba(0,213,255,.20),transparent 55%),
+        linear-gradient(135deg,rgba(8,124,255,.22),rgba(0,213,255,.06));
+}
+.balance-card .lbl{font-size:11px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;color:#8ba3bd}
+.balance-card .amt{font-size:38px;font-weight:900;letter-spacing:-1.4px;margin-top:8px;line-height:1.05}
+.balance-card .sub{font-size:12.5px;color:#8ba3bd;margin-top:8px}
+.balance-card .sub b{color:#69edb8;font-weight:700}
+
+/* ---------- tabs ---------- */
+.tabs{
+    display:flex;gap:6px;padding:5px;margin-bottom:20px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px;
+}
+.tab{
+    flex:1;text-align:center;padding:11px 8px;border-radius:10px;
+    font-size:12.5px;font-weight:700;color:#8ba3bd;cursor:pointer;
+    border:0;background:transparent;font-family:inherit;transition:.2s;
+}
+.tab:hover{color:#fff}
+.tab.active{background:linear-gradient(135deg,#087cff,#00d5ff);color:#fff}
+.tab .badge{
+    display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;
+    font-size:10.5px;font-weight:800;background:rgba(255,255,255,.18);
+}
+
+/* ---------- panels ---------- */
+.panel{display:none}
+.panel.active{display:block}
+
+.card{
+    border-radius:18px;padding:22px;margin-bottom:16px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.08);
+}
+.card h3{font-size:15px;font-weight:800;margin-bottom:6px}
+.card .hint{font-size:12.5px;color:#8ba3bd;line-height:1.65;margin-bottom:16px}
+
+/* ---------- bank detail display ---------- */
+.pay-to{
+    border-radius:14px;padding:16px 18px;margin-bottom:18px;
+    background:linear-gradient(135deg,rgba(8,124,255,.16),rgba(0,213,255,.05));
+    border:1px solid rgba(0,213,255,.22);
+}
+.pay-to .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0}
+.pay-to .row + .row{border-top:1px solid rgba(255,255,255,.07)}
+.pay-to .k{font-size:11.5px;color:#8ba3bd;font-weight:600;letter-spacing:.3px}
+.pay-to .v{font-size:15px;font-weight:800;letter-spacing:-.2px}
+.copy-btn{
+    border:0;background:rgba(255,255,255,.10);color:#8ba3bd;
+    font-family:inherit;font-size:11px;font-weight:700;
+    padding:6px 11px;border-radius:8px;cursor:pointer;transition:.2s;
+}
+.copy-btn:hover{background:rgba(255,255,255,.18);color:#fff}
+
+.notice{
+    border-radius:12px;padding:13px 15px;margin-bottom:16px;
+    font-size:12.5px;line-height:1.6;
+}
+.notice.warn{background:rgba(255,212,121,.10);border:1px solid rgba(255,212,121,.30);color:#ffd479}
+.notice.info{background:rgba(0,213,255,.08);border:1px solid rgba(0,213,255,.22);color:#9be3ff}
+.notice.bad{background:rgba(255,154,169,.10);border:1px solid rgba(255,154,169,.30);color:#ff9aa9}
+.notice.good{background:rgba(105,237,184,.10);border:1px solid rgba(105,237,184,.30);color:#69edb8}
+
+/* ---------- forms ---------- */
+.field{margin-bottom:15px}
+.field label{
+    display:block;font-size:11.5px;font-weight:700;color:#8ba3bd;
+    margin-bottom:7px;letter-spacing:.3px;
+}
+.field input,.field select{
+    width:100%;height:46px;padding:0 14px;
+    border-radius:12px;border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;
+    transition:.2s;
+}
+.field select{
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238ba3bd' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;
+    cursor:pointer;
+}
+.field select option{background:#0b1524;color:#fff}
+.field input:focus,.field select:focus{
+    outline:none;border-color:#00d5ff;background:rgba(0,213,255,.06);
+}
+.field input::placeholder{color:#5c7189;font-weight:500}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.btn{
+    width:100%;height:48px;border:0;border-radius:13px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;font-family:inherit;font-size:13px;font-weight:800;
+    cursor:pointer;transition:.25s;
+}
+.btn:hover{filter:brightness(1.10)}
+.btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+
+/* ---------- proof upload ---------- */
+.drop{
+    border:1.5px dashed rgba(255,255,255,.20);
+    border-radius:14px;padding:22px;text-align:center;cursor:pointer;
+    transition:.2s;background:rgba(255,255,255,.02);
+}
+.drop:hover{border-color:#00d5ff;background:rgba(0,213,255,.05)}
+.drop p{font-size:12.5px;color:#8ba3bd;margin-top:8px;line-height:1.6}
+.drop .big{font-size:13px;font-weight:700;color:#fff}
+#proofPreview{
+    display:none;max-width:100%;max-height:220px;margin:14px auto 0;
+    border-radius:12px;border:1px solid rgba(255,255,255,.14);
+}
+
+/* ---------- history ---------- */
+.tx{
+    display:flex;align-items:center;gap:14px;
+    padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.tx:last-child{border-bottom:0}
+.tx .ic{
+    width:40px;height:40px;border-radius:12px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:900;
+}
+.tx .ic.credit{background:rgba(105,237,184,.14);color:#69edb8}
+.tx .ic.debit{background:rgba(255,154,169,.14);color:#ff9aa9}
+.tx .meta{flex:1;min-width:0}
+.tx .t{font-size:13.5px;font-weight:700}
+.tx .d{font-size:11.5px;color:#8ba3bd;margin-top:3px}
+.tx .right{text-align:right;flex-shrink:0}
+.tx .a{font-size:14px;font-weight:800;letter-spacing:-.2px}
+.tx .a.credit{color:#69edb8}
+.tx .a.debit{color:#ff9aa9}
+.status{
+    display:inline-block;margin-top:4px;padding:2px 9px;border-radius:20px;
+    font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;
+}
+.status.pending{background:rgba(255,212,121,.16);color:#ffd479}
+.status.approved{background:rgba(105,237,184,.16);color:#69edb8}
+.status.completed{background:rgba(0,213,255,.16);color:#6fe0ff}
+.status.rejected{background:rgba(255,154,169,.16);color:#ff9aa9}
+
+.empty{text-align:center;padding:44px 18px;color:#8ba3bd}
+.empty .big{font-size:15px;font-weight:800;color:#fff;margin-bottom:7px}
+.empty p{font-size:12.5px;line-height:1.6}
+
+@media(max-width:620px){
+    .balance-card .amt{font-size:31px}
+    .two{grid-template-columns:1fr}
+    .wrap{padding:18px 14px 70px}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading your wallet…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> MailMart Wallet</div>
+        <div style="display:flex;gap:9px">
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+            <a class="back-link" href="email-sale.html">Sell Email</a>
+            <button class="back-link" id="logoutBtn" style="cursor:pointer">Log out</button>
+        </div>
+    </div>
+
+    <div class="balance-card">
+        <div class="lbl">Available Balance</div>
+        <div class="amt" id="balanceEl">₦0.00</div>
+        <div class="sub" id="balanceSub">Loading…</div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="deposit">Deposit</button>
+        <button class="tab" data-tab="withdraw">Withdraw</button>
+        <button class="tab" data-tab="history">History <span class="badge" id="txCount">0</span></button>
+    </div>
+
+    <!-- ---------------- DEPOSIT ---------------- -->
+    <div class="panel active" id="panel-deposit">
+
+        <div id="depositSetup"></div>
+
+        <div class="card">
+            <h3>Confirm your transfer</h3>
+            <p class="hint">Transfer the exact amount, then upload a screenshot of the receipt. An administrator credits your wallet once the transfer is confirmed — usually within an hour.</p>
+
+            <div class="field">
+                <label for="depAmount">Amount (₦)</label>
+                <input type="number" id="depAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
+            </div>
+
+            <div class="two">
+                <div class="field">
+                    <label for="depName">Name on the sending account</label>
+                    <input type="text" id="depName" placeholder="Full name used for the transfer">
+                </div>
+                <div class="field">
+                    <label for="depBank">Bank you sent from</label>
+                    <select id="depBank"></select>
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Proof of payment</label>
+                <div class="drop" id="dropZone">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <div class="big" id="dropLabel">Choose a screenshot</div>
+                    <p>Tap to pick your receipt image.<br>It is resized before upload, so any size works.</p>
+                    <img id="proofPreview" alt="Proof preview">
+                </div>
+                <input type="file" id="proofInput" accept="image/*" style="display:none">
+            </div>
+
+            <div id="depositMsg"></div>
+
+            <button class="btn" id="depositBtn">Submit deposit</button>
+        </div>
+    </div>
+
+    <!-- ---------------- WITHDRAW ---------------- -->
+    <div class="panel" id="panel-withdraw">
+        <div class="card">
+            <h3>Withdraw to your bank</h3>
+            <p class="hint">Withdrawals are reviewed and paid out within 24 hours. Make sure the account name matches the name on your MailMart account.</p>
+
+            <div id="withdrawNotice"></div>
+
+            <div class="field">
+                <label for="wdAmount">Amount (₦)</label>
+                <input type="number" id="wdAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
+            </div>
+
+            <div class="field">
+                <label for="wdBank">Bank</label>
+                <select id="wdBank"></select>
+            </div>
+
+            <div class="field">
+                <label for="wdAccount">Account number</label>
+                <input type="text" id="wdAccount" placeholder="0123456789" inputmode="numeric" maxlength="10">
+            </div>
+
+            <div class="field">
+                <label for="wdAccountName">Account name</label>
+                <input type="text" id="wdAccountName" placeholder="Exactly as it appears on the account">
+            </div>
+
+            <div id="withdrawMsg"></div>
+
+            <button class="btn" id="withdrawBtn">Request withdrawal</button>
+        </div>
+    </div>
+
+    <!-- ---------------- HISTORY ---------------- -->
+    <div class="panel" id="panel-history">
+        <div class="card">
+            <h3>Transaction history</h3>
+            <p class="hint">Every deposit and withdrawal, newest first.</p>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import {
+    auth, db, doc, onSnapshot, onAuthStateChanged, signOut
+} from "./js/firebase.js";
+
+import { BANKS } from "./js/data/nigeria.js";
+import { fileToBase64 } from "./js/image.js";
+
+import {
+    loadSettings,
+    requestDeposit,
+    requestWithdrawal,
+    watchMyTransactions,
+    formatNaira,
+    formatDate
+} from "./js/wallet.js";
+
+/* ------------------------------------------------------------------ */
+/* tiny DOM helpers                                                    */
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function notice(el, kind, html) {
+    el.innerHTML = html ? `<div class="notice ${kind}">${html}</div>` : "";
+}
+
+/* ------------------------------------------------------------------ */
+/* auth guard                                                          */
+/* ------------------------------------------------------------------ */
+let currentUser = null;
+let currentBalance = 0;
+let settings = null;
+let proofData = "";
+let unsubBalance = null;
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    currentUser = user;
+    start(user);
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+    try { await signOut(auth); } catch (e) { console.error(e); }
+    window.location.href = "login.html";
+});
+
+async function start(user) {
+
+    /* live balance straight off the user document, so an administrator
+       approving a deposit shows up here without a refresh */
+    unsubBalance = onSnapshot(doc(db, "users", user.uid), (snap) => {
+        const data = snap.exists() ? snap.data() : {};
+        currentBalance = Number(data.balance || 0);
+        $("balanceEl").textContent = formatNaira(currentBalance);
+        $("balanceSub").innerHTML =
+            `Signed in as <b>${esc(user.email)}</b>`;
+    });
+
+    settings = await loadSettings().catch(() => null);
+    renderBankOptions();
+    renderDepositSetup();
+    renderWithdrawNotice();
+
+    watchMyTransactions(renderHistory, (err) => {
+        console.error("Could not load transactions:", err);
+        $("historyList").innerHTML =
+            '<div class="empty"><div class="big">Could not load history</div>' +
+            "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+    });
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* bank dropdowns                                                      */
+/* ------------------------------------------------------------------ */
+function renderBankOptions() {
+    const options = ['<option value="">Select a bank</option>']
+        .concat(BANKS.map((b) => `<option value="${esc(b.name)}">${esc(b.name)}</option>`))
+        .join("");
+    $("depBank").innerHTML = options;
+    $("wdBank").innerHTML = options;
+}
+
+/* ------------------------------------------------------------------ */
+/* deposit panel                                                       */
+/* ------------------------------------------------------------------ */
+function renderDepositSetup() {
+    const box = $("depositSetup");
+
+    if (!settings || !settings.depositAccountNumber) {
+        box.innerHTML =
+            '<div class="notice warn">The administrator has not published a ' +
+            "deposit account yet. Check back shortly.</div>";
+        return;
+    }
+
+    box.innerHTML = `
+        <div class="card">
+            <h3>Transfer to this account</h3>
+            <p class="hint">Send the amount below to the account details shown here, then upload your receipt.</p>
+            <div class="pay-to">
+                <div class="row">
+                    <div>
+                        <div class="k">Bank</div>
+                        <div class="v">${esc(settings.depositBank || "—")}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div>
+                        <div class="k">Account number</div>
+                        <div class="v" id="acctNum">${esc(settings.depositAccountNumber)}</div>
+                    </div>
+                    <button class="copy-btn" id="copyAcct">Copy</button>
+                </div>
+                <div class="row">
+                    <div>
+                        <div class="k">Account name</div>
+                        <div class="v">${esc(settings.depositAccountName || "—")}</div>
+                    </div>
+                </div>
+            </div>
+            ${settings.depositNote ? `<div class="notice info">${esc(settings.depositNote)}</div>` : ""}
+        </div>`;
+
+    const copyBtn = $("copyAcct");
+    if (copyBtn) {
+        copyBtn.addEventListener("click", async () => {
+            try {
+                await navigator.clipboard.writeText(settings.depositAccountNumber);
+                copyBtn.textContent = "Copied";
+                setTimeout(() => (copyBtn.textContent = "Copy"), 1600);
+            } catch {
+                // clipboard can be blocked; select the text instead
+                const range = document.createRange();
+                range.selectNode($("acctNum"));
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+            }
+        });
+    }
+}
+
+/* proof upload -> base64 */
+$("dropZone").addEventListener("click", () => $("proofInput").click());
+
+$("proofInput").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const label = $("dropLabel");
+    label.textContent = "Processing image…";
+
+    try {
+        proofData = await fileToBase64(file);
+        $("proofPreview").src = proofData;
+        $("proofPreview").style.display = "block";
+        label.textContent = file.name;
+        notice($("depositMsg"), "good", "Receipt attached.");
+    } catch (err) {
+        proofData = "";
+        $("proofPreview").style.display = "none";
+        label.textContent = "Choose a screenshot";
+        notice($("depositMsg"), "bad", esc(err.message));
+    }
+    e.target.value = "";
+});
+
+$("depositBtn").addEventListener("click", async () => {
+    const btn = $("depositBtn");
+    const amount = Number($("depAmount").value);
+    const name = $("depName").value.trim();
+    const bank = $("depBank").value;
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return notice($("depositMsg"), "bad", "Enter the amount you transferred.");
+    }
+    if (!name) {
+        return notice($("depositMsg"), "bad", "Enter the name on the sending account.");
+    }
+    if (!bank) {
+        return notice($("depositMsg"), "bad", "Select the bank you sent from.");
+    }
+    if (!proofData) {
+        return notice($("depositMsg"), "bad", "Attach a screenshot of your receipt.");
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+
+    try {
+        await requestDeposit({
+            amount,
+            depositorName: name,
+            bankUsed: bank,
+            proofImage: proofData
+        });
+        notice($("depositMsg"), "good",
+            "Submitted. An administrator will confirm your transfer and credit your wallet shortly.");
+        $("depAmount").value = "";
+        $("depName").value = "";
+        $("depBank").value = "";
+        proofData = "";
+        $("proofPreview").style.display = "none";
+        $("proofPreview").src = "";
+        $("dropLabel").textContent = "Choose a screenshot";
+        switchTab("history");
+    } catch (err) {
+        console.error(err);
+        notice($("depositMsg"), "bad", esc(err.message));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Submit deposit";
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* withdraw panel                                                      */
+/* ------------------------------------------------------------------ */
+function renderWithdrawNotice() {
+    const min = Number(settings?.minWithdrawal || 0);
+    const bits = [`Available: <b>${formatNaira(currentBalance)}</b>`];
+    if (min > 0) bits.push(`Minimum withdrawal: <b>${formatNaira(min)}</b>`);
+    $("withdrawNotice").innerHTML =
+        `<div class="notice info">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
+}
+
+$("withdrawBtn").addEventListener("click", async () => {
+    const btn = $("withdrawBtn");
+    const amount = Number($("wdAmount").value);
+    const bank = $("wdBank").value;
+    const account = $("wdAccount").value.trim();
+    const accountName = $("wdAccountName").value.trim();
+    const min = Number(settings?.minWithdrawal || 0);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return notice($("withdrawMsg"), "bad", "Enter an amount to withdraw.");
+    }
+    if (min > 0 && amount < min) {
+        return notice($("withdrawMsg"), "bad",
+            `The minimum withdrawal is ${formatNaira(min)}.`);
+    }
+    if (amount > currentBalance) {
+        return notice($("withdrawMsg"), "bad",
+            `That is more than your balance of ${formatNaira(currentBalance)}.`);
+    }
+    if (!bank) return notice($("withdrawMsg"), "bad", "Select your bank.");
+    if (!/^\d{10}$/.test(account)) {
+        return notice($("withdrawMsg"), "bad", "Account number must be 10 digits.");
+    }
+    if (!accountName) {
+        return notice($("withdrawMsg"), "bad", "Enter the account name.");
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+
+    try {
+        await requestWithdrawal({
+            amount,
+            bankName: bank,
+            accountNumber: account,
+            accountName
+        });
+        notice($("withdrawMsg"), "good",
+            "Withdrawal requested. It will be paid to your account within 24 hours.");
+        $("wdAmount").value = "";
+        $("wdAccount").value = "";
+        $("wdAccountName").value = "";
+        $("wdBank").value = "";
+        switchTab("history");
+    } catch (err) {
+        console.error(err);
+        notice($("withdrawMsg"), "bad", esc(err.message));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Request withdrawal";
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* history                                                             */
+/* ------------------------------------------------------------------ */
+function renderHistory(rows) {
+    $("txCount").textContent = String(rows.length);
+
+    if (!rows.length) {
+        $("historyList").innerHTML =
+            '<div class="empty"><div class="big">No transactions yet</div>' +
+            "<p>Your deposits and withdrawals will appear here.</p></div>";
+        return;
+    }
+
+    $("historyList").innerHTML = rows
+        .map((tx) => {
+            const credit = tx.direction === "credit";
+            const arrow = credit ? "↓" : "↑";
+            const label = credit ? "Deposit" : "Withdrawal";
+            const detail =
+                tx.type === "withdrawal"
+                    ? `${esc(tx.bankName || "Bank")} · ${esc(tx.accountNumber || "")}`
+                    : esc(tx.depositorName || tx.bankUsed || "Bank transfer");
+
+            const reason =
+                tx.status === "rejected" && tx.rejectionReason
+                    ? `<div class="d">${esc(tx.rejectionReason)}</div>`
+                    : "";
+
+            return `
+                <div class="tx">
+                    <div class="ic ${credit ? "credit" : "debit"}">${arrow}</div>
+                    <div class="meta">
+                        <div class="t">${label}</div>
+                        <div class="d">${detail}</div>
+                        <div class="d">${esc(formatDate(tx.createdAt))}</div>
+                        ${reason}
+                    </div>
+                    <div class="right">
+                        <div class="a ${credit ? "credit" : "debit"}">
+                            ${credit ? "+" : "−"}${esc(formatNaira(tx.amount))}
+                        </div>
+                        <span class="status ${esc(tx.status)}">${esc(tx.status)}</span>
+                    </div>
+                </div>`;
+        })
+        .join("");
+}
+
+/* ------------------------------------------------------------------ */
+/* tabs                                                                */
+/* ------------------------------------------------------------------ */
+function switchTab(name) {
+    document.querySelectorAll(".tab").forEach((t) =>
+        t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".panel").forEach((p) =>
+        p.classList.toggle("active", p.id === `panel-${name}`));
+}
+
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        switchTab(tab.dataset.tab);
+        if (tab.dataset.tab === "withdraw") renderWithdrawNotice();
+    });
+});
+
+</script>
+
+</body>
+</html>

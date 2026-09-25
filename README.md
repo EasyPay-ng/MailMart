@@ -43,6 +43,39 @@ via the Firebase Admin SDK. The app does not depend on it, but it is convenient
 if you add a backend later. It needs a service-account key, which must never be
 committed.
 
+## Wallet
+
+Money moves in two steps, so that no user can credit themselves:
+
+1. A user raises a **pending** request — a deposit (with a screenshot of the
+   transfer) or a withdrawal to a Nigerian bank. This appends a row to
+   `transactions` and moves nothing.
+2. An administrator settles it from `admin-wallet.html`. This is the only thing
+   that changes a balance.
+
+Settlement runs inside a Firestore `runTransaction()`, so the ledger row and
+the balance update either both land or neither does — a half-applied transfer
+is the one outcome a wallet must never produce.
+
+Deposits are manual by design: the administrator publishes the account users
+transfer to, users upload proof, and an administrator confirms and credits —
+the one-hour target. Withdrawals are approved, then marked paid once the bank
+transfer is actually sent — the 24-hour target.
+
+The `transactions` query needs the composite index in
+`firestore.indexes.json`:
+
+```sh
+firebase deploy --only firestore:indexes
+```
+
+**Trust boundary, stated plainly:** the client computes the new balance, and
+the rules only check that whoever writes it is an administrator. That stops
+ordinary users cold, but a compromised or careless administrator session could
+still write a wrong number. If you want the arithmetic verified server-side,
+settlement should move into a Cloud Function. The ledger is append-only either
+way, so a bad entry is always traceable.
+
 ## Migrating accounts from Supabase
 
 Firebase and Supabase are separate identity systems, so accounts are not carried
@@ -77,6 +110,10 @@ Then open `http://localhost:8000`.
 | `js/image.js` | Image → base64 helper (not wired into a page yet) |
 | `firestore.rules` | Server-side access control |
 | `scripts/` | Optional Admin SDK helpers |
+| `wallet.html` | User wallet: deposit, withdraw, history |
+| `admin-wallet.html` | Administrator settlement desk |
+| `js/wallet.js` | Deposits, withdrawals, settlement |
+| `js/data/nigeria.js` | 37 states, 774 LGAs, 48 banks with NIP codes |
 
 ## Security notes
 

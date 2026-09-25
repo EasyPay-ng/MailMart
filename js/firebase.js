@@ -39,7 +39,9 @@ import {
   where,
   orderBy,
   serverTimestamp,
-  arrayUnion
+  arrayUnion,
+  runTransaction,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 import {
@@ -97,7 +99,9 @@ export {
   where,
   orderBy,
   serverTimestamp,
-  arrayUnion
+  arrayUnion,
+  runTransaction,
+  writeBatch
 };
 
 // Collection names, so pages never hard-code them.

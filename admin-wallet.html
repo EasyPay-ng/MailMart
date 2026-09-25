@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Wallet Admin | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html{width:100%;min-height:100%}
+
+body{
+    width:100%;
+    min-height:100vh;
+    overflow-x:hidden;
+    font-family:Inter,Arial,sans-serif;
+    color:#fff;
+    background:
+        radial-gradient(circle at 15% 0%,rgba(0,120,255,.17),transparent 35%),
+        radial-gradient(circle at 100% 100%,rgba(0,213,255,.10),transparent 35%),
+        #020812;
+}
+
+a{color:inherit;text-decoration:none}
+
+#loadingScreen{
+    position:fixed;inset:0;z-index:999;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;
+    background:#020812;
+}
+.spinner{
+    width:42px;height:42px;border-radius:50%;
+    border:3px solid rgba(255,255,255,.12);
+    border-top-color:#00d5ff;
+    animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadingScreen p{color:#8ba3bd;font-size:13px}
+
+.wrap{max-width:1140px;margin:0 auto;padding:22px 18px 80px}
+
+.topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:14px;margin-bottom:22px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:17px;letter-spacing:-.3px}
+.brand .dot{
+    width:26px;height:26px;border-radius:9px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;
+}
+.back-link{
+    font-size:12.5px;font-weight:700;color:#8ba3bd;
+    padding:9px 15px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.10);
+    background:rgba(255,255,255,.03);
+    transition:.2s;
+}
+.back-link:hover{color:#fff;border-color:rgba(0,213,255,.4)}
+
+/* ---------- stats ---------- */
+.stats{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px;
+}
+.stat{
+    border-radius:15px;padding:16px 17px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.08);
+}
+.stat .k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#8ba3bd}
+.stat .v{font-size:21px;font-weight:900;letter-spacing:-.7px;margin-top:7px}
+.stat .v.amber{color:#ffd479}
+.stat .v.green{color:#69edb8}
+.stat .v.cyan{color:#6fe0ff}
+
+/* ---------- cards ---------- */
+.card{
+    border-radius:18px;padding:22px;margin-bottom:16px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.08);
+}
+.card h3{font-size:15px;font-weight:800;margin-bottom:5px}
+.card .hint{font-size:12.5px;color:#8ba3bd;line-height:1.65;margin-bottom:16px}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.field{margin-bottom:14px}
+.field label{
+    display:block;font-size:11.5px;font-weight:700;color:#8ba3bd;
+    margin-bottom:7px;letter-spacing:.3px;
+}
+.field input,.field textarea{
+    width:100%;padding:12px 14px;
+    border-radius:12px;border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    color:#fff;font-family:inherit;font-size:13.5px;font-weight:600;
+    transition:.2s;
+}
+.field textarea{min-height:70px;resize:vertical;line-height:1.6}
+.field input:focus,.field textarea:focus{
+    outline:none;border-color:#00d5ff;background:rgba(0,213,255,.06);
+}
+.field input::placeholder,.field textarea::placeholder{color:#5c7189;font-weight:500}
+
+.btn{
+    height:46px;padding:0 22px;border:0;border-radius:13px;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;font-family:inherit;font-size:13px;font-weight:800;
+    cursor:pointer;transition:.25s;
+}
+.btn:hover{filter:brightness(1.10)}
+.btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
+.btn.small{height:38px;padding:0 15px;font-size:12px;border-radius:11px}
+.btn.good{background:linear-gradient(135deg,#0f9f6e,#69edb8);color:#03150e}
+.btn.bad{background:linear-gradient(135deg,#c23a52,#ff9aa9);color:#1a0509}
+.btn.ghost{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    color:#dbe9f7;
+}
+
+/* ---------- request rows ---------- */
+.req{
+    display:flex;gap:16px;align-items:flex-start;
+    padding:16px 0;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.req:last-child{border-bottom:0}
+.req .body{flex:1;min-width:0}
+.req .who{font-size:13px;font-weight:700;word-break:break-all}
+.req .meta{font-size:11.5px;color:#8ba3bd;margin-top:4px;line-height:1.6}
+.req .amt{font-size:19px;font-weight:900;letter-spacing:-.6px;margin-top:6px}
+.req .amt.credit{color:#69edb8}
+.req .amt.debit{color:#ff9aa9}
+.req .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.thumb{
+    width:78px;height:78px;flex-shrink:0;border-radius:12px;
+    object-fit:cover;cursor:pointer;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.04);
+}
+.thumb:hover{opacity:.85}
+
+.empty{text-align:center;padding:38px 18px;color:#8ba3bd}
+.empty .big{font-size:14.5px;font-weight:800;color:#fff;margin-bottom:7px}
+.empty p{font-size:12.5px;line-height:1.6}
+
+.notice{
+    border-radius:12px;padding:13px 15px;margin-bottom:14px;
+    font-size:12.5px;line-height:1.6;
+}
+.notice.good{background:rgba(105,237,184,.10);border:1px solid rgba(105,237,184,.30);color:#69edb8}
+.notice.bad{background:rgba(255,154,169,.10);border:1px solid rgba(255,154,169,.30);color:#ff9aa9}
+.notice.info{background:rgba(0,213,255,.08);border:1px solid rgba(0,213,255,.22);color:#9be3ff}
+
+/* ---------- modal ---------- */
+#modal{
+    display:none;position:fixed;inset:0;z-index:1000;
+    background:rgba(2,8,18,.92);
+    align-items:center;justify-content:center;padding:24px;cursor:zoom-out;
+}
+#modal.open{display:flex}
+#modal img{max-width:100%;max-height:88vh;border-radius:12px;border:1px solid rgba(255,255,255,.16)}
+
+/* ---------- table ---------- */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{
+    text-align:left;padding:10px 10px;font-size:10.5px;font-weight:700;
+    letter-spacing:.7px;text-transform:uppercase;color:#8ba3bd;
+    border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;
+}
+.tbl td{padding:11px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl .mono{font-weight:800;letter-spacing:-.2px;white-space:nowrap}
+.tbl .credit{color:#69edb8}
+.tbl .debit{color:#ff9aa9}
+.tbl .small{font-size:11px;color:#8ba3bd}
+
+.status{
+    display:inline-block;padding:2px 9px;border-radius:20px;
+    font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;
+}
+.status.pending{background:rgba(255,212,121,.16);color:#ffd479}
+.status.approved{background:rgba(105,237,184,.16);color:#69edb8}
+.status.completed{background:rgba(0,213,255,.16);color:#6fe0ff}
+.status.rejected{background:rgba(255,154,169,.16);color:#ff9aa9}
+
+.tabs{display:flex;gap:6px;padding:5px;margin-bottom:18px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px}
+.tab{flex:1;text-align:center;padding:11px 8px;border-radius:10px;
+    font-size:12.5px;font-weight:700;color:#8ba3bd;cursor:pointer;
+    border:0;background:transparent;font-family:inherit;transition:.2s}
+.tab:hover{color:#fff}
+.tab.active{background:linear-gradient(135deg,#087cff,#00d5ff);color:#fff}
+.tab .badge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:20px;
+    font-size:10.5px;font-weight:800;background:rgba(255,255,255,.18)}
+.panel{display:none}
+.panel.active{display:block}
+
+.scroll{overflow-x:auto}
+
+@media(max-width:820px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .two{grid-template-columns:1fr}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Checking administrator access…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Wallet Admin</div>
+        <div style="display:flex;gap:9px">
+            <a class="back-link" href="admin.html">Sales Review</a>
+            <a class="back-link" href="wallet.html">My Wallet</a>
+            <button class="back-link" id="logoutBtn" style="cursor:pointer">Log out</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="k">Pending deposits</div>
+            <div class="v amber" id="statPendingDep">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Pending withdrawals</div>
+            <div class="v amber" id="statPendingWd">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Credited (all time)</div>
+            <div class="v green" id="statCredited">₦0.00</div>
+        </div>
+        <div class="stat">
+            <div class="k">Paid out (all time)</div>
+            <div class="v cyan" id="statPaidOut">₦0.00</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="requests">Requests <span class="badge" id="pendingCount">0</span></button>
+        <button class="tab" data-tab="history">All transactions</button>
+        <button class="tab" data-tab="settings">Settings</button>
+    </div>
+
+    <!-- ---------------- REQUESTS ---------------- -->
+    <div class="panel active" id="panel-requests">
+        <div class="card">
+            <h3>Pending deposits</h3>
+            <p class="hint">Confirm the transfer landed in the account below, then approve. Approving credits the user's wallet immediately.</p>
+            <div id="pendingDeposits"></div>
+        </div>
+
+        <div class="card">
+            <h3>Withdrawals</h3>
+            <p class="hint">Approving releases the funds. Once you have actually sent the bank transfer, mark it paid.</p>
+            <div id="pendingWithdrawals"></div>
+        </div>
+    </div>
+
+    <!-- ---------------- HISTORY ---------------- -->
+    <div class="panel" id="panel-history">
+        <div class="card">
+            <h3>All transactions</h3>
+            <p class="hint">Every deposit and withdrawal on the platform, newest first.</p>
+            <div id="msgHistory"></div>
+            <div class="scroll"><table class="tbl" id="historyTable"></table></div>
+        </div>
+    </div>
+
+    <!-- ---------------- SETTINGS ---------------- -->
+    <div class="panel" id="panel-settings">
+        <div class="card">
+            <h3>Account users deposit into</h3>
+            <p class="hint">These details are shown to every user on the deposit screen. Double-check them — users will transfer real money here.</p>
+
+            <div class="two">
+                <div class="field">
+                    <label for="setBank">Bank name</label>
+                    <input type="text" id="setBank" placeholder="e.g. OPay">
+                </div>
+                <div class="field">
+                    <label for="setAcctNum">Account number</label>
+                    <input type="text" id="setAcctNum" placeholder="0123456789" inputmode="numeric" maxlength="10">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="setAcctName">Account name</label>
+                <input type="text" id="setAcctName" placeholder="Name on the account">
+            </div>
+
+            <div class="field">
+                <label for="setMinWd">Minimum withdrawal (₦)</label>
+                <input type="number" id="setMinWd" min="0" step="1" placeholder="e.g. 1000">
+            </div>
+
+            <div class="field">
+                <label for="setDepNote">Note shown on the deposit screen</label>
+                <textarea id="setDepNote" placeholder="Optional, e.g. transfer only from an account in your own name."></textarea>
+            </div>
+
+            <div id="msgSettings"></div>
+
+            <button class="btn" id="saveSettingsBtn">Save settings</button>
+        </div>
+    </div>
+
+</div>
+
+<div id="modal"><img id="modalImg" alt="Proof of payment"></div>
+
+<script type="module">
+
+import { auth, onAuthStateChanged, signOut } from "./js/firebase.js";
+import { isAdminUser } from "./js/admin.js";
+import {
+    loadSettings,
+    saveSettings,
+    watchAllTransactions,
+    approveTransaction,
+    rejectTransaction,
+    formatNaira,
+    formatDate
+} from "./js/wallet.js";
+
+/* ------------------------------------------------------------------ */
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function notice(el, kind, html) {
+    el.innerHTML = html ? `<div class="notice ${kind}">${html}</div>` : "";
+}
+
+let adminUser = null;
+let all = [];
+
+/* ------------------------------------------------------------------ */
+/* guard — the Firestore rules are the real gate, this is just routing  */
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    const ok = await isAdminUser(user);
+    if (!ok) {
+        window.location.href = "dashboard.html";
+        return;
+    }
+    adminUser = user;
+    await start();
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+    try { await signOut(auth); } catch (e) { console.error(e); }
+    window.location.href = "login.html";
+});
+
+async function start() {
+    const settings = await loadSettings().catch(() => null);
+    if (settings) {
+        $("setBank").value = settings.depositBank || "";
+        $("setAcctNum").value = settings.depositAccountNumber || "";
+        $("setAcctName").value = settings.depositAccountName || "";
+        $("setMinWd").value = settings.minWithdrawal ?? "";
+        $("setDepNote").value = settings.depositNote || "";
+    }
+
+    watchAllTransactions(render, (err) => {
+        console.error("Could not load transactions:", err);
+        $("pendingDeposits").innerHTML =
+            '<div class="empty"><div class="big">Could not load requests</div>' +
+            "<p>Check your Firestore security rules and that you are an administrator.</p></div>";
+    });
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* settlement actions                                                  */
+/* ------------------------------------------------------------------ */
+async function act(tx, action, reason = "") {
+    try {
+        if (action === "approve") await approveTransaction(tx, adminUser);
+        else await rejectTransaction(tx, adminUser, reason);
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that request.");
+    }
+}
+
+$("pendingDeposits").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (btn) {
+        const tx = all.find((t) => t.id === btn.dataset.id);
+        if (!tx) return;
+        if (btn.dataset.act === "reject") {
+            const reason = prompt("Reason for rejecting this deposit?", "") ?? "";
+            if (reason === null) return;
+            act(tx, "reject", reason.trim());
+        } else {
+            act(tx, "approve");
+        }
+    }
+    const img = e.target.closest("img.thumb");
+    if (img) {
+        $("modalImg").src = img.src;
+        $("modal").classList.add("open");
+    }
+});
+
+$("pendingWithdrawals").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const tx = all.find((t) => t.id === btn.dataset.id);
+    if (!tx) return;
+    if (btn.dataset.act === "reject") {
+        const reason = prompt("Reason for rejecting this withdrawal?", "") ?? "";
+        if (reason === null) return;
+        act(tx, "reject", reason.trim());
+    } else {
+        act(tx, "approve");
+    }
+});
+
+$("modal").addEventListener("click", () => $("modal").classList.remove("open"));
+
+/* ------------------------------------------------------------------ */
+/* settings                                                            */
+/* ------------------------------------------------------------------ */
+$("saveSettingsBtn").addEventListener("click", async () => {
+    const btn = $("saveSettingsBtn");
+    const accountNumber = $("setAcctNum").value.trim();
+
+    if (accountNumber && !/^\d{10}$/.test(accountNumber)) {
+        return notice($("msgSettings"), "bad", "Account number must be 10 digits.");
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+
+    try {
+        await saveSettings({
+            depositBank: $("setBank").value.trim(),
+            depositAccountNumber: accountNumber,
+            depositAccountName: $("setAcctName").value.trim(),
+            minWithdrawal: Number($("setMinWd").value) || 0,
+            depositNote: $("setDepNote").value.trim()
+        });
+        notice($("msgSettings"), "good", "Saved. Users will see these details immediately.");
+    } catch (err) {
+        console.error(err);
+        notice($("msgSettings"), "bad", esc(err.message));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Save settings";
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* rendering                                                           */
+/* ------------------------------------------------------------------ */
+function render(rows) {
+    all = rows;
+
+    const pendingDeposits = rows.filter((t) => t.type === "deposit" && t.status === "pending");
+    const withdrawals = rows.filter((t) => t.type === "withdrawal");
+    const openWithdrawals = withdrawals.filter((t) => t.status === "pending" || t.status === "approved");
+
+    $("pendingCount").textContent = String(pendingDeposits.length + openWithdrawals.length);
+    $("statPendingDep").textContent = String(pendingDeposits.length);
+    $("statPendingWd").textContent = String(openWithdrawals.length);
+    $("statCredited").textContent = formatNaira(
+        rows.filter((t) => t.type === "deposit" && (t.status === "approved" || t.status === "completed"))
+            .reduce((n, t) => n + Number(t.amount || 0), 0));
+    $("statPaidOut").textContent = formatNaira(
+        rows.filter((t) => t.type === "withdrawal" && (t.status === "approved" || t.status === "completed"))
+            .reduce((n, t) => n + Number(t.amount || 0), 0));
+
+    /* pending deposits */
+    $("pendingDeposits").innerHTML = pendingDeposits.length
+        ? pendingDeposits.map(depositRow).join("")
+        : '<div class="empty"><div class="big">Nothing waiting</div>' +
+          "<p>New deposit requests appear here the moment they are submitted.</p></div>";
+
+    /* withdrawals still needing attention */
+    $("pendingWithdrawals").innerHTML = openWithdrawals.length
+        ? openWithdrawals.map(withdrawalRow).join("")
+        : '<div class="empty"><div class="big">No withdrawals</div>' +
+          "<p>Withdrawal requests will appear here.</p></div>";
+
+    renderTable(rows);
+}
+
+function depositRow(tx) {
+    const proof = tx.proofImage
+        ? `<img class="thumb" src="${esc(tx.proofImage)}" alt="Proof of payment">`
+        : "";
+
+    return `
+        <div class="req">
+            ${proof}
+            <div class="body">
+                <div class="who">${esc(tx.email || tx.uid)}</div>
+                <div class="meta">
+                    ${esc(tx.depositorName || "—")} · sent from ${esc(tx.bankUsed || "—")}<br>
+                    ${esc(formatDate(tx.createdAt))}
+                </div>
+                <div class="amt credit">+${esc(formatNaira(tx.amount))}</div>
+                <div class="acts">
+                    <button class="btn small good" data-act="approve" data-id="${esc(tx.id)}">Approve &amp; credit</button>
+                    <button class="btn small bad" data-act="reject" data-id="${esc(tx.id)}">Reject</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function withdrawalRow(tx) {
+    const isPending = tx.status === "pending";
+
+    const actions = isPending
+        ? `<button class="btn small good" data-act="approve" data-id="${esc(tx.id)}">Approve</button>
+           <button class="btn small bad" data-act="reject" data-id="${esc(tx.id)}">Reject</button>`
+        : `<button class="btn small" data-act="approve" data-id="${esc(tx.id)}">Mark paid</button>`;
+
+    return `
+        <div class="req">
+            <div class="body">
+                <div class="who">${esc(tx.email || tx.uid)}</div>
+                <div class="meta">
+                    ${esc(tx.accountName || "—")}<br>
+                    ${esc(tx.bankName || "—")} · ${esc(tx.accountNumber || "—")}
+                    ${tx.bankCode ? `(code ${esc(tx.bankCode)})` : ""}<br>
+                    ${esc(formatDate(tx.createdAt))}
+                    <span class="status ${esc(tx.status)}">${esc(tx.status)}</span>
+                </div>
+                <div class="amt debit">−${esc(formatNaira(tx.amount))}</div>
+                <div class="acts">${actions}</div>
+            </div>
+        </div>`;
+}
+
+function renderTable(rows) {
+    if (!rows.length) {
+        $("historyTable").innerHTML = "";
+        return;
+    }
+
+    const head = `
+        <thead><tr>
+            <th>Date</th><th>User</th><th>Type</th>
+            <th>Amount</th><th>Status</th><th>Reviewed</th>
+        </tr></thead>`;
+
+    const body = rows
+        .map((tx) => {
+            const credit = tx.direction === "credit";
+            const reviewed = tx.reviewedBy
+                ? `${esc(tx.reviewedBy)}<div class="small">${esc(formatDate(tx.reviewedAt))}</div>`
+                : "—";
+            return `
+                <tr>
+                    <td class="small">${esc(formatDate(tx.createdAt))}</td>
+                    <td class="small">${esc(tx.email || tx.uid)}</td>
+                    <td>${credit ? "Deposit" : "Withdrawal"}</td>
+                    <td class="mono ${credit ? "credit" : "debit"}">
+                        ${credit ? "+" : "−"}${esc(formatNaira(tx.amount))}
+                    </td>
+                    <td><span class="status ${esc(tx.status)}">${esc(tx.status)}</span></td>
+                    <td class="small">${reviewed}</td>
+                </tr>`;
+        })
+        .join("");
+
+    $("historyTable").innerHTML = head + `<tbody>${body}</tbody>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* tabs                                                                */
+/* ------------------------------------------------------------------ */
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) =>
+            t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".panel").forEach((p) =>
+            p.classList.toggle("active", p.id === `panel-${tab.dataset.tab}`));
+    });
+});
+
+</script>
+
+</body>
+</html>
