@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Marketplace Admin | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.app{
+    display:flex;gap:16px;padding:15px 0;
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+.app:last-child{border-bottom:0}
+.app .idimg{
+    width:92px;height:92px;border-radius:12px;object-fit:cover;flex-shrink:0;
+    cursor:zoom-in;border:1px solid rgba(255,255,255,.14);
+}
+.app .body{flex:1;min-width:0}
+.app .nm{font-size:13.5px;font-weight:800}
+.app .mt{font-size:11.5px;color:#8ba3bd;margin-top:3px;line-height:1.65;word-break:break-all}
+.app .acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+
+.ord{
+    display:flex;gap:14px;padding:15px 0;
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+.ord:last-child{border-bottom:0}
+.ord .shot{
+    width:62px;height:62px;border-radius:11px;object-fit:cover;flex-shrink:0;
+    background:rgba(255,255,255,.04);
+}
+.ord .body{flex:1;min-width:0}
+.ord .ttl{font-size:13px;font-weight:700;line-height:1.4}
+.ord .mt{font-size:11.5px;color:#8ba3bd;margin-top:4px;line-height:1.6}
+.ord .amt{font-size:16px;font-weight:900;letter-spacing:-.4px;margin-top:5px}
+.ord .acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+
+.mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Checking administrator access…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Marketplace Admin</div>
+        <div class="actions">
+            <a class="back-link" href="admin-wallet.html">Wallet Admin</a>
+            <a class="back-link" href="admin.html">Sales Review</a>
+            <a class="back-link" href="marketplace.html">Marketplace</a>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="k">Awaiting payment</div>
+            <div class="v amber" id="statAwaiting">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Pending verification</div>
+            <div class="v amber" id="statKyc">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Live listings</div>
+            <div class="v cyan" id="statListings">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Service fee earned</div>
+            <div class="v green" id="statFees">₦0.00</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="orders">Orders <span class="badge" id="ordCount">0</span></button>
+        <button class="tab" data-tab="kyc">Verification <span class="badge" id="kycCount">0</span></button>
+        <button class="tab" data-tab="listings">Listings</button>
+        <button class="tab" data-tab="post">Post as admin</button>
+        <button class="tab" data-tab="settings">Fees</button>
+    </div>
+
+    <!-- ---------------- ORDERS ---------------- -->
+    <div class="panel active" id="panel-orders">
+        <div class="card">
+            <h3>Orders awaiting payment</h3>
+            <p class="hint">Confirming an order charges the buyer and pays the seller in one step. The service fee stays with the platform.</p>
+            <div id="awaiting"></div>
+        </div>
+
+        <div class="card">
+            <h3>All orders</h3>
+            <p class="hint">Every order placed on the marketplace.</p>
+            <div class="scroll"><table class="tbl" id="orderTable"></table></div>
+        </div>
+    </div>
+
+    <!-- ---------------- VERIFICATION ---------------- -->
+    <div class="panel" id="panel-kyc">
+        <div class="card">
+            <h3>Seller verification queue</h3>
+            <p class="hint">Approving sets the user's seller flag, which is what allows them to post items. Reject with a reason so they can fix it.</p>
+            <div id="kycQueue"></div>
+        </div>
+    </div>
+
+    <!-- ---------------- LISTINGS ---------------- -->
+    <div class="panel" id="panel-listings">
+        <div class="card">
+            <h3>All listings</h3>
+            <p class="hint">Everything sellers have posted. You can remove anything that breaks the rules.</p>
+            <div class="mini-grid" id="adminListings"></div>
+        </div>
+    </div>
+
+    <!-- ---------------- POST AS ADMIN ---------------- -->
+    <div class="panel" id="panel-post">
+        <div class="card">
+            <h3>Post an item as the platform</h3>
+            <p class="hint">Administrators can list goods directly, bypassing seller verification.</p>
+
+            <div id="postMsg"></div>
+
+            <div class="field">
+                <label for="aTitle">Item name</label>
+                <input type="text" id="aTitle" maxlength="120" placeholder="e.g. iPhone 13, 128GB, black">
+            </div>
+
+            <div class="two">
+                <div class="field">
+                    <label for="aCategory">Category</label>
+                    <select id="aCategory"></select>
+                </div>
+                <div class="field">
+                    <label for="aStock">Quantity available</label>
+                    <input type="number" id="aStock" min="1" step="1" value="1">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="aDescription">Description</label>
+                <textarea id="aDescription" maxlength="2000"></textarea>
+            </div>
+
+            <div class="field">
+                <label>Item photo</label>
+                <div class="drop" id="aDrop">
+                    <div class="big" id="aDropLabel">Choose a photo</div>
+                    <p>Tap to pick an image.</p>
+                    <img id="aPreview" alt="Preview">
+                </div>
+                <input type="file" id="aImage" accept="image/*" style="display:none">
+            </div>
+
+            <div class="two">
+                <div class="field">
+                    <label for="aPrice">Price (₦)</label>
+                    <input type="number" id="aPrice" min="1" step="1">
+                </div>
+                <div class="field">
+                    <label for="aDiscount">Discounted price (₦)</label>
+                    <input type="number" id="aDiscount" min="0" step="1" value="0">
+                    <div class="tip">0 means no discount.</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="aDelivery">Delivery fee (₦)</label>
+                <input type="number" id="aDelivery" min="0" step="1" value="0">
+                <div class="tip">Applied to every state for this item.</div>
+            </div>
+
+            <button class="btn block" id="aPostBtn">Post item</button>
+        </div>
+    </div>
+
+    <!-- ---------------- FEES ---------------- -->
+    <div class="panel" id="panel-settings">
+        <div class="card">
+            <h3>Platform service fee</h3>
+            <p class="hint">Charged to the buyer on every order and kept by the platform. Sellers set their own delivery fees, so those are not configured here.</p>
+
+            <div class="field">
+                <label for="sFee">Service fee per order (₦)</label>
+                <input type="number" id="sFee" min="0" step="1" placeholder="e.g. 500">
+                <div class="tip">A flat amount per order. Set 0 to run the marketplace free of charge.</div>
+            </div>
+
+            <div id="feeMsg"></div>
+            <button class="btn" id="saveFeeBtn">Save fee</button>
+        </div>
+    </div>
+
+</div>
+
+<div class="modal" id="modal"><img id="modalImg" alt="" style="max-width:100%;max-height:88vh;border-radius:12px"></div>
+
+<script type="module">
+
+import { auth, onAuthStateChanged } from "./js/firebase.js";
+import { isAdminUser } from "./js/admin.js";
+import { fileToBase64 } from "./js/image.js";
+import { loadSettings, saveSettings, formatNaira, formatDate } from "./js/wallet.js";
+import {
+    CATEGORIES,
+    STATUS_LABEL,
+    watchAllOrders,
+    watchAllListings,
+    watchKycQueue,
+    reviewKyc,
+    settleOrderPayment,
+    refundOrder,
+    createListing,
+    setListingStatus,
+    hasDiscount,
+    unitPriceOf
+} from "./js/marketplace.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let adminUser = null;
+let orders = [];
+let listings = [];
+let kycRows = [];
+let settings = null;
+let adminImage = "";
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    if (!(await isAdminUser(user))) {
+        window.location.href = "dashboard.html";
+        return;
+    }
+    adminUser = user;
+    await start();
+});
+
+async function start() {
+    $("aCategory").innerHTML =
+        CATEGORIES.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    settings = await loadSettings().catch(() => null);
+    if (settings) $("sFee").value = settings.serviceFee ?? 0;
+
+    watchAllOrders((rows) => {
+        orders = rows;
+        renderOrders();
+    }, (err) => {
+        console.error(err);
+        $("awaiting").innerHTML =
+            '<div class="empty"><div class="big">Could not load orders</div>' +
+            "<p>Check your Firestore security rules.</p></div>";
+    });
+
+    watchAllListings((rows) => {
+        listings = rows;
+        renderListings();
+    }, (err) => console.error("listings:", err));
+
+    watchKycQueue((rows) => {
+        kycRows = rows;
+        renderKyc();
+    }, (err) => console.error("kyc:", err));
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* orders                                                              */
+/* ------------------------------------------------------------------ */
+function renderOrders() {
+    const awaiting = orders.filter((o) => o.status === "pending_payment");
+
+    $("statAwaiting").textContent = String(awaiting.length);
+    $("statListings").textContent = String(listings.filter((l) => l.status === "active").length);
+    $("statKyc").textContent = String(kycRows.length);
+    $("statFees").textContent = formatNaira(
+        orders.filter((o) => ["paid", "shipped", "completed"].includes(o.status))
+              .reduce((n, o) => n + Number(o.serviceFee || 0), 0));
+    $("ordCount").textContent = String(awaiting.length);
+
+    $("awaiting").innerHTML = awaiting.length
+        ? awaiting.map(awaitingRow).join("")
+        : '<div class="empty"><div class="big">Nothing waiting</div>' +
+          "<p>Orders appear here as soon as a buyer places one.</p></div>";
+
+    if (!orders.length) {
+        $("orderTable").innerHTML = "";
+        return;
+    }
+
+    const head = `<thead><tr>
+        <th>Placed</th><th>Item</th><th>Buyer</th><th>Seller</th>
+        <th>Total</th><th>Status</th>
+    </tr></thead>`;
+
+    $("orderTable").innerHTML = head + "<tbody>" + orders.map((o) => `
+        <tr>
+            <td class="small">${esc(formatDate(o.createdAt))}</td>
+            <td>${esc(o.listingTitle || "—")} × ${esc(o.quantity || 1)}</td>
+            <td class="small">${esc(o.buyerEmail || "—")}</td>
+            <td class="small">${esc(o.sellerEmail || "—")}</td>
+            <td class="mono">${esc(formatNaira(o.total))}</td>
+            <td><span class="status ${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span></td>
+        </tr>`).join("") + "</tbody>";
+}
+
+function awaitingRow(o) {
+    const a = o.address || {};
+    return `
+        <div class="ord">
+            <img class="shot" src="${esc(o.listingImage || "")}" alt="">
+            <div class="body">
+                <div class="ttl">${esc(o.listingTitle || "Item")} × ${esc(o.quantity || 1)}</div>
+                <div class="mt">
+                    Buyer ${esc(o.buyerEmail || "—")} · Seller ${esc(o.sellerEmail || "—")}<br>
+                    ${esc(formatDate(o.createdAt))}<br>
+                    Ship to ${esc(a.name || "—")}, ${esc(a.street || "")}, ${esc(a.lga || "")}, ${esc(a.state || "")}
+                </div>
+                <div class="amt">${esc(formatNaira(o.total))}
+                    <span class="mt" style="display:inline;margin-left:8px">
+                        seller receives ${esc(formatNaira(o.sellerPayout))}
+                    </span>
+                </div>
+                <div class="acts">
+                    <button class="btn small good" data-act="settle" data-id="${esc(o.id)}">Confirm payment</button>
+                    <button class="btn small ghost" data-act="cancel" data-id="${esc(o.id)}">Cancel order</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+$("awaiting").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const order = orders.find((o) => o.id === btn.dataset.id);
+    if (!order) return;
+
+    try {
+        if (btn.dataset.act === "settle") {
+            if (!confirm(
+                `Charge ${formatNaira(order.total)} to ${order.buyerEmail} and pay ` +
+                `${formatNaira(order.sellerPayout)} to ${order.sellerEmail}?`
+            )) return;
+            await settleOrderPayment(order, adminUser);
+        } else {
+            const reason = prompt("Reason for cancelling this order?", "") ?? "";
+            if (reason === null) return;
+            await cancelAwaiting(order, reason.trim());
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that order.");
+    }
+});
+
+/* An order that was never paid has no money to return, so it is simply
+   marked cancelled — no balance movement. */
+async function cancelAwaiting(order, reason) {
+    const { updateDoc, doc, serverTimestamp, arrayUnion, db } = await import("./js/firebase.js");
+    await updateDoc(doc(db, "orders", order.id), {
+        status: "cancelled",
+        cancellationReason: reason,
+        updatedAt: serverTimestamp(),
+        timeline: arrayUnion({
+            status: "cancelled",
+            at: new Date().toISOString(),
+            by: adminUser.email || ""
+        })
+    });
+}
+
+$("orderTable").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const order = orders.find((o) => o.id === btn.dataset.id);
+    if (!order) return;
+    try {
+        await refundOrder(order, adminUser);
+    } catch (err) {
+        alert(err.message || "Could not refund that order.");
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* verification                                                        */
+/* ------------------------------------------------------------------ */
+function renderKyc() {
+    $("kycCount").textContent = String(kycRows.length);
+    $("statKyc").textContent = String(kycRows.length);
+
+    if (!kycRows.length) {
+        $("kycQueue").innerHTML =
+            '<div class="empty"><div class="big">Queue is clear</div>' +
+            "<p>No seller applications are waiting for review.</p></div>";
+        return;
+    }
+
+    $("kycQueue").innerHTML = kycRows.map((k) => `
+        <div class="app">
+            <img class="idimg" src="${esc(k.idImage || "")}" alt="ID document">
+            <div class="body">
+                <div class="nm">${esc(k.fullName || "—")}</div>
+                <div class="mt">
+                    ${esc(k.email || "")}<br>
+                    ${esc(k.phone || "")}<br>
+                    ${esc(k.street || "")}, ${esc(k.lga || "")}, ${esc(k.state || "")}<br>
+                    ${esc(k.idType || "")} · submitted ${esc(formatDate(k.createdAt))}
+                </div>
+                <div class="acts">
+                    <button class="btn small good" data-act="approve" data-uid="${esc(k.uid)}">Approve</button>
+                    <button class="btn small bad" data-act="reject" data-uid="${esc(k.uid)}">Reject</button>
+                </div>
+            </div>
+        </div>`).join("");
+}
+
+$("kycQueue").addEventListener("click", async (e) => {
+    const img = e.target.closest("img.idimg");
+    if (img) {
+        $("modalImg").src = img.src;
+        $("modal").classList.add("open");
+        return;
+    }
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+
+    const application = kycRows.find((k) => k.uid === btn.dataset.uid);
+    if (!application) return;
+
+    try {
+        if (btn.dataset.act === "approve") {
+            await reviewKyc(application, true, adminUser, "");
+        } else {
+            const reason = prompt("Reason for rejecting this application?", "") ?? "";
+            if (reason === null) return;
+            await reviewKyc(application, false, adminUser, reason.trim());
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that application.");
+    }
+});
+
+$("modal").addEventListener("click", () => $("modal").classList.remove("open"));
+
+/* ------------------------------------------------------------------ */
+/* listings                                                            */
+/* ------------------------------------------------------------------ */
+function renderListings() {
+    if (!listings.length) {
+        $("adminListings").innerHTML =
+            '<div class="empty"><div class="big">No listings</div>' +
+            "<p>Nothing has been posted yet.</p></div>";
+        return;
+    }
+
+    $("adminListings").innerHTML = listings.map((l) => {
+        const unit = unitPriceOf(l);
+        const price = hasDiscount(l)
+            ? `<span class="price-new">${esc(formatNaira(unit))}</span>
+               <span class="price-old">${esc(formatNaira(l.price))}</span>`
+            : `<span class="price-plain">${esc(formatNaira(unit))}</span>`;
+
+        return `
+            <div class="item" data-id="${esc(l.id)}">
+                <img class="shot" src="${esc(l.image || "")}" alt="">
+                <div class="body">
+                    <span class="chip">${esc(l.status || "active")}</span>
+                    <div class="name">${esc(l.title || "")}</div>
+                    <div class="prices">${price}</div>
+                    <div class="field tip" style="margin:0">${esc(l.sellerEmail || "—")}</div>
+                    <div class="row-end" style="margin-top:4px">
+                        <button class="btn small bad" data-act="remove" data-id="${esc(l.id)}">Remove</button>
+                    </div>
+                </div>
+            </div>`;
+    }).join("");
+}
+
+$("adminListings").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const listing = listings.find((l) => l.id === btn.dataset.id);
+    if (!confirm(`Remove "${listing ? listing.title : "this item"}" from the marketplace?`)) return;
+    try {
+        await setListingStatus(btn.dataset.id, "soldout");
+    } catch (err) {
+        alert(err.message || "Could not remove that listing.");
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* post as admin + fee settings                                        */
+/* ------------------------------------------------------------------ */
+$("aDrop").addEventListener("click", () => $("aImage").click());
+$("aImage").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    $("aDropLabel").textContent = "Processing…";
+    try {
+        adminImage = await fileToBase64(file);
+        $("aPreview").src = adminImage;
+        $("aPreview").style.display = "block";
+        $("aDropLabel").textContent = file.name;
+    } catch (err) {
+        adminImage = "";
+        $("aDropLabel").textContent = "Choose a photo";
+        $("postMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    }
+    e.target.value = "";
+});
+
+$("aPostBtn").addEventListener("click", async () => {
+    const title = $("aTitle").value.trim();
+    const description = $("aDescription").value.trim();
+    const category = $("aCategory").value;
+    const stock = Math.floor(Number($("aStock").value) || 1);
+    const price = Number($("aPrice").value);
+    const discountPrice = Number($("aDiscount").value) || 0;
+    const deliveryDefault = Number($("aDelivery").value) || 0;
+
+    if (!title) return postFail("Give the item a name.");
+    if (!Number.isFinite(price) || price <= 0) return postFail("Enter a price.");
+    if (discountPrice > 0 && discountPrice >= price) {
+        return postFail("The discounted price must be lower than the price.");
+    }
+    if (!adminImage) return postFail("Add a photo.");
+
+    const btn = $("aPostBtn");
+    btn.disabled = true;
+    try {
+        await createListing({
+            title, description, category, image: adminImage,
+            price, discountPrice, stock, deliveryDefault, deliveryByState: {}
+        });
+        $("postMsg").innerHTML = '<div class="notice good">Posted to the marketplace.</div>';
+        ["aTitle", "aDescription", "aPrice", "aDelivery"].forEach((id) => ($(id).value = ""));
+        $("aDiscount").value = "0";
+        adminImage = "";
+        $("aPreview").style.display = "none";
+        $("aDropLabel").textContent = "Choose a photo";
+    } catch (err) {
+        console.error(err);
+        postFail(err.message);
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+function postFail(message) {
+    $("postMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
+}
+
+$("saveFeeBtn").addEventListener("click", async () => {
+    const value = Number($("sFee").value) || 0;
+    const btn = $("saveFeeBtn");
+    if (value < 0) {
+        $("feeMsg").innerHTML = '<div class="notice bad">The fee cannot be negative.</div>';
+        return;
+    }
+    btn.disabled = true;
+    try {
+        await saveSettings({ serviceFee: value });
+        $("feeMsg").innerHTML =
+            `<div class="notice good">Saved. Buyers are now charged ${esc(formatNaira(value))} per order.</div>`;
+    } catch (err) {
+        console.error(err);
+        $("feeMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    } finally {
+        btn.disabled = false;
+    }
+});
+
+/* ------------------------------------------------------------------ */
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) =>
+            t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".panel").forEach((p) =>
+            p.classList.toggle("active", p.id === `panel-${tab.dataset.tab}`));
+    });
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Marketplace | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.filters{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.filters input,.filters select{
+    height:44px;padding:0 14px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.12);
+    background:rgba(255,255,255,.04);
+    color:#fff;font-family:inherit;font-size:13px;font-weight:600;
+}
+.filters input{flex:1;min-width:170px}
+.filters select{cursor:pointer;min-width:180px}
+.filters select option{background:#0b1524}
+.filters input:focus,.filters select:focus{outline:none;border-color:#00d5ff}
+
+.balance-pill{
+    display:flex;align-items:center;gap:8px;
+    padding:9px 15px;border-radius:11px;
+    background:rgba(105,237,184,.10);
+    border:1px solid rgba(105,237,184,.26);
+    font-size:12.5px;font-weight:800;color:#69edb8;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading the marketplace…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Marketplace</div>
+        <div class="actions">
+            <span class="balance-pill" id="balancePill">₦0.00</span>
+            <a class="back-link primary" href="sell.html">Sell</a>
+            <a class="back-link" href="orders.html">Orders</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div id="setupNotice"></div>
+
+    <div class="filters">
+        <input type="search" id="search" placeholder="Search goods…">
+        <select id="categoryFilter"></select>
+    </div>
+
+    <div class="grid" id="grid"></div>
+
+</div>
+
+<!-- ---------------- product detail / buy ---------------- -->
+<div class="modal" id="modal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <div>
+                <h2 id="mTitle">Item</h2>
+                <span class="status" id="mStatus">active</span>
+            </div>
+            <button class="modal-close" id="mClose">✕</button>
+        </div>
+
+        <img class="hero" id="mImage" alt="">
+
+        <p class="card hint" id="mDescription" style="margin-bottom:16px"></p>
+
+        <div class="two">
+            <div class="field">
+                <label for="mQty">Quantity</label>
+                <input type="number" id="mQty" min="1" step="1" value="1" inputmode="numeric">
+            </div>
+            <div class="field">
+                <label for="mState">Deliver to (state)</label>
+                <select id="mState"></select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="mName">Recipient name</label>
+            <input type="text" id="mName" placeholder="Who should receive it?">
+        </div>
+
+        <div class="two">
+            <div class="field">
+                <label for="mLga">Local government area</label>
+                <select id="mLga"></select>
+            </div>
+            <div class="field">
+                <label for="mPhone">Phone number</label>
+                <input type="tel" id="mPhone" placeholder="0803 000 0000">
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="mStreet">Street address</label>
+            <input type="text" id="mStreet" placeholder="House number and street">
+        </div>
+
+        <div class="breakdown" id="mBreakdown"></div>
+
+        <div id="mMsg"></div>
+
+        <button class="btn block" id="mBuy">Place order</button>
+        <p class="field tip" style="text-align:center;margin-top:10px">
+            Your wallet is debited once an administrator confirms the payment.
+        </p>
+    </div>
+</div>
+
+<script type="module">
+
+import { auth, db, doc, onSnapshot, onAuthStateChanged, signOut } from "./js/firebase.js";
+import { STATES, lgasFor } from "./js/data/nigeria.js";
+import { loadSettings, formatNaira } from "./js/wallet.js";
+import {
+    CATEGORIES,
+    watchActiveListings,
+    placeOrder,
+    quoteFor,
+    hasDiscount,
+    unitPriceOf,
+    deliveryFeeFor
+} from "./js/marketplace.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let currentUser = null;
+let balance = 0;
+let settings = null;
+let listings = [];
+let active = null;
+
+/* ------------------------------------------------------------------ */
+/* guard                                                               */
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    currentUser = user;
+    start(user);
+});
+
+async function start(user) {
+    onSnapshot(doc(db, "users", user.uid), (snap) => {
+        balance = Number((snap.exists() ? snap.data() : {}).balance || 0);
+        $("balancePill").textContent = formatNaira(balance);
+    });
+
+    settings = await loadSettings().catch(() => null);
+    if (!settings) {
+        $("setupNotice").innerHTML =
+            '<div class="notice warn">An administrator has not configured the ' +
+            "platform service fee yet. Orders will be quoted with a ₦0 service fee " +
+            "until they save the settings.</div>";
+    }
+
+    buildFilters();
+    watchActiveListings((rows) => {
+        listings = rows;
+        render();
+    }, (err) => {
+        console.error("Could not load listings:", err);
+        $("grid").innerHTML =
+            '<div class="empty"><div class="big">Could not load listings</div>' +
+            "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+    });
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* filters                                                             */
+/* ------------------------------------------------------------------ */
+function buildFilters() {
+    $("categoryFilter").innerHTML =
+        '<option value="">All categories</option>' +
+        CATEGORIES.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    $("mState").innerHTML =
+        '<option value="">Select your state</option>' +
+        STATES.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+}
+
+$("search").addEventListener("input", render);
+$("categoryFilter").addEventListener("change", render);
+
+function visibleListings() {
+    const term = $("search").value.trim().toLowerCase();
+    const category = $("categoryFilter").value;
+    return listings.filter((l) => {
+        if (category && l.category !== category) return false;
+        if (!term) return true;
+        return (l.title || "").toLowerCase().includes(term) ||
+               (l.description || "").toLowerCase().includes(term);
+    });
+}
+
+/* ------------------------------------------------------------------ */
+/* grid                                                                */
+/* ------------------------------------------------------------------ */
+function render() {
+    const rows = visibleListings();
+
+    if (!rows.length) {
+        $("grid").innerHTML =
+            '<div class="empty"><div class="big">Nothing here yet</div>' +
+            "<p>Listed goods will appear here as soon as a verified seller posts them.</p></div>";
+        return;
+    }
+
+    $("grid").innerHTML = rows
+        .map((l) => {
+            const discounted = hasDiscount(l);
+            const unit = unitPriceOf(l);
+            const old = Number(l.price || 0);
+            const saving = discounted
+                ? Math.round(((old - unit) / old) * 100)
+                : 0;
+
+            const priceBlock = discounted
+                ? `<div class="prices">
+                       <span class="price-new">${esc(formatNaira(unit))}</span>
+                       <span class="price-old">${esc(formatNaira(old))}</span>
+                       <span class="save">−${saving}%</span>
+                   </div>`
+                : `<div class="prices"><span class="price-plain">${esc(formatNaira(unit))}</span></div>`;
+
+            return `
+                <div class="item" data-id="${esc(l.id)}">
+                    <img class="shot" src="${esc(l.image || "")}" alt="${esc(l.title || "")}">
+                    <div class="body">
+                        <span class="chip">${esc(l.category || "Other")}</span>
+                        <div class="name">${esc(l.title || "")}</div>
+                        ${priceBlock}
+                        <div class="field tip" style="margin:0">
+                            Delivery from ${esc(formatNaira(deliveryFeeFor(l, "")))}
+                        </div>
+                    </div>
+                </div>`;
+        })
+        .join("");
+}
+
+$("grid").addEventListener("click", (e) => {
+    const card = e.target.closest(".item");
+    if (!card) return;
+    const listing = listings.find((l) => l.id === card.dataset.id);
+    if (listing) openListing(listing);
+});
+
+/* ------------------------------------------------------------------ */
+/* detail + buy                                                        */
+/* ------------------------------------------------------------------ */
+function openListing(listing) {
+    active = listing;
+    $("mTitle").textContent = listing.title || "Item";
+    $("mStatus").textContent = listing.status || "active";
+    $("mStatus").className = `status ${esc(listing.status || "active")}`;
+    $("mImage").src = listing.image || "";
+    $("mDescription").textContent = listing.description || "";
+
+    $("mQty").value = "1";
+    $("mMsg").innerHTML = "";
+    if (currentUser) {
+        $("mName").value = "";
+        $("mPhone").value = "";
+        $("mStreet").value = "";
+    }
+    updateQuote();
+    $("modal").classList.add("open");
+}
+
+function closeModal() {
+    $("modal").classList.remove("open");
+    active = null;
+}
+
+$("mClose").addEventListener("click", closeModal);
+$("modal").addEventListener("click", (e) => {
+    if (e.target === $("modal")) closeModal();
+});
+
+$("mState").addEventListener("change", () => {
+    const state = $("mState").value;
+    const lgas = lgasFor(state);
+    $("mLga").innerHTML =
+        '<option value="">Select an area</option>' +
+        lgas.map((l) => `<option value="${esc(l)}">${esc(l)}</option>`).join("");
+    updateQuote();
+});
+
+["mQty", "mState"].forEach((id) => $(id).addEventListener("input", updateQuote));
+
+function updateQuote() {
+    if (!active) return;
+    const qty = Math.max(1, Math.floor(Number($("mQty").value) || 1));
+    const state = $("mState").value;
+    const q = quoteFor(active, qty, state, settings);
+
+    $("mBreakdown").innerHTML = `
+        <div class="brow">
+            <span>Item · ${esc(active.title || "")} × ${q.quantity}</span>
+            <span>${esc(formatNaira(q.subtotal))}</span>
+        </div>
+        <div class="brow">
+            <span>Delivery${state ? ` to ${esc(state)}` : ""}</span>
+            <span>${esc(formatNaira(q.deliveryFee))}</span>
+        </div>
+        <div class="brow">
+            <span>Service fee</span>
+            <span>${esc(formatNaira(q.serviceFee))}</span>
+        </div>
+        <div class="brow total">
+            <span>Total</span>
+            <span>${esc(formatNaira(q.total))}</span>
+        </div>`;
+}
+
+$("mBuy").addEventListener("click", async () => {
+    const btn = $("mBuy");
+    const state = $("mState").value;
+    const lga = $("mLga").value;
+    const name = $("mName").value.trim();
+    const phone = $("mPhone").value.trim();
+    const street = $("mStreet").value.trim();
+    const qty = Math.max(1, Math.floor(Number($("mQty").value) || 1));
+
+    if (!name) return fail("Enter the recipient's name.");
+    if (!state) return fail("Choose the state to deliver to.");
+    if (!lga) return fail("Choose the local government area.");
+    if (!street) return fail("Enter the street address.");
+    if (!phone) return fail("Enter a phone number for the delivery.");
+
+    const quote = quoteFor(active, qty, state, settings);
+    if (quote.total > balance) {
+        return fail(
+            `This order costs ${formatNaira(quote.total)} but your balance is ` +
+            `${formatNaira(balance)}. Top up your wallet first.`
+        );
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Placing order…";
+
+    try {
+        await placeOrder({
+            listing: active,
+            quantity: qty,
+            address: { name, phone, state, lga, street },
+            settings
+        });
+        $("mMsg").innerHTML =
+            '<div class="notice good">Order placed. The seller has been notified by ' +
+            "email, and your payment is queued for confirmation.</div>";
+        setTimeout(closeModal, 1400);
+    } catch (err) {
+        console.error(err);
+        fail(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Place order";
+    }
+});
+
+function fail(message) {
+    $("mMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
+}
+
+</script>
+
+</body>
+</html>

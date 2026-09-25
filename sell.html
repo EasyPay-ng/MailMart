@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sell | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.state-grid .mini{margin-bottom:0}
+.state-grid .mini label{font-size:10.5px;margin-bottom:5px}
+.state-grid .mini input{height:40px;padding:0 11px;font-size:12.5px}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading your seller account…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Sell on MailMart</div>
+        <div class="actions">
+            <a class="back-link" href="marketplace.html">Marketplace</a>
+            <a class="back-link" href="orders.html">Orders</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div id="kycBanner"></div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="listings">My listings <span class="badge" id="myCount">0</span></button>
+        <button class="tab" data-tab="new">Post an item</button>
+        <button class="tab" data-tab="kyc">Verification</button>
+    </div>
+
+    <!-- ---------------- MY LISTINGS ---------------- -->
+    <div class="panel active" id="panel-listings">
+        <div class="card">
+            <h3>My listings</h3>
+            <p class="hint">Everything you have posted. Pause an item to hide it from the marketplace without deleting it.</p>
+            <div class="grid" id="myGrid"></div>
+        </div>
+    </div>
+
+    <!-- ---------------- POST AN ITEM ---------------- -->
+    <div class="panel" id="panel-new">
+        <div class="card">
+            <h3>Post an item</h3>
+            <p class="hint">Add a clear photo, a fair price, and what it costs you to deliver. Leave the discounted price at 0 if the item is not on offer.</p>
+
+            <div id="newMsg"></div>
+
+            <div class="field">
+                <label for="fTitle">Item name</label>
+                <input type="text" id="fTitle" maxlength="120" placeholder="e.g. iPhone 13, 128GB, black">
+            </div>
+
+            <div class="two">
+                <div class="field">
+                    <label for="fCategory">Category</label>
+                    <select id="fCategory"></select>
+                </div>
+                <div class="field">
+                    <label for="fStock">Quantity available</label>
+                    <input type="number" id="fStock" min="1" step="1" value="1" inputmode="numeric">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="fDescription">Description</label>
+                <textarea id="fDescription" maxlength="2000" placeholder="Condition, what is included, anything a buyer should know."></textarea>
+            </div>
+
+            <div class="field">
+                <label>Item photo</label>
+                <div class="drop" id="dropZone">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                    <div class="big" id="dropLabel">Choose a photo</div>
+                    <p>Tap to pick an image. It is resized before upload.</p>
+                    <img id="preview" alt="Preview">
+                </div>
+                <input type="file" id="imageInput" accept="image/*" style="display:none">
+            </div>
+
+            <div class="two">
+                <div class="field">
+                    <label for="fPrice">Price (₦)</label>
+                    <input type="number" id="fPrice" min="1" step="1" placeholder="e.g. 250000" inputmode="numeric">
+                </div>
+                <div class="field">
+                    <label for="fDiscount">Discounted price (₦)</label>
+                    <input type="number" id="fDiscount" min="0" step="1" value="0" inputmode="numeric">
+                    <div class="tip">Set to 0 for no discount. The marketplace strikes out the original and shows this one.</div>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="fDelivery">Default delivery fee (₦)</label>
+                <input type="number" id="fDelivery" min="0" step="1" value="0" inputmode="numeric">
+                <div class="tip">What you charge to deliver anywhere not listed below.</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="field">
+                <label style="display:flex;align-items:center;gap:9px;cursor:pointer">
+                    <input type="checkbox" id="fOverrides" style="width:auto;height:auto;margin:0">
+                    <span>Charge different delivery fees for some states</span>
+                </label>
+                <div class="tip">Leave blank to use your default fee. Fill in only the states that cost you more or less.</div>
+            </div>
+
+            <div id="stateWrap" style="display:none">
+                <div class="state-grid" id="stateGrid"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <button class="btn block" id="postBtn">Post item</button>
+        </div>
+    </div>
+
+    <!-- ---------------- VERIFICATION ---------------- -->
+    <div class="panel" id="panel-kyc">
+        <div class="card" id="kycCard"></div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import { auth, db, doc, onSnapshot, onAuthStateChanged } from "./js/firebase.js";
+import { STATES, lgasFor } from "./js/data/nigeria.js";
+import { fileToBase64 } from "./js/image.js";
+import { formatNaira } from "./js/wallet.js";
+import {
+    CATEGORIES,
+    ID_TYPES,
+    submitKyc,
+    watchMyKyc,
+    createListing,
+    updateListing,
+    setListingStatus,
+    watchMyListings,
+    hasDiscount,
+    unitPriceOf,
+    deliveryFeeFor
+} from "./js/marketplace.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let currentUser = null;
+let kyc = null;
+let myListings = [];
+let itemImage = "";
+let idImage = "";
+
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    currentUser = user;
+    start();
+});
+
+function start() {
+    buildForms();
+
+    watchMyKyc((value) => {
+        kyc = value;
+        renderKyc();
+        renderBanner();
+    });
+
+    watchMyListings((rows) => {
+        myListings = rows;
+        renderMyListings();
+    });
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+function buildForms() {
+    $("fCategory").innerHTML =
+        CATEGORIES.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    $("stateGrid").innerHTML = STATES
+        .map((s) => `
+            <div class="field mini">
+                <label for="st-${esc(s)}">${esc(s)}</label>
+                <input type="number" id="st-${esc(s)}" data-state="${esc(s)}"
+                       min="0" step="1" placeholder="default" inputmode="numeric">
+            </div>`)
+        .join("");
+}
+
+function isApproved() {
+    return kyc && kyc.status === "approved";
+}
+
+/* ------------------------------------------------------------------ */
+/* banner + verification panel                                         */
+/* ------------------------------------------------------------------ */
+function renderBanner() {
+    if (!kyc) {
+        $("kycBanner").innerHTML =
+            '<div class="notice warn">You are not verified as a seller yet. ' +
+            "Complete verification under the <b>Verification</b> tab, and an " +
+            "administrator will review it before you can post items.</div>";
+        return;
+    }
+    if (kyc.status === "pending") {
+        $("kycBanner").innerHTML =
+            '<div class="notice info">Your verification is <b>pending review</b>. ' +
+            "You can prepare listings, but posting is disabled until an administrator approves you.</div>";
+        return;
+    }
+    if (kyc.status === "rejected") {
+        $("kycBanner").innerHTML =
+            '<div class="notice bad">Your verification was rejected' +
+            (kyc.rejectionReason ? `: ${esc(kyc.rejectionReason)}` : "") +
+            ". Update your details under the <b>Verification</b> tab and resubmit.</div>";
+        return;
+    }
+    $("kycBanner").innerHTML =
+        '<div class="notice good">You are a <b>verified seller</b>. Your items appear on the marketplace.</div>';
+}
+
+function renderKyc() {
+    const card = $("kycCard");
+    const k = kyc || {};
+
+    const statusPill = kyc
+        ? `<span class="status ${esc(k.status)}">${esc(k.status)}</span>`
+        : '<span class="status pending">not submitted</span>';
+
+    card.innerHTML = `
+        <h3>Seller verification <span style="margin-left:8px">${statusPill}</span></h3>
+        <p class="hint">We need to know who is selling. Your ID is seen only by the
+        administrator reviewing your application.</p>
+
+        ${kyc && kyc.status === "rejected" && kyc.rejectionReason
+            ? `<div class="notice bad">Reason: ${esc(kyc.rejectionReason)}</div>` : ""}
+        ${kyc && kyc.status === "approved"
+            ? '<div class="notice good">Your details are verified. You can resubmit if anything changes.</div>' : ""}
+
+        <div class="two">
+            <div class="field">
+                <label for="kName">Full name</label>
+                <input type="text" id="kName" value="${esc(k.fullName || "")}" placeholder="As it appears on your ID">
+            </div>
+            <div class="field">
+                <label for="kPhone">Phone number</label>
+                <input type="tel" id="kPhone" value="${esc(k.phone || "")}" placeholder="0803 000 0000">
+            </div>
+        </div>
+
+        <div class="two">
+            <div class="field">
+                <label for="kState">State</label>
+                <select id="kState"></select>
+            </div>
+            <div class="field">
+                <label for="kLga">Local government area</label>
+                <select id="kLga"></select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="kStreet">Street address</label>
+            <input type="text" id="kStreet" value="${esc(k.street || "")}" placeholder="House number and street">
+        </div>
+
+        <div class="field">
+            <label for="kIdType">Means of identification</label>
+            <select id="kIdType"></select>
+        </div>
+
+        <div class="field">
+            <label>Photo of your ID</label>
+            <div class="drop" id="idDrop">
+                <div class="big" id="idLabel">${k.idImage ? "Replace ID photo" : "Choose an ID photo"}</div>
+                <p>Tap to upload a clear picture of your ID document.</p>
+                <img id="idPreview" alt="ID preview" style="${k.idImage ? "display:block" : ""}" src="${k.idImage ? esc(k.idImage) : ""}">
+            </div>
+            <input type="file" id="idInput" accept="image/*" style="display:none">
+        </div>
+
+        <div id="kycMsg"></div>
+        <button class="btn" id="kycBtn">${kyc ? "Resubmit application" : "Submit for verification"}</button>`;
+
+    /* state -> LGA cascade */
+    $("kState").innerHTML =
+        '<option value="">Select your state</option>' +
+        STATES.map((s) => `<option value="${esc(s)}"${k.state === s ? " selected" : ""}>${esc(s)}</option>`).join("");
+    $("kIdType").innerHTML =
+        ID_TYPES.map((t) => `<option value="${esc(t)}"${k.idType === t ? " selected" : ""}>${esc(t)}</option>`).join("");
+
+    const fillLga = () => {
+        const state = $("kState").value;
+        const lgas = lgasFor(state);
+        $("kLga").innerHTML =
+            '<option value="">Select an area</option>' +
+            lgas.map((l) => `<option value="${esc(l)}"${k.lga === l ? " selected" : ""}>${esc(l)}</option>`).join("");
+    };
+    fillLga();
+    $("kState").addEventListener("change", fillLga);
+
+    idImage = k.idImage || "";
+    $("idDrop").addEventListener("click", () => $("idInput").click());
+    $("idInput").addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        $("idLabel").textContent = "Processing…";
+        try {
+            idImage = await fileToBase64(file);
+            $("idPreview").src = idImage;
+            $("idPreview").style.display = "block";
+            $("idLabel").textContent = file.name;
+        } catch (err) {
+            idImage = "";
+            $("idLabel").textContent = "Choose an ID photo";
+            $("kycMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+        }
+        e.target.value = "";
+    });
+
+    $("kycBtn").addEventListener("click", submitApplication);
+}
+
+async function submitApplication() {
+    const btn = $("kycBtn");
+    const fullName = $("kName").value.trim();
+    const phone = $("kPhone").value.trim();
+    const state = $("kState").value;
+    const lga = $("kLga").value;
+    const street = $("kStreet").value.trim();
+    const idType = $("kIdType").value;
+
+    if (!fullName) return kycFail("Enter your full name.");
+    if (!phone) return kycFail("Enter your phone number.");
+    if (!state) return kycFail("Select your state.");
+    if (!lga) return kycFail("Select your local government area.");
+    if (!street) return kycFail("Enter your street address.");
+    if (!idImage) return kycFail("Upload a photo of your ID.");
+
+    btn.disabled = true;
+    btn.textContent = "Submitting…";
+    try {
+        await submitKyc({ fullName, phone, state, lga, street, idType, idImage });
+        $("kycMsg").innerHTML =
+            '<div class="notice good">Submitted. An administrator will review it shortly.</div>';
+    } catch (err) {
+        console.error(err);
+        kycFail(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = kyc ? "Resubmit application" : "Submit for verification";
+    }
+}
+
+function kycFail(message) {
+    $("kycMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* posting                                                             */
+/* ------------------------------------------------------------------ */
+$("dropZone").addEventListener("click", () => $("imageInput").click());
+$("imageInput").addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    $("dropLabel").textContent = "Processing image…";
+    try {
+        itemImage = await fileToBase64(file);
+        $("preview").src = itemImage;
+        $("preview").style.display = "block";
+        $("dropLabel").textContent = file.name;
+    } catch (err) {
+        itemImage = "";
+        $("preview").style.display = "none";
+        $("dropLabel").textContent = "Choose a photo";
+        $("newMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    }
+    e.target.value = "";
+});
+
+$("fOverrides").addEventListener("change", () => {
+    $("stateWrap").style.display = $("fOverrides").checked ? "block" : "none";
+});
+
+$("postBtn").addEventListener("click", async () => {
+    const btn = $("postBtn");
+
+    if (!isApproved()) {
+        return postFail(
+            "You need to be verified before you can post. Complete the Verification tab and wait for approval."
+        );
+    }
+
+    const title = $("fTitle").value.trim();
+    const description = $("fDescription").value.trim();
+    const category = $("fCategory").value;
+    const stock = Math.floor(Number($("fStock").value) || 1);
+    const price = Number($("fPrice").value);
+    const discountPrice = Number($("fDiscount").value) || 0;
+    const deliveryDefault = Number($("fDelivery").value) || 0;
+
+    if (!title) return postFail("Give the item a name.");
+    if (!Number.isFinite(price) || price <= 0) return postFail("Enter a price.");
+    if (discountPrice > 0 && discountPrice >= price) {
+        return postFail("The discounted price must be lower than the normal price, or left at 0.");
+    }
+    if (!itemImage) return postFail("Add a photo of the item.");
+
+    /* per-state delivery overrides, only for states actually filled in */
+    const deliveryByState = {};
+    if ($("fOverrides").checked) {
+        document.querySelectorAll("#stateGrid input[data-state]").forEach((input) => {
+            const raw = input.value.trim();
+            if (raw === "") return;
+            const value = Number(raw);
+            if (Number.isFinite(value) && value >= 0) deliveryByState[input.dataset.state] = value;
+        });
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Posting…";
+    try {
+        await createListing({
+            title,
+            description,
+            category,
+            image: itemImage,
+            price,
+            discountPrice,
+            stock,
+            deliveryDefault,
+            deliveryByState
+        });
+        $("newMsg").innerHTML =
+            '<div class="notice good">Posted. Your item is live on the marketplace.</div>';
+        resetForm();
+        switchTab("listings");
+    } catch (err) {
+        console.error(err);
+        postFail(err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Post item";
+    }
+});
+
+function postFail(message) {
+    $("newMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
+}
+
+function resetForm() {
+    ["fTitle", "fDescription", "fPrice", "fDelivery"].forEach((id) => ($(id).value = ""));
+    $("fDiscount").value = "0";
+    $("fStock").value = "1";
+    itemImage = "";
+    $("preview").style.display = "none";
+    $("preview").src = "";
+    $("dropLabel").textContent = "Choose a photo";
+    document.querySelectorAll("#stateGrid input[data-state]").forEach((i) => (i.value = ""));
+    $("fOverrides").checked = false;
+    $("stateWrap").style.display = "none";
+}
+
+/* ------------------------------------------------------------------ */
+/* my listings                                                         */
+/* ------------------------------------------------------------------ */
+function renderMyListings() {
+    $("myCount").textContent = String(myListings.length);
+
+    if (!myListings.length) {
+        $("myGrid").innerHTML =
+            '<div class="empty"><div class="big">No listings yet</div>' +
+            "<p>Post your first item and it will appear on the marketplace.</p></div>";
+        return;
+    }
+
+    $("myGrid").innerHTML = myListings
+        .map((l) => {
+            const discounted = hasDiscount(l);
+            const unit = unitPriceOf(l);
+            const priceBlock = discounted
+                ? `<div class="prices">
+                       <span class="price-new">${esc(formatNaira(unit))}</span>
+                       <span class="price-old">${esc(formatNaira(l.price))}</span>
+                   </div>`
+                : `<div class="prices"><span class="price-plain">${esc(formatNaira(unit))}</span></div>`;
+
+            const toggle = l.status === "active"
+                ? `<button class="btn small ghost" data-act="pause" data-id="${esc(l.id)}">Pause</button>`
+                : `<button class="btn small good" data-act="activate" data-id="${esc(l.id)}">Make live</button>`;
+
+            return `
+                <div class="item" data-id="${esc(l.id)}">
+                    <img class="shot" src="${esc(l.image || "")}" alt="${esc(l.title || "")}">
+                    <div class="body">
+                        <span class="chip">${esc(l.status || "active")}</span>
+                        <div class="name">${esc(l.title || "")}</div>
+                        ${priceBlock}
+                        <div class="field tip" style="margin:0">
+                            Delivery from ${esc(formatNaira(deliveryFeeFor(l, "")))} · ${esc(l.stock ?? 1)} in stock
+                        </div>
+                        <div class="row-end" style="margin-top:4px">
+                            ${toggle}
+                            <button class="btn small bad" data-act="delete" data-id="${esc(l.id)}">Delete</button>
+                        </div>
+                    </div>
+                </div>`;
+        })
+        .join("");
+}
+
+$("myGrid").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const id = btn.dataset.id;
+
+    try {
+        if (btn.dataset.act === "pause") await setListingStatus(id, "paused");
+        if (btn.dataset.act === "activate") await setListingStatus(id, "active");
+        if (btn.dataset.act === "delete") {
+            const listing = myListings.find((l) => l.id === id);
+            if (!confirm(`Delete "${listing ? listing.title : "this item"}"? This cannot be undone.`)) return;
+            await setListingStatus(id, "soldout");
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that listing.");
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* tabs                                                                */
+/* ------------------------------------------------------------------ */
+function switchTab(name) {
+    document.querySelectorAll(".tab").forEach((t) =>
+        t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".panel").forEach((p) =>
+        p.classList.toggle("active", p.id === `panel-${name}`));
+}
+
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+});
+
+</script>
+
+</body>
+</html>

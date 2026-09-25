@@ -157,7 +157,7 @@ service cloud.firestore {
       function ownPendingRequest() {
         return request.resource.data.uid == uid()
           && request.resource.data.status == 'pending'
-          && ['deposit', 'withdrawal'].hasAny([request.resource.data.type])
+          && ['deposit', 'withdrawal', 'order_payment'].hasAny([request.resource.data.type])
           && request.resource.data.amount is number
           && request.resource.data.amount > 0
           && request.resource.data.createdAt == request.time
@@ -168,7 +168,10 @@ service cloud.firestore {
           && (request.resource.data.type != 'deposit'
               || (request.resource.data.depositorName is string
                   && request.resource.data.proofImage is string
-                  && request.resource.data.proofImage.size() < 800000));
+                  && request.resource.data.proofImage.size() < 800000))
+          && (request.resource.data.type != 'order_payment'
+              || (request.resource.data.orderId is string
+                  && request.resource.data.direction == 'debit'));
       }
 
       // Administrators may only move a request along its allowed path, and the
@@ -191,6 +194,182 @@ service cloud.firestore {
       allow create: if signedIn() && ownPendingRequest();
       allow update: if signedIn() && adminSettlement();
       allow delete: if false;
+    }
+
+    // ---------- seller KYC ----------------------------------------------
+    match /kyc/{kycId} {
+
+      function ownApplication() {
+        return request.resource.data.uid == request.auth.uid
+          && request.resource.data.status == 'pending'
+          && request.resource.data.keys().hasAll(
+               ['fullName', 'phone', 'state', 'lga', 'street', 'idType', 'idImage'])
+          && request.resource.data.idImage.size() < 800000;
+      }
+
+      // The paired write to users/{uid}.isSeller is what unlocks selling.
+      function adminDecision() {
+        return isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+          && resource.data.status == 'pending'
+          && ['approved', 'rejected'].hasAny([request.resource.data.status])
+          && request.resource.data.reviewedBy == tokenEmail();
+      }
+
+      allow read: if signedIn()
+        && (kycId == request.auth.uid || isAdmin());
+      allow create: if signedIn() && ownApplication();
+      allow update: if signedIn() && (ownApplication() || adminDecision());
+      allow delete: if false;
+    }
+
+    // ---------- listings --------------------------------------------------
+    match /listings/{listingId} {
+
+      function isVerifiedSeller() {
+        return signedIn()
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSeller == true;
+      }
+
+      function listingShape() {
+        return request.resource.data.keys().hasAll(
+                 ['title', 'description', 'category', 'image', 'price',
+                  'discountPrice', 'deliveryDefault', 'deliveryByState', 'status'])
+               && request.resource.data.price > 0
+               && request.resource.data.discountPrice >= 0
+               && request.resource.data.deliveryDefault >= 0
+               && request.resource.data.image.size() < 800000
+               && request.resource.data.title.size() <= 120
+               && request.resource.data.description.size() <= 2000
+               && ['active', 'paused', 'soldout'].hasAny([request.resource.data.status]);
+      }
+
+      allow read: if signedIn();
+
+      // Only a KYC-approved seller (or an administrator) may list goods.
+      allow create: if (isVerifiedSeller() || isAdmin())
+        && request.resource.data.sellerUid == request.auth.uid
+        && listingShape()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // A listing cannot be handed to another seller.
+      allow update: if signedIn()
+        && (resource.data.sellerUid == request.auth.uid || isAdmin())
+        && request.resource.data.sellerUid == resource.data.sellerUid
+        && listingShape();
+
+      allow delete: if signedIn()
+        && (resource.data.sellerUid == request.auth.uid || isAdmin());
+    }
+
+    // ---------- orders ----------------------------------------------------
+    match /orders/{orderId} {
+
+      function unitPriceOf(l) {
+        return l.discountPrice > 0 && l.discountPrice < l.price ? l.discountPrice : l.price;
+      }
+
+      function deliveryFeeOf(l, state) {
+        return l.deliveryByState.keys().hasAll([state])
+          ? l.deliveryByState[state]
+          : l.deliveryDefault;
+      }
+
+      // Tolerate a platform that has not saved settings yet: no settings
+      // document means no fee has been configured, so zero is the right value.
+      function serviceFeeMatches() {
+        let path = /databases/$(database)/documents/settings/platform;
+        return exists(path)
+          ? request.resource.data.serviceFee == get(path).data.serviceFee
+          : request.resource.data.serviceFee == 0;
+      }
+
+      // The quote the browser produced is recomputed here, so a tampered page
+      // cannot buy something for less than the seller is asking.
+      function pricedCorrectly() {
+        let listing = get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data;
+        let unit = unitPriceOf(listing);
+        return listing.status == 'active'
+          && request.resource.data.quantity >= 1
+          && request.resource.data.itemPrice == unit
+          && request.resource.data.subtotal == unit * request.resource.data.quantity
+          && request.resource.data.deliveryFee
+               == deliveryFeeOf(listing, request.resource.data.address.state)
+          && serviceFeeMatches()
+          && request.resource.data.total
+               == request.resource.data.subtotal
+                  + request.resource.data.deliveryFee
+                  + request.resource.data.serviceFee
+          && request.resource.data.sellerPayout
+               == request.resource.data.subtotal + request.resource.data.deliveryFee
+          && request.resource.data.sellerUid == listing.sellerUid
+          && request.resource.data.sellerEmail == listing.sellerEmail;
+      }
+
+      function ownOrder() {
+        return request.resource.data.buyerUid == request.auth.uid
+          && request.resource.data.status == 'pending_payment'
+          && request.resource.data.keys().hasAll(
+               ['listingId', 'sellerUid', 'sellerEmail', 'quantity', 'itemPrice',
+                'subtotal', 'deliveryFee', 'serviceFee', 'total', 'sellerPayout',
+                'address', 'timeline', 'createdAt', 'updatedAt'])
+          && pricedCorrectly()
+          && request.resource.data.createdAt == request.time;
+      }
+
+      function statusStep() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['status', 'updatedAt', 'timeline',
+                           'paidAt', 'completedAt', 'refundedAt']);
+      }
+
+      allow read: if signedIn()
+        && (resource.data.buyerUid == request.auth.uid
+            || resource.data.sellerUid == request.auth.uid
+            || isAdmin());
+
+      allow create: if signedIn() && ownOrder();
+
+      // The seller ships a paid order; the buyer confirms delivery, or cancels
+      // before it ships; an administrator may move an order anywhere.
+      allow update: if signedIn() && statusStep() && (
+        (resource.data.sellerUid == request.auth.uid
+          && resource.data.status == 'paid'
+          && request.resource.data.status == 'shipped')
+        || (resource.data.buyerUid == request.auth.uid
+            && resource.data.status == 'shipped'
+            && request.resource.data.status == 'completed')
+        || (resource.data.buyerUid == request.auth.uid
+            && ['pending_payment', 'paid'].hasAny([resource.data.status])
+            && request.resource.data.status == 'cancelled')
+        || isAdmin()
+      );
+
+      allow delete: if false;
+    }
+
+    // ---------- outgoing mail ---------------------------------------------
+    // The Trigger Email extension reads and updates this collection with
+    // admin privileges, bypassing these rules. They exist to stop a browser
+    // queueing arbitrary mail: one notice per real order, addressed only to
+    // that order's actual seller.
+    match /mail/{mailId} {
+
+      function orderNotice() {
+        let path = /databases/$(database)/documents/orders/$(request.resource.data.orderId);
+        return signedIn()
+          && request.resource.data.orderId is string
+          && exists(path)
+          && get(path).data.buyerUid == request.auth.uid
+          && request.resource.data.to == get(path).data.sellerEmail
+          && request.resource.data.message.subject is string;
+      }
+
+      allow create: if orderNotice();
+      allow read, update, delete: if false;
     }
 
     // No catch-all match: rules deny by default, so any other collection the

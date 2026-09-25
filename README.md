@@ -43,6 +43,46 @@ via the Firebase Admin SDK. The app does not depend on it, but it is convenient
 if you add a backend later. It needs a service-account key, which must never be
 committed.
 
+## Marketplace
+
+Sellers apply under **Sell → Verification**. An administrator approves them,
+which sets `isSeller` on their user document — that flag is what the rules
+check before allowing anyone to list goods, so verification is enforced
+server-side rather than by hiding a button.
+
+Verified sellers (and administrators) post items with a photo, a price and an
+optional discounted price. Where a discount exists the marketplace strikes
+out the original and shows the discounted figure with the saving alongside.
+
+Delivery is priced per state: the seller sets a default fee and may override
+it for individual states. On top of that the platform charges a flat service
+fee, configured by an administrator under **Marketplace Admin → Fees**.
+
+Buying an item records an order and raises a pending debit. Nothing is charged
+at that point — an administrator confirms the payment, and that single step
+charges the buyer and pays the seller. The service fee is simply not paid out,
+so it stays with the platform. Buyers track orders through
+`pending_payment → paid → shipped → completed`.
+
+The total the browser quotes is **recomputed server-side** in
+`firestore.rules` against the live listing and the configured service fee, so
+a tampered page cannot buy something for less than the seller is asking.
+
+### Seller email notifications
+
+Sellers are emailed when they receive an order, using the **Trigger Email**
+extension. The app writes a document to `mail`; the extension sends it and
+stamps the result back onto the document. Install it with:
+
+```sh
+firebase ext:install firebase/firestore-send-email --project mailmartz
+```
+
+It needs SMTP credentials, and it requires the Blaze plan. The extension runs
+with admin privileges, so the `mail` rules only constrain the browser: they
+let a buyer queue exactly one notice per order, addressed to that order's
+real seller — which stops someone using your project to send arbitrary mail.
+
 ## Wallet
 
 Money moves in two steps, so that no user can credit themselves:
@@ -114,6 +154,12 @@ Then open `http://localhost:8000`.
 | `admin-wallet.html` | Administrator settlement desk |
 | `js/wallet.js` | Deposits, withdrawals, settlement |
 | `js/data/nigeria.js` | 37 states, 774 LGAs, 48 banks with NIP codes |
+| `marketplace.html` | Browse and buy goods |
+| `sell.html` | Seller verification and listings |
+| `orders.html` | Order tracking for buyers and sellers |
+| `admin-marketplace.html` | Verification queue, listings, fees, settlement |
+| `js/marketplace.js` | KYC, listings, orders, pricing |
+| `css/app.css` | Shared theme for the marketplace screens |
 
 ## Security notes
 
