@@ -206,8 +206,10 @@ function renderVerdict() {
     }
 
     /* Everything else that did not pass — a failure for another reason or a
-       warning — listed verbatim, so no check disappears from the verdict. */
-    const covered = new Set([...denied, ...indexed]);
+       warning — listed verbatim, so no check disappears from the verdict. The
+       missing-index rows stay in the list: that is where their "create the
+       index" link is. */
+    const covered = new Set(denied);
 
     html += results
         .filter((r) => r.status !== "pass" && r.status !== "skip" && !covered.has(r))
