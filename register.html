@@ -1138,7 +1138,8 @@ class="home"
 
 <script type="module">
 
-import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, doc, setDoc, serverTimestamp } from "./js/supabase.js";
+import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, doc, setDoc, serverTimestamp } from "./js/firebase.js";
+import { isAdminEmail, redirectAfterAuth } from "./js/admin.js";
 
 const provider=new GoogleAuthProvider();
 
@@ -1307,7 +1308,7 @@ registerLoading.style.display=
 }
 
 
-function supabaseError(error){
+function friendlyError(error){
 
 switch(error.code){
 
@@ -1337,7 +1338,7 @@ return"Your browser blocked the Google registration window.";
 
 case"auth/operation-not-allowed":
 
-return"This registration method is not enabled in Supabase.";
+return"This registration method is not enabled in Firebase.";
 
 default:
 
@@ -1628,6 +1629,10 @@ balance:0,
 
 status:"active",
 
+isAdmin:isAdminEmail(
+emailValue
+),
+
 createdAt:serverTimestamp(),
 
 updatedAt:serverTimestamp()
@@ -1642,10 +1647,11 @@ showSuccess(
 
 
 setTimeout(
-()=>{
+async()=>{
 
-window.location.href=
-"dashboard.html";
+await redirectAfterAuth(
+user
+);
 
 },
 900
@@ -1655,7 +1661,7 @@ window.location.href=
 }catch(error){
 
 showError(
-supabaseError(error)
+friendlyError(error)
 );
 
 loading(false);
@@ -1744,6 +1750,10 @@ balance:0,
 
 status:"active",
 
+isAdmin:isAdminEmail(
+user.email
+),
+
 createdAt:serverTimestamp(),
 
 updatedAt:serverTimestamp()
@@ -1761,10 +1771,11 @@ showSuccess(
 
 
 setTimeout(
-()=>{
+async()=>{
 
-window.location.href=
-"dashboard.html";
+await redirectAfterAuth(
+user
+);
 
 },
 900
@@ -1774,7 +1785,7 @@ window.location.href=
 }catch(error){
 
 showError(
-supabaseError(error)
+friendlyError(error)
 );
 
 loading(false);

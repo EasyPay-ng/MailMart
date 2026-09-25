@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Orders | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.order{
+    display:flex;gap:14px;padding:16px 0;
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+.order:last-child{border-bottom:0}
+.order .shot{
+    width:74px;height:74px;border-radius:12px;object-fit:cover;flex-shrink:0;
+    background:rgba(255,255,255,.04);
+}
+.order .body{flex:1;min-width:0}
+.order .title{font-size:13.5px;font-weight:700;line-height:1.4}
+.order .meta{font-size:11.5px;color:#8ba3bd;margin-top:4px;line-height:1.6}
+.order .total{font-size:16px;font-weight:900;letter-spacing:-.4px;margin-top:6px}
+.order .acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
+
+.track{display:flex;gap:0;margin-top:12px;flex-wrap:wrap}
+.track .step{
+    display:flex;align-items:center;gap:7px;
+    font-size:10.5px;font-weight:700;color:#5c7189;padding-right:14px;
+}
+.track .step .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:rgba(255,255,255,.16);flex-shrink:0;
+}
+.track .step.done{color:#69edb8}
+.track .step.done .dot{background:#69edb8}
+.track .step.now{color:#ffd479}
+.track .step.now .dot{background:#ffd479;box-shadow:0 0 0 3px rgba(255,212,121,.18)}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Loading your orders…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Orders</div>
+        <div class="actions">
+            <a class="back-link primary" href="marketplace.html">Marketplace</a>
+            <a class="back-link" href="sell.html">Sell</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="purchases">My purchases <span class="badge" id="buyCount">0</span></button>
+        <button class="tab" data-tab="sales">My sales <span class="badge" id="sellCount">0</span></button>
+    </div>
+
+    <div class="panel active" id="panel-purchases">
+        <div class="card">
+            <h3>My purchases</h3>
+            <p class="hint">Track what you have ordered, and confirm delivery once it arrives.</p>
+            <div id="buyList"></div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-sales">
+        <div class="card">
+            <h3>My sales</h3>
+            <p class="hint">Orders buyers have placed with you. Ship once an order shows as Paid.</p>
+            <div id="sellList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import { auth, onAuthStateChanged } from "./js/firebase.js";
+import { formatNaira, formatDate } from "./js/wallet.js";
+import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder } from "./js/marketplace.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const FLOW = ["pending_payment", "paid", "shipped", "completed"];
+
+let currentUser = null;
+let buyerRows = [];
+let sellerRows = [];
+
+onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    currentUser = user;
+    start();
+});
+
+function start() {
+    watchBuyerOrders((rows) => {
+        buyerRows = rows;
+        $("buyCount").textContent = String(rows.length);
+        renderList($("buyList"), rows, "buyer");
+    }, (err) => listError($("buyList"), err));
+
+    watchSellerOrders((rows) => {
+        sellerRows = rows;
+        $("sellCount").textContent = String(rows.length);
+        renderList($("sellList"), rows, "seller");
+    }, (err) => listError($("sellList"), err));
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+function listError(el, err) {
+    console.error(err);
+    el.innerHTML =
+        '<div class="empty"><div class="big">Could not load orders</div>' +
+        "<p>Check your Firestore security rules and that you are signed in.</p></div>";
+}
+
+/* ------------------------------------------------------------------ */
+function renderList(el, rows, side) {
+    if (!rows.length) {
+        el.innerHTML =
+            '<div class="empty"><div class="big">Nothing here yet</div>' +
+            `<p>${side === "buyer"
+                ? "Orders you place will appear here."
+                : "Orders buyers place with you will appear here."}</p></div>`;
+        return;
+    }
+
+    el.innerHTML = rows.map((o) => orderCard(o, side)).join("");
+}
+
+function orderCard(o, side) {
+    const status = o.status || "pending_payment";
+    const cancelled = ["cancelled", "refunded"].includes(status);
+
+    const timeline = Array.isArray(o.timeline) ? o.timeline : [];
+    const reached = new Set(timeline.map((t) => t.status));
+    reached.add(status);
+
+    const tracker = cancelled
+        ? ""
+        : `<div class="track">${FLOW.map((step, i) => {
+              const current = FLOW.indexOf(status);
+              const done = i < current;
+              const now = step === status;
+              const cls = now ? "now" : done ? "done" : "";
+              return `<div class="step ${cls}"><span class="dot"></span>${esc(STATUS_LABEL[step] || step)}</div>`;
+          }).join("")}</div>`;
+
+    const other = side === "buyer"
+        ? `Seller: ${esc(o.sellerEmail || "—")}`
+        : `Buyer: ${esc(o.buyerEmail || "—")}`;
+
+    const address = o.address || {};
+
+    const actions = [];
+    if (side === "seller" && status === "paid") {
+        actions.push(`<button class="btn small good" data-act="shipped" data-id="${esc(o.id)}">Mark as shipped</button>`);
+    }
+    if (side === "buyer" && status === "shipped") {
+        actions.push(`<button class="btn small good" data-act="completed" data-id="${esc(o.id)}">Confirm delivery</button>`);
+    }
+    if (side === "buyer" && ["pending_payment", "paid"].includes(status)) {
+        actions.push(`<button class="btn small bad" data-act="cancelled" data-id="${esc(o.id)}">Cancel order</button>`);
+    }
+
+    return `
+        <div class="order">
+            <img class="shot" src="${esc(o.listingImage || "")}" alt="">
+            <div class="body">
+                <div class="title">${esc(o.listingTitle || "Item")} × ${esc(o.quantity || 1)}</div>
+                <div class="meta">
+                    ${other}<br>
+                    ${esc(formatDate(o.createdAt))}
+                    <span class="status ${esc(status)}">${esc(STATUS_LABEL[status] || status)}</span>
+                </div>
+                <div class="total">${esc(formatNaira(o.total))}</div>
+                <div class="meta">
+                    Deliver to ${esc(address.name || "—")} · ${esc(address.street || "")},
+                    ${esc(address.lga || "")}, ${esc(address.state || "")} · ${esc(address.phone || "")}
+                </div>
+                <div class="meta">
+                    Item ${esc(formatNaira(o.subtotal))} · Delivery ${esc(formatNaira(o.deliveryFee))} ·
+                    Service ${esc(formatNaira(o.serviceFee))}
+                </div>
+                ${tracker}
+                ${actions.length ? `<div class="acts">${actions.join("")}</div>` : ""}
+            </div>
+        </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+async function onAction(target, act) {
+    const id = target.dataset.id;
+    const row = findOrder(id);
+    if (!row) return;
+
+    if (act === "cancelled" && !confirm("Cancel this order?")) return;
+    if (act === "completed" && !confirm("Confirm that you received this order? This releases payment to the seller.")) return;
+
+    try {
+        await advanceOrder(row, act, currentUser.email);
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that order.");
+    }
+}
+
+function findOrder(id) {
+    return buyerRows.find((o) => o.id === id) || sellerRows.find((o) => o.id === id);
+}
+
+["buyList", "sellList"].forEach((listId) => {
+    $(listId).addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-act]");
+        if (btn) onAction(btn, btn.dataset.act);
+    });
+});
+
+/* ------------------------------------------------------------------ */
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((t) =>
+            t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".panel").forEach((p) =>
+            p.classList.toggle("active", p.id === `panel-${tab.dataset.tab}`));
+    });
+});
+
+</script>
+
+</body>
+</html>

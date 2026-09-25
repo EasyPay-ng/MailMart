@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mail Desk | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.mail{
+    border-radius:16px;padding:16px 17px;margin-bottom:12px;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.08);
+}
+.mail.held{border-color:rgba(0,213,255,.34);background:rgba(0,213,255,.055)}
+.mail .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.mail .addr{font-size:14.5px;font-weight:800;letter-spacing:-.2px;word-break:break-all}
+.mail .sub{font-size:11.5px;color:#8ba3bd;margin-top:4px;line-height:1.6}
+.mail .acts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+
+.cred{
+    display:flex;gap:10px;align-items:center;margin-top:11px;
+    padding:10px 12px;border-radius:11px;
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    font-size:12.5px;flex-wrap:wrap;
+}
+.cred .k{color:#8ba3bd;font-weight:700;font-size:11px;letter-spacing:.4px;text-transform:uppercase}
+.cred .v{font-weight:800;letter-spacing:.4px}
+
+.answer{
+    border-radius:12px;padding:12px 14px;margin-top:12px;
+    background:rgba(105,237,184,.10);
+    border:1px solid rgba(105,237,184,.34);
+}
+.answer .lab{font-size:10.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#69edb8}
+.answer .val{
+    font-size:22px;font-weight:900;letter-spacing:1.5px;margin-top:5px;
+    color:#fff;word-break:break-all;
+}
+.answer .at{font-size:11px;color:#8ba3bd;margin-top:6px}
+
+.payin{
+    height:38px;width:120px;padding:0 11px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.05);
+    color:#fff;font-family:inherit;font-size:12.5px;font-weight:700;
+}
+
+.who{
+    display:flex;align-items:center;gap:10px;padding:9px 0;
+    border-bottom:1px solid rgba(255,255,255,.07);font-size:12.5px;
+}
+.who:last-child{border-bottom:0}
+.who .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.who .dot.on{background:#69edb8;box-shadow:0 0 0 3px rgba(105,237,184,.18)}
+.who .dot.off{background:rgba(255,255,255,.18)}
+
+.alertbar{
+    display:none;align-items:center;gap:10px;
+    border-radius:13px;padding:12px 15px;margin-bottom:16px;
+    background:linear-gradient(135deg,rgba(8,124,255,.20),rgba(0,213,255,.08));
+    border:1px solid rgba(0,213,255,.34);
+    font-size:12.5px;font-weight:700;
+}
+.alertbar.show{display:flex}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Opening the desk…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Mail Desk</div>
+        <div class="actions">
+            <button class="back-link" id="notifyBtn">Enable alerts</button>
+            <a class="back-link" href="admin-team.html">Team</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+            <button class="back-link" id="logoutBtn">Log out</button>
+        </div>
+    </div>
+
+    <div class="alertbar" id="alertBar">
+        <span id="alertText"></span>
+        <button class="btn small ghost" id="alertDismiss" style="margin-left:auto">Dismiss</button>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="k">In queue</div>
+            <div class="v amber" id="statQueue">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">I am holding</div>
+            <div class="v cyan" id="statHeld">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Awaiting seller</div>
+            <div class="v amber" id="statWaiting">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Desk online</div>
+            <div class="v green" id="statOnline">0</div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="queue">Queue <span class="badge" id="queueCount">0</span></button>
+        <button class="tab" data-tab="work">My work <span class="badge" id="workCount">0</span></button>
+        <button class="tab" data-tab="online">Who's online</button>
+    </div>
+
+    <div class="panel active" id="panel-queue">
+        <div class="card">
+            <h3>Unclaimed mails</h3>
+            <p class="hint">Take a mail only when you are ready to work it now. Claiming locks it so nobody else at the desk picks up the same one.</p>
+            <div id="queueList"></div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-work">
+        <div class="card">
+            <h3>Mails you are holding</h3>
+            <p class="hint">Log the account in on your phone, trigger Google's check, then ask the seller for the code — or for a prompt, ask them to approve it and type <b>done</b>.</p>
+            <div id="workList"></div>
+        </div>
+    </div>
+
+    <div class="panel" id="panel-online">
+        <div class="card">
+            <h3>Who is at the desk</h3>
+            <p class="hint">Anyone who has had this page open in the last two minutes.</p>
+            <div id="presenceList"></div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import { auth, signOut, onAuthStateChanged } from "./js/firebase.js";
+import { isAdminUser } from "./js/admin.js";
+import { formatDate } from "./js/wallet.js";
+import {
+    watchQueue,
+    watchMyClaims,
+    watchPresence,
+    claimMail,
+    releaseMail,
+    requestVerification,
+    completeMail,
+    heartbeat,
+    isOnline,
+    requestNotifyPermission,
+    notifyNewMail,
+    chime,
+    MAIL_STATUS,
+    VERIFY_STATUS
+} from "./js/emaildesk.js";
+
+import { getDoc, doc, db } from "./js/firebase.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let me = null;
+let queue = [];
+let held = [];
+let presence = [];
+let seenQueueIds = null;   // null until the first snapshot arrives
+let revealed = new Set();
+
+/* ------------------------------------------------------------------ */
+/* guard — administrators may sit at the desk too                      */
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+
+    const admin = await isAdminUser(user);
+    if (!admin) {
+        const snap = await getDoc(doc(db, "users", user.uid)).catch(() => null);
+        const isSub = !!(snap && snap.exists() && snap.data().isSubAdmin === true);
+        if (!isSub) {
+            window.location.href = "dashboard.html";
+            return;
+        }
+    }
+
+    me = user;
+    start(user);
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+    try { await signOut(auth); } catch (e) { console.error(e); }
+    window.location.href = "login.html";
+});
+
+function start(user) {
+    /* presence: a heartbeat says "I am here" so the desk can see who is on */
+    heartbeat(user).catch(() => {});
+    setInterval(() => heartbeat(user).catch(() => {}), 45000);
+    window.addEventListener("beforeunload", () => {
+        navigator.sendBeacon && navigator.sendBeacon("");
+    });
+
+    watchQueue(renderQueue, (err) => {
+        console.error(err);
+        $("queueList").innerHTML =
+            '<div class="empty"><div class="big">Could not load the queue</div>' +
+            "<p>Check your Firestore security rules and that you are on the desk.</p></div>";
+    });
+
+    watchMyClaims((rows) => {
+        held = rows;
+        renderWork();
+    }, (err) => console.error("claims:", err));
+
+    watchPresence((rows) => {
+        presence = rows;
+        renderPresence();
+    }, (err) => console.error("presence:", err));
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* queue                                                               */
+/* ------------------------------------------------------------------ */
+function renderQueue(rows) {
+    queue = rows.filter((m) => m.status === "pending");
+
+    /* tell everyone at the desk when something new lands */
+    if (seenQueueIds !== null) {
+        const fresh = queue.filter((m) => !seenQueueIds.has(m.id));
+        if (fresh.length) {
+            showAlert(`${fresh.length} new mail${fresh.length > 1 ? "s" : ""} just arrived in the queue.`);
+            fresh.forEach((m) => notifyNewMail(m.email || "A new mail"));
+            chime();
+        }
+    }
+    seenQueueIds = new Set(queue.map((m) => m.id));
+
+    $("statQueue").textContent = String(queue.length);
+    $("statHeld").textContent = String(held.length);
+    $("statWaiting").textContent = String(
+        held.filter((m) => m.verificationStatus === "requested").length
+    );
+    $("queueCount").textContent = String(queue.length);
+
+    $("queueList").innerHTML = queue.length
+        ? queue.map(queueCard).join("")
+        : '<div class="empty"><div class="big">Queue is clear</div>' +
+          "<p>Nothing waiting. New malls appear here the moment a seller submits one.</p></div>";
+}
+
+function queueCard(m) {
+    const age = m.createdAt ? formatDate(m.createdAt) : "just now";
+    return `
+        <div class="mail">
+            <div class="top">
+                <div>
+                    <div class="addr">${esc(m.email || "—")}</div>
+                    <div class="sub">Submitted ${esc(age)}</div>
+                </div>
+                <span class="status pending">Queued</span>
+            </div>
+            <div class="acts">
+                <button class="btn small good" data-act="claim" data-id="${esc(m.id)}">Take this mail</button>
+            </div>
+        </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* my work                                                             */
+/* ------------------------------------------------------------------ */
+function renderWork() {
+    $("workCount").textContent = String(held.length);
+    $("statHeld").textContent = String(held.length);
+
+    if (!held.length) {
+        $("workList").innerHTML =
+            '<div class="empty"><div class="big">You are not holding anything</div>' +
+            "<p>Take a mail from the queue and it will appear here.</p></div>";
+        return;
+    }
+
+    $("workList").innerHTML = held.map(workCard).join("");
+}
+
+function workCard(m) {
+    const vStatus = m.verificationStatus || "none";
+    const shown = revealed.has(m.id);
+    const pw = shown ? esc(m.password || "") : "••••••••••";
+
+    let stage = "";
+    if (vStatus === "none") {
+        stage = `
+            <div class="acts">
+                <button class="btn small" data-act="ask-code" data-id="${esc(m.id)}">Ask for a code</button>
+                <button class="btn small" data-act="ask-prompt" data-id="${esc(m.id)}">Ask for a prompt</button>
+            </div>
+            <div class="sub" style="margin-top:8px">Tell the seller which one Google is sending.</div>`;
+    } else if (vStatus === "requested") {
+        stage = `
+            <div class="notice info" style="margin:12px 0 0">
+                Waiting on the seller — asked for ${esc(m.verificationType === "prompt" ? "a prompt" : "a code")}
+                ${m.verificationRequestedAt ? ` at ${esc(formatDate(m.verificationRequestedAt))}` : ""}.
+            </div>
+            <div class="acts">
+                <button class="btn small ghost" data-act="ask-code" data-id="${esc(m.id)}">Re-ask: code</button>
+                <button class="btn small ghost" data-act="ask-prompt" data-id="${esc(m.id)}">Re-ask: prompt</button>
+            </div>`;
+    } else if (vStatus === "submitted") {
+        stage = `
+            <div class="answer">
+                <div class="lab">Seller's reply${m.verificationType === "prompt" ? " (prompt)" : " (code)"}</div>
+                <div class="val">${esc(m.verificationValue || "—")}</div>
+                <div class="at">Sent ${esc(formatDate(m.verificationSubmittedAt))}</div>
+            </div>
+            <div class="acts">
+                <input class="payin" type="number" id="pay-${esc(m.id)}" min="0" step="1" placeholder="Payout ₦">
+                <button class="btn small good" data-act="approve" data-id="${esc(m.id)}">Worked — approve</button>
+                <button class="btn small bad" data-act="reject" data-id="${esc(m.id)}">Did not work</button>
+            </div>`;
+    } else {
+        stage = `
+            <div class="notice ${vStatus === "verified" ? "good" : "bad"}" style="margin:12px 0 0">
+                ${esc(VERIFY_STATUS[vStatus] || vStatus)}
+            </div>`;
+    }
+
+    return `
+        <div class="mail held">
+            <div class="top">
+                <div>
+                    <div class="addr">${esc(m.email || "—")}</div>
+                    <div class="sub">
+                        Taken ${esc(formatDate(m.claimedAt))} ·
+                        ${esc(MAIL_STATUS[m.status] || m.status)}
+                    </div>
+                </div>
+                <span class="status ${esc(m.status || "pending")}">${esc(MAIL_STATUS[m.status] || m.status)}</span>
+            </div>
+
+            <div class="cred">
+                <span class="k">Password</span>
+                <span class="v" id="pw-${esc(m.id)}">${pw}</span>
+                <button class="btn small ghost" data-act="reveal" data-id="${esc(m.id)}">
+                    ${shown ? "Hide" : "Reveal"}
+                </button>
+            </div>
+
+            ${stage}
+
+            <div class="acts" style="margin-top:14px">
+                <button class="btn small ghost" data-act="release" data-id="${esc(m.id)}">Hand back to queue</button>
+            </div>
+        </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* presence                                                            */
+/* ------------------------------------------------------------------ */
+function renderPresence() {
+    const now = Date.now();
+    const online = presence.filter((p) => isOnline(p, now));
+
+    $("statOnline").textContent = String(online.length);
+
+    if (!presence.length) {
+        $("presenceList").innerHTML =
+            '<div class="empty"><div class="big">Nobody has checked in</div>' +
+            "<p>Anyone who opens this page appears here.</p></div>";
+        return;
+    }
+
+    $("presenceList").innerHTML = presence
+        .slice()
+        .sort((a, b) => (isOnline(b, now) ? 1 : 0) - (isOnline(a, now) ? 1 : 0))
+        .map((p) => {
+            const on = isOnline(p, now);
+            return `
+                <div class="who">
+                    <span class="dot ${on ? "on" : "off"}"></span>
+                    <span style="flex:1;word-break:break-all">${esc(p.email || p.uid)}</span>
+                    <span class="field tip" style="margin:0">${on ? "online now" : esc(formatDate(p.lastSeen))}</span>
+                </div>`;
+        })
+        .join("");
+}
+
+/* ------------------------------------------------------------------ */
+/* actions                                                             */
+/* ------------------------------------------------------------------ */
+$("queueList").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn || btn.dataset.act !== "claim") return;
+    const mail = queue.find((m) => m.id === btn.dataset.id);
+    if (!mail) return;
+
+    btn.disabled = true;
+    btn.textContent = "Taking…";
+    try {
+        await claimMail(mail, me);
+        switchTab("work");
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not take that mail.");
+        btn.disabled = false;
+        btn.textContent = "Take this mail";
+    }
+});
+
+$("workList").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const mail = held.find((m) => m.id === btn.dataset.id);
+    if (!mail) return;
+
+    const act = btn.dataset.act;
+
+    try {
+        if (act === "reveal") {
+            revealed.has(mail.id) ? revealed.delete(mail.id) : revealed.add(mail.id);
+            renderWork();
+            return;
+        }
+        if (act === "release") {
+            if (!confirm("Hand this mail back to the queue?")) return;
+            await releaseMail(mail, me);
+            return;
+        }
+        if (act === "ask-code" || act === "ask-prompt") {
+            await requestVerification(mail, act === "ask-prompt" ? "prompt" : "code", me);
+            return;
+        }
+        if (act === "approve") {
+            const input = $(`pay-${mail.id}`);
+            const payout = Number(input ? input.value : 0) || 0;
+            if (payout <= 0 && !confirm("Approve with no payout amount set?")) return;
+            await completeMail(mail, { approved: true, payout }, me);
+            return;
+        }
+        if (act === "reject") {
+            const reason = prompt("Why did it not work?", "") ?? "";
+            if (reason === null) return;
+            await completeMail(mail, { approved: false, reason: reason.trim() }, me);
+            return;
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not update that mail.");
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* alerts                                                              */
+/* ------------------------------------------------------------------ */
+$("notifyBtn").addEventListener("click", async () => {
+    const ok = await requestNotifyPermission();
+    $("notifyBtn").textContent = ok ? "Alerts on" : "Alerts blocked";
+    if (ok) notifyNewMail("This is how a new mail will look.");
+});
+
+function showAlert(text) {
+    $("alertText").textContent = text;
+    $("alertBar").classList.add("show");
+}
+$("alertDismiss").addEventListener("click", () => $("alertBar").classList.remove("show"));
+
+/* ------------------------------------------------------------------ */
+/* tabs                                                                */
+/* ------------------------------------------------------------------ */
+function switchTab(name) {
+    document.querySelectorAll(".tab").forEach((t) =>
+        t.classList.toggle("active", t.dataset.tab === name));
+    document.querySelectorAll(".panel").forEach((p) =>
+        p.classList.toggle("active", p.id === `panel-${name}`));
+}
+
+document.querySelectorAll(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+});
+
+</script>
+
+</body>
+</html>

