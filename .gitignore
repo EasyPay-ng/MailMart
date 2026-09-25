@@ -1,0 +1,13 @@
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+
+# Never commit service-account credentials.
+serviceAccountKey.json
+*service-account*.json
+.google-credentials/
+
+# Dependencies (used only by the optional scripts/ helpers)
+node_modules/

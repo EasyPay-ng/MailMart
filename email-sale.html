@@ -990,7 +990,7 @@ body::before{
 
 <script type="module">
 
-import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/supabase.js";
+import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp } from "./js/firebase.js";
 
 /* Auth guard — same pattern as the dashboard */
 onAuthStateChanged(auth,(user)=>{
@@ -1034,7 +1034,7 @@ document.getElementById("contactAdmin").addEventListener("click",()=>{
     alert("Demo: open live chat or email admin@mailmart.com to complete your sale.");
 });
 
-/* Track the submitted email + chosen category + Supabase row id */
+/* Track the submitted email + chosen category + Firestore doc id */
 let submittedEmail="";
 let chosenCat="OTP";
 let saleId=null;
@@ -1095,7 +1095,7 @@ saleForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* save to Supabase so the admin receives it */
+    /* save to Firestore so the admin receives it */
     try{
         const ref=await addDoc(collection(db,"sales"),{
             email:emailVal,
@@ -1113,7 +1113,7 @@ saleForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not save your submission. Check your Supabase security rules.");
+        alert("Could not save your submission. Check your Firestore security rules.");
         return;
     }
 
@@ -1209,7 +1209,7 @@ addForm.addEventListener("submit",async(e)=>{
         return;
     }
 
-    /* push the follow-up into the same Supabase sale doc */
+    /* push the follow-up into the same Firestore sale doc */
     try{
         await updateDoc(doc(db,"sales",saleId),{
             submissions:arrayUnion({
@@ -1221,7 +1221,7 @@ addForm.addEventListener("submit",async(e)=>{
         });
     }catch(err){
         console.error(err);
-        alert("Could not send to admin. Check your Supabase security rules.");
+        alert("Could not send to admin. Check your Firestore security rules.");
         return;
     }
 

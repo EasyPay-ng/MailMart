@@ -1,0 +1,141 @@
+rules_version = '2';
+
+// MailMart Firestore security rules.
+//
+// This file — not the browser — decides who is an administrator. The list in
+// js/admin.js only decides where a signed-in user gets redirected; a tampered
+// client that skips it still hits these rules and is refused.
+//
+// Deploy with:  firebase deploy --only firestore:rules
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- administrators -------------------------------------------
+    // Keep in sync with ADMIN_EMAILS in js/admin.js.
+    function adminEmails() {
+      return ['baasituoppor01@gmail.com', 'beniwealth70@gmail.com'];
+    }
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function tokenEmail() {
+      return request.auth.token.email;
+    }
+
+    // The signed-in user's own email is an administrator address. This is what
+    // lets the named administrators in before their user document exists.
+    function tokenEmailIsAdmin() {
+      return signedIn() && tokenEmail() != null
+        && adminEmails().hasAny([tokenEmail().lower()]);
+    }
+
+    // An arbitrary address is an administrator address.
+    function emailIsAdmin(addr) {
+      return addr != null && adminEmails().hasAny([addr.lower()]);
+    }
+
+    // Privilege check for the caller.
+    function isFlaggedAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(uid()))
+        && get(/databases/$(database)/documents/users/$(uid())).data.isAdmin == true;
+    }
+
+    function isAdmin() {
+      return isFlaggedAdmin() || tokenEmailIsAdmin();
+    }
+
+    // ---------- users ----------------------------------------------------
+    match /users/{userId} {
+
+      // Owners may tidy their own profile: name, phone and photo only. Things
+      // that carry value or privilege are deliberately absent from the list.
+      function ownProfileEdit() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['username', 'phone', 'displayName', 'photoURL', 'updatedAt'])
+               && request.resource.data.uid == resource.data.uid
+               && request.resource.data.balance == resource.data.balance
+               && request.resource.data.status == resource.data.status
+               && request.resource.data.isAdmin == resource.data.isAdmin
+               && request.resource.data.updatedAt == request.time
+               && request.resource.data.photoURL.size() < 800000;
+      }
+
+      allow read: if signedIn() && (userId == uid() || isAdmin());
+
+      // A new profile must belong to the caller, start with no balance, and
+      // can only claim isAdmin when the caller's own email is on the list.
+      allow create: if signedIn()
+        && userId == uid()
+        && tokenEmail() != null
+        && request.resource.data.keys().hasAll(
+             ['uid', 'username', 'phone', 'email', 'displayName',
+              'photoURL', 'balance', 'status', 'isAdmin',
+              'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid()
+        && request.resource.data.email.lower() == tokenEmail().lower()
+        && request.resource.data.balance == 0
+        && request.resource.data.status == 'active'
+        && request.resource.data.isAdmin == tokenEmailIsAdmin()
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.photoURL.size() < 800000;
+
+      // Owners may tidy their own profile; administrators may edit anyone.
+      // Neither can mint an administrator who is not on the list above.
+      allow update: if signedIn() && (
+        (userId == uid() && ownProfileEdit())
+        || (isAdmin()
+            && request.resource.data.isAdmin == emailIsAdmin(resource.data.email))
+      );
+
+      allow delete: if false;
+    }
+
+    // ---------- sales ----------------------------------------------------
+    match /sales/{saleId} {
+
+      // Append-only: exactly one new entry, and nothing previously stored has
+      // been rewritten or removed.
+      function sellerAppendOnly() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['submissions', 'updatedAt'])
+               && request.resource.data.submissions.size()
+                    == resource.data.submissions.size() + 1
+               && request.resource.data.submissions.hasAll(resource.data.submissions)
+               && request.resource.data.updatedAt == request.time;
+      }
+
+      // A seller sees their own submission; an administrator sees all of them.
+      allow read: if signedIn()
+        && (resource.data.uid == uid() || isAdmin());
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(
+             ['email', 'password', 'status', 'submissions', 'uid', 'createdAt'])
+        && request.resource.data.uid == uid()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.submissions.size() == 0
+        && request.resource.data.createdAt == request.time;
+
+      // Sellers may only append follow-up submissions. Status, payout and the
+      // stored password are administrator-only fields.
+      allow update: if signedIn() && (
+        (resource.data.uid == uid() && sellerAppendOnly())
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // No catch-all match: rules deny by default, so any other collection the
+    // client might invent is refused.
+  }
+}

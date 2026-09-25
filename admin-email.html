@@ -563,20 +563,32 @@ body::before{
 
 <script type="module">
 
-import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from "./js/supabase.js";
+import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp } from "./js/firebase.js";
+import { isAdminUser } from "./js/admin.js";
 
 /* ------------------------------------------------------------------
    AUTH GUARD
-   Requires a signed-in user. For production, also verify the user is
-   an admin (enforced by the users.is_admin flag and row-level security).
-   Example:
-     const snap = await getDoc(doc(db,"admins",user.uid));
-     if(!snap.exists()){ window.location.href="dashboard.html"; return; }
+   Requires a signed-in user who is flagged as an administrator.
+   isAdminUser() reads users/{uid}.isAdmin from Firestore; firestore.rules
+   is the real enforcement point, so a tampered client gains nothing by
+   deleting this check.
 ------------------------------------------------------------------ */
-onAuthStateChanged(auth,(user)=>{
+onAuthStateChanged(auth,async(user)=>{
+
     if(!user){
         window.location.href="login.html";
+        return;
     }
+
+    const ok=await isAdminUser(user);
+
+    if(!ok){
+        window.location.href="dashboard.html";
+        return;
+    }
+
+    startSalesFeed();
+
 });
 
 document.getElementById("logoutBtn").addEventListener("click",async()=>{
@@ -602,6 +614,15 @@ let currentFilter="all";
 
 const q=query(collection(db,"sales"),orderBy("createdAt","desc"));
 
+let feedStarted=false;
+
+/* Opened only once the guard above confirms an administrator, so a
+   non-admin never opens a listener Firestore would refuse. */
+function startSalesFeed(){
+
+if(feedStarted) return;
+feedStarted=true;
+
 onSnapshot(q,(snap)=>{
 
     allSales=[];
@@ -616,11 +637,13 @@ onSnapshot(q,(snap)=>{
     render();
 
 },err=>{
-    console.error("Supabase read failed:",err);
+    console.error("Firestore read failed:",err);
     listEl.innerHTML=
         '<div class="empty"><div class="big">Could not load sales</div>'+
-        'Check your Supabase security rules and that you are signed in.</div>';
+        'Check your Firestore security rules and that you are an administrator.</div>';
 });
+
+}
 
 /* ---------- Render ---------- */
 

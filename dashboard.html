@@ -1039,7 +1039,7 @@ body::before{
 
 <body>
 
-<!-- Loading gate (shown until Supabase confirms auth) -->
+<!-- Loading gate (shown until Firebase confirms auth) -->
 <div class="loading-screen" id="loadingScreen">
     <div class="spinner"></div>
     <div class="txt">Verifying your session…</div>
@@ -1391,7 +1391,7 @@ body::before{
 
 <script type="module">
 
-import { auth, onAuthStateChanged, signOut } from "./js/supabase.js";
+import { auth, onAuthStateChanged, signOut } from "./js/firebase.js";
 
 const loadingScreen=document.getElementById("loadingScreen");
 const shell=document.getElementById("shell");
@@ -1455,7 +1455,7 @@ document.querySelectorAll(".nav-item").forEach(item=>{
 .forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.addEventListener("click",()=>{
-        alert("This is a demo dashboard. Wire this action to your Supabase backend.");
+        alert("This is a demo dashboard. Wire this action to your Firebase backend.");
     });
 });
 
