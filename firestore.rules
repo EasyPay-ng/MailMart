@@ -52,6 +52,14 @@ service cloud.firestore {
       return isFlaggedAdmin() || tokenEmailIsAdmin();
     }
 
+    // Privilege check for the sub-administrator desk. Only an administrator
+    // can set this flag, so the desk cannot be joined by signing up.
+    function isSubAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(uid()))
+        && get(/databases/$(database)/documents/users/$(uid())).data.isSubAdmin == true;
+    }
+
     // ---------- users ----------------------------------------------------
     match /users/{userId} {
 
@@ -113,26 +121,100 @@ service cloud.firestore {
                && request.resource.data.updatedAt == request.time;
       }
 
-      // A seller sees their own submission; an administrator sees all of them.
-      allow read: if signedIn()
-        && (resource.data.uid == uid() || isAdmin());
+      // The seller answers a verification request: the code Google sent, or
+      // "done" once they have tapped a prompt.
+      function sellerRepliesWithCode() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['verificationValue', 'verificationStatus',
+                           'verificationSubmittedAt', 'submissions', 'updatedAt'])
+               && resource.data.verificationStatus == 'requested'
+               && request.resource.data.verificationStatus == 'submitted'
+               && request.resource.data.verificationValue is string
+               && request.resource.data.verificationValue.size() <= 200
+               && request.resource.data.submissions.size()
+                    == resource.data.submissions.size() + 1
+               && request.resource.data.submissions.hasAll(resource.data.submissions)
+               && request.resource.data.updatedAt == request.time;
+      }
 
+      // Takes an unclaimed mail. js/emaildesk.js wraps this in a transaction,
+      // which is what actually resolves two simultaneous taps; this is the
+      // backstop that refuses a claim on a mail someone else already holds.
+      function subAdminClaim() {
+        return resource.data.claimedBy == null
+          && request.resource.data.claimedBy == uid()
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['claimedBy', 'claimedByEmail', 'claimedAt', 'updatedAt'])
+          && request.resource.data.claimedAt == request.time;
+      }
+
+      function subAdminRelease() {
+        return resource.data.claimedBy == uid()
+          && request.resource.data.claimedBy == null
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['claimedBy', 'claimedByEmail', 'claimedAt',
+                         'verificationType', 'verificationStatus',
+                         'verificationRequestedAt', 'updatedAt']);
+      }
+
+      // Working a mail this sub-admin already holds: ask Google for a check,
+      // then record whether it worked. Nothing else on the mail may change.
+      function subAdminProgress() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['verificationType', 'verificationStatus',
+                           'verificationRequestedAt', 'verificationRequestedBy',
+                           'verificationValue', 'status', 'payout',
+                           'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+               && (request.resource.data.status == resource.data.status
+                   || ['approved', 'rejected'].hasAny([request.resource.data.status]))
+               && (request.resource.data.verificationType == resource.data.verificationType
+                   || ['code', 'prompt'].hasAny([request.resource.data.verificationType]));
+      }
+
+      // A seller sees their own submission; the desk sees the whole queue.
+      allow read: if signedIn()
+        && (resource.data.uid == uid() || isAdmin() || isSubAdmin());
+
+      // New mails must arrive unclaimed and awaiting verification, so the
+      // queue query can find them.
       allow create: if signedIn()
         && request.resource.data.keys().hasAll(
-             ['email', 'password', 'status', 'submissions', 'uid', 'createdAt'])
+             ['email', 'password', 'status', 'submissions', 'uid', 'createdAt',
+              'claimedBy', 'claimedByEmail', 'claimedAt', 'verificationType',
+              'verificationStatus', 'verificationRequestedAt', 'verificationValue'])
         && request.resource.data.uid == uid()
         && request.resource.data.status == 'pending'
         && request.resource.data.submissions.size() == 0
+        && request.resource.data.claimedBy == null
+        && request.resource.data.verificationStatus == 'none'
         && request.resource.data.createdAt == request.time;
 
-      // Sellers may only append follow-up submissions. Status, payout and the
-      // stored password are administrator-only fields.
       allow update: if signedIn() && (
-        (resource.data.uid == uid() && sellerAppendOnly())
+        // the seller adds a follow-up, or answers a verification request
+        (resource.data.uid == uid() && (sellerAppendOnly() || sellerRepliesWithCode()))
+        // a sub-admin claims, releases, or works a mail they are holding
+        || (isSubAdmin() && (subAdminClaim()
+                             || subAdminRelease()
+                             || (resource.data.claimedBy == uid() && subAdminProgress())))
         || isAdmin()
       );
 
       allow delete: if isAdmin();
+    }
+
+    // ---------- presence ---------------------------------------------------
+    // Who is at the desk right now. Each sub-admin's page writes its own
+    // heartbeat; the desk reads the collection to show who is online.
+    match /presence/{presenceId} {
+      allow read: if signedIn() && (isAdmin() || isSubAdmin());
+      allow create: if signedIn()
+        && presenceId == uid()
+        && request.resource.data.uid == uid();
+      allow update: if signedIn()
+        && presenceId == uid()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['email', 'lastSeen', 'updatedAt']);
+      allow delete: if false;
     }
 
     // ---------- platform settings ---------------------------------------

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Desk Team | MailMart</title>
+
+<meta name="theme-color" content="#020812">
+
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/app.css">
+
+<style>
+.member{
+    display:flex;gap:14px;align-items:flex-start;
+    padding:15px 0;border-bottom:1px solid rgba(255,255,255,.07);
+}
+.member:last-child{border-bottom:0}
+.member .who{flex:1;min-width:0}
+.member .nm{font-size:13.5px;font-weight:800;word-break:break-all}
+.member .mt{font-size:11.5px;color:#8ba3bd;margin-top:3px;line-height:1.6}
+.member .figs{display:flex;gap:16px;margin-top:9px;flex-wrap:wrap}
+.member .fig{font-size:11px;color:#8ba3bd}
+.member .fig b{display:block;font-size:15px;font-weight:900;color:#fff;letter-spacing:-.3px;margin-top:2px}
+.member .acts{display:flex;gap:8px;flex-shrink:0}
+
+.found{
+    display:flex;gap:12px;align-items:center;
+    padding:13px 15px;border-radius:12px;margin-bottom:12px;
+    background:rgba(0,213,255,.07);
+    border:1px solid rgba(0,213,255,.26);
+}
+.found .nm{font-size:13px;font-weight:800;word-break:break-all;flex:1}
+</style>
+</head>
+
+<body>
+
+<div id="loadingScreen">
+    <div class="spinner"></div>
+    <p>Checking administrator access…</p>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+
+    <div class="topbar">
+        <div class="brand"><span class="dot">M</span> Desk Team</div>
+        <div class="actions">
+            <a class="back-link" href="subadmin-desk.html">Mail Desk</a>
+            <a class="back-link" href="admin.html">Sales Review</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="k">Sub-admins</div>
+            <div class="v cyan" id="statTotal">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Online now</div>
+            <div class="v green" id="statOnline">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Handled all time</div>
+            <div class="v" id="statHandled">0</div>
+        </div>
+        <div class="stat">
+            <div class="k">Approved</div>
+            <div class="v green" id="statApproved">0</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Add someone to the desk</h3>
+        <p class="hint">Type the email they signed up with. They must already have an account — sub-admins cannot be created from here, only promoted.</p>
+
+        <div class="row-end" style="margin-bottom:14px">
+            <input type="email" id="findEmail" placeholder="name@example.com"
+                   style="flex:1;min-width:200px;height:46px;padding:0 14px;border-radius:12px;
+                          border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+                          color:#fff;font-family:inherit;font-size:13.5px;font-weight:600">
+            <button class="btn" id="findBtn" style="height:46px">Find user</button>
+        </div>
+
+        <div id="findResult"></div>
+    </div>
+
+    <div class="card">
+        <h3>Who is on the desk <span class="count" id="teamCount"></span></h3>
+        <p class="hint">Sub-admins can claim mails from the queue and work them. Removing someone does not take back a mail they are already holding.</p>
+        <div id="teamList"></div>
+    </div>
+
+</div>
+
+<script type="module">
+
+import {
+    auth, db, collection, query, where, onSnapshot, getDocs, onAuthStateChanged
+} from "./js/firebase.js";
+
+import { isAdminUser } from "./js/admin.js";
+import { formatDate } from "./js/wallet.js";
+import {
+    findUsersByEmail,
+    setSubAdmin,
+    watchPresence,
+    watchAllSales,
+    isOnline
+} from "./js/emaildesk.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (v) =>
+    String(v ?? "").replace(/[&<>"']/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+let me = null;
+let team = [];
+let presence = [];
+let sales = [];
+
+/* ------------------------------------------------------------------ */
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = "login.html";
+        return;
+    }
+    if (!(await isAdminUser(user))) {
+        window.location.href = "dashboard.html";
+        return;
+    }
+    me = user;
+    start();
+});
+
+function start() {
+    onSnapshot(
+        query(collection(db, "users"), where("isSubAdmin", "==", true)),
+        (snap) => {
+            team = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+            renderTeam();
+        },
+        (err) => {
+            console.error(err);
+            $("teamList").innerHTML =
+                '<div class="empty"><div class="big">Could not load the team</div>' +
+                "<p>Check your Firestore security rules.</p></div>";
+        }
+    );
+
+    watchPresence((rows) => {
+        presence = rows;
+        renderTeam();
+    }, (err) => console.error("presence:", err));
+
+    watchAllSales((rows) => {
+        sales = rows;
+        renderTeam();
+    }, (err) => console.error("sales:", err));
+
+    $("loadingScreen").style.display = "none";
+    $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* promote by email                                                    */
+/* ------------------------------------------------------------------ */
+$("findBtn").addEventListener("click", doFind);
+$("findEmail").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doFind();
+});
+
+async function doFind() {
+    const email = $("findEmail").value.trim();
+    const box = $("findResult");
+
+    if (!email) {
+        box.innerHTML = '<div class="notice bad">Enter the email they signed up with.</div>';
+        return;
+    }
+
+    try {
+        const found = await findUsersByEmail(email);
+        if (!found.length) {
+            box.innerHTML =
+                `<div class="notice bad">No account uses ${esc(email)}. They need to register first.</div>`;
+            return;
+        }
+
+        box.innerHTML = found.map((u) => `
+            <div class="found">
+                <div class="nm">${esc(u.email || u.uid)}
+                    <div class="field tip" style="margin:2px 0 0">${esc(u.displayName || u.username || "")}</div>
+                </div>
+                ${u.isSubAdmin
+                    ? '<span class="status active">already on the desk</span>'
+                    : `<button class="btn small good" data-promote="${esc(u.uid)}">Add to the desk</button>`}
+            </div>`).join("");
+    } catch (err) {
+        console.error(err);
+        box.innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    }
+}
+
+$("findResult").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-promote]");
+    if (!btn) return;
+    btn.disabled = true;
+    try {
+        await setSubAdmin(btn.dataset.promote, true);
+        $("findResult").innerHTML =
+            '<div class="notice good">Added. They can open the mail desk now.</div>';
+        $("findEmail").value = "";
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not add them.");
+        btn.disabled = false;
+    }
+});
+
+/* ------------------------------------------------------------------ */
+/* the roster + work figures                                           */
+/* ------------------------------------------------------------------ */
+function statsFor(uid) {
+    const mine = sales.filter((s) => s.claimedBy === uid);
+    return {
+        holding: mine.filter((s) => ["pending"].includes(s.status) && s.verificationStatus !== "verified").length,
+        handled: mine.length,
+        approved: mine.filter((s) => s.status === "approved" || s.status === "paid").length,
+        rejected: mine.filter((s) => s.status === "rejected").length
+    };
+}
+
+function renderTeam() {
+    const now = Date.now();
+    const online = presence.filter((p) => isOnline(p, now));
+
+    $("statTotal").textContent = String(team.length);
+    $("statOnline").textContent = String(online.length);
+    $("statHandled").textContent = String(
+        sales.filter((s) => s.claimedBy).length);
+    $("statApproved").textContent = String(
+        sales.filter((s) => s.status === "approved" || s.status === "paid").length);
+    $("teamCount").textContent = team.length ? `${team.length}` : "";
+
+    if (!team.length) {
+        $("teamList").innerHTML =
+            '<div class="empty"><div class="big">Nobody on the desk yet</div>' +
+            "<p>Find a registered user above and add them.</p></div>";
+        return;
+    }
+
+    $("teamList").innerHTML = team.map((u) => {
+        const p = presence.find((x) => x.uid === u.uid);
+        const on = isOnline(p, now);
+        const s = statsFor(u.uid);
+
+        return `
+            <div class="member">
+                <div class="who">
+                    <div class="nm">${esc(u.email || u.uid)}
+                        <span class="status ${on ? "active" : "paused"}" style="margin-left:8px">
+                            ${on ? "online" : "offline"}
+                        </span>
+                    </div>
+                    <div class="mt">
+                        ${p && p.lastSeen ? `Last seen ${esc(formatDate(p.lastSeen))}` : "Never checked in"}
+                    </div>
+                    <div class="figs">
+                        <div class="fig">Holding<b>${s.holding}</b></div>
+                        <div class="fig">Handled<b>${s.handled}</b></div>
+                        <div class="fig">Approved<b>${s.approved}</b></div>
+                        <div class="fig">Rejected<b>${s.rejected}</b></div>
+                    </div>
+                </div>
+                <div class="acts">
+                    <button class="btn small bad" data-remove="${esc(u.uid)}">Remove</button>
+                </div>
+            </div>`;
+    }).join("");
+}
+
+$("teamList").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-remove]");
+    if (!btn) return;
+    const uid = btn.dataset.remove;
+    const member = team.find((u) => u.uid === uid);
+    if (!confirm(`Remove ${member ? member.email : "this person"} from the desk?`)) return;
+
+    btn.disabled = true;
+    try {
+        await setSubAdmin(uid, false);
+    } catch (err) {
+        console.error(err);
+        alert(err.message || "Could not remove them.");
+        btn.disabled = false;
+    }
+});
+
+</script>
+
+</body>
+</html>

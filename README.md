@@ -130,6 +130,45 @@ Either way, the `users` and `sales` rows in Postgres have to be copied into
 Firestore by hand. There is no automatic conversion — export to JSON and write
 the documents with a script.
 
+## Email queue and sub-administrator desk
+
+A seller submits a mail under **Sell Email**. It lands in a queue, and the
+seller is told to keep the account open, because Google is about to send
+something.
+
+Someone at the desk claims the mail, logs the account in on their phone,
+triggers Google's check, and asks the seller for it. The seller's page then
+opens a field — a box for the code, or a request to type **done** once they
+have tapped a prompt. Whatever they send goes straight back to whoever is
+holding that mail.
+
+**Only one person can hold a mail.** Claiming runs inside a Firestore
+`runTransaction()`: it reads the mail, refuses if someone else already holds
+it, and writes the claim otherwise. Two sub-admins tapping the same mail at
+the same instant are serialised, so exactly one wins and the other is told it
+is taken. `firestore.rules` enforces the same condition independently, so a
+modified client cannot claim a mail that is already held — the transaction is
+what makes it fair, the rules are what make it enforced.
+
+Administrators promote sub-admins under **Desk Team**: find a registered user
+by email and add them. Nobody can make themselves a sub-admin by signing up;
+only an administrator sets that flag.
+
+New mails reach everyone with the desk open. The queue updates live, a banner
+appears, the browser shows a notification once permission is granted, and a
+short chime plays. A presence heartbeat records who has had the desk open in
+the last two minutes, so both the desk and the team page show who is actually
+there rather than who merely has permission.
+
+### A word on what this workflow stores
+
+It collects account passwords, and it has sub-admins signing into those
+accounts on their own phones. The rules keep passwords readable only by the
+seller, administrators and whoever is on the desk — but that is access
+control, not protection. This concentrates a great deal of legal and security
+exposure in one place, and it deserves advice before real accounts flow
+through it.
+
 ## Local development
 
 Serve the repository over HTTP (ES modules do not work reliably through
@@ -160,6 +199,9 @@ Then open `http://localhost:8000`.
 | `admin-marketplace.html` | Verification queue, listings, fees, settlement |
 | `js/marketplace.js` | KYC, listings, orders, pricing |
 | `css/app.css` | Shared theme for the marketplace screens |
+| `subadmin-desk.html` | The mail desk: claim, verify, complete |
+| `admin-team.html` | Promote sub-admins, see who handled what |
+| `js/emaildesk.js` | Queue, atomic claim, presence, notifications |
 
 ## Security notes
 
