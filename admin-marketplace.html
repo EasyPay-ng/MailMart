@@ -409,6 +409,11 @@ $("orderTable").addEventListener("click", async (e) => {
     if (!btn) return;
     const order = orders.find((o) => o.id === btn.dataset.id);
     if (!order) return;
+    if (!confirm(
+        `Refund ${formatNaira(order.total)} to ${order.buyerEmail} for ` +
+        `"${order.listingTitle || "this order"}"? This credits their wallet immediately.`
+    )) return;
+
     try {
         await refundOrder(order, adminUser);
     } catch (err) {

@@ -586,6 +586,7 @@ body::before{
 
 import { auth, db, onAuthStateChanged, signOut, collection, onSnapshot, query, orderBy, doc, updateDoc, serverTimestamp, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
+import { payEmailSale, formatNaira } from "./js/wallet.js";
 
 /* ------------------------------------------------------------------
    AUTH GUARD
@@ -610,6 +611,8 @@ onAuthStateChanged(auth,async(user)=>{
         return;
     }
 
+    adminUser=user;
+
     startSalesFeed();
 
 });
@@ -631,6 +634,7 @@ document.querySelectorAll(".nav-item").forEach(item=>{
 ------------------------------------------------------------------ */
 const listEl=document.getElementById("list");
 
+let adminUser=null;       // the administrator paying out sales
 let allSales=[];          // full snapshot
 let saleData={};          // id -> {password,...} kept in memory (not in DOM)
 let currentFilter="all";
@@ -703,7 +707,7 @@ function render(){
     document.getElementById("stPend").textContent=pend;
     document.getElementById("stAppr").textContent=appr;
     document.getElementById("stPaid").textContent=paid;
-    document.getElementById("stPayout").textContent="$"+payout.toFixed(2);
+    document.getElementById("stPayout").textContent=formatNaira(payout);
 
     document.getElementById("cAll").textContent=allSales.length;
     document.getElementById("cPend").textContent=pend;
@@ -750,13 +754,13 @@ function cardHtml(s){
     if(s.status==="pending"||s.status==="approved"){
         actions+=
             '<div class="pay">'+
-                '<input class="amt" id="amt-'+s.id+'" type="number" placeholder="Amount $" min="0" step="0.01">'+
-                '<button class="act pay-btn" data-action="pay" data-id="'+s.id+'">Send Payment</button>'+
+                '<input class="amt" id="amt-'+s.id+'" type="number" placeholder="Amount ₦" min="0" step="0.01">'+
+                '<button class="act pay-btn" data-action="pay" data-id="'+s.id+'">Pay into wallet</button>'+
             '</div>';
     }
 
     if(s.status==="paid"){
-        actions+='<span class="paid-note">✓ Paid $'+(Number(s.payout)||0).toFixed(2)+'</span>';
+        actions+='<span class="paid-note">✓ Paid '+formatNaira(Number(s.payout)||0)+' — credited to wallet</span>';
     }
 
     if(s.status==="rejected"){
@@ -840,20 +844,23 @@ listEl.addEventListener("click",async(e)=>{
     }
 
     if(action==="pay"){
+        const sale=allSales.find(s=>s.id===id);
+        if(!sale){
+            alert("That sale is no longer loaded — reload the page.");
+            return;
+        }
         const amtInput=document.getElementById("amt-"+id);
         const amount=parseFloat(amtInput.value);
         if(!amount||amount<=0){
-            alert("Enter a valid payment amount.");
+            alert("Enter a valid payout amount in naira.");
             amtInput.focus();
             return;
         }
-        if(!confirm("Send payment of $"+amount.toFixed(2)+" for this email?")) return;
-        await updateDoc(doc(db,"sales",id),{
-            status:"paid",
-            payout:amount,
-            paidAt:serverTimestamp(),
-            updatedAt:serverTimestamp()
-        });
+        if(!confirm("Pay "+formatNaira(amount)+" for "+(sale.email||"this email")+
+            "? This credits the seller's MailMart wallet immediately.")) return;
+        /* One transaction: sale marked paid, seller's wallet credited, ledger
+           row written. A failure anywhere leaves all three untouched. */
+        await payEmailSale({ sale, amount, adminUser });
         return;
     }
 

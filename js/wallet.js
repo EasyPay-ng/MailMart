@@ -25,6 +25,7 @@ import {
   runTransaction
 } from "./firebase.js";
 import { bankCodeFor } from "./data/nigeria.js";
+import { SALES } from "./emaildesk.js";
 
 export const SETTINGS_ID = "platform";
 export const TRANSACTIONS = "transactions";
@@ -69,6 +70,59 @@ function requireUser() {
 
 function toRows(snapshot) {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/* ------------------------------------------------------------------ */
+/* the ledger, named                                                   */
+/* ------------------------------------------------------------------ */
+// Every way money can enter or leave a wallet, in one place. The wallet is
+// naira-only: every amount and every label below is ₦.
+
+export const TX_LABELS = {
+  deposit: "Deposit",
+  withdrawal: "Withdrawal",
+  order_payment: "Marketplace purchase",
+  order_payout: "Marketplace sale",
+  email_payout: "Email sale payout",
+  order_refund: "Order refund"
+};
+
+/**
+ * What a ledger row is called, plus the one-line detail a history list should
+ * show under it. Kept here so the user's wallet page and the administrator's
+ * wallet page can never disagree about what a row means.
+ */
+export function describeTransaction(tx) {
+  const type = tx?.type || "";
+  const label = TX_LABELS[type] || type || "Transaction";
+  const amount = formatNaira(tx?.amount);
+  const reference = tx?.reference || "";
+
+  let detail = "";
+  switch (type) {
+    case "deposit":
+      detail = [tx.depositorName, tx.bankUsed].filter(Boolean).join(" · ") || "Bank transfer";
+      break;
+    case "withdrawal":
+      detail = [tx.bankName, tx.accountNumber].filter(Boolean).join(" · ") || "Bank transfer";
+      break;
+    case "order_payment":
+      detail = reference || "Marketplace order";
+      break;
+    case "order_payout":
+      detail = reference || "Marketplace order";
+      break;
+    case "email_payout":
+      detail = reference ? `Sold ${reference}` : "Email sold to MailMart";
+      break;
+    case "order_refund":
+      detail = reference || "Cancelled order";
+      break;
+    default:
+      detail = reference || "";
+  }
+
+  return { label, detail, amount };
 }
 
 /* ------------------------------------------------------------------ */
@@ -158,8 +212,22 @@ export function watchAllTransactions(onRows, onError = console.error) {
  * First call moves pending -> approved and applies the balance change.
  * A second call marks an approved withdrawal completed, for the point where
  * the administrator has actually sent the bank transfer.
+ *
+ * Deposits and withdrawals only. Order payments are settled from
+ * admin-marketplace.html (which pays the seller at the same time) and email
+ * payouts are sent from the sales screen — settling either of those from
+ * here would move money twice, so this refuses them by name.
  */
 export async function approveTransaction(tx, adminUser) {
+  if (tx.type === "order_payment") {
+    throw new Error(
+      "Order payments are settled from the Marketplace Admin screen, which also pays the seller — settling one here would charge the buyer twice."
+    );
+  }
+  if (tx.type !== "deposit" && tx.type !== "withdrawal") {
+    throw new Error("Only deposits and withdrawals are settled from this screen.");
+  }
+
   const txRef = doc(db, TRANSACTIONS, tx.id);
   const userRef = doc(db, "users", tx.uid);
 
@@ -203,5 +271,79 @@ export async function rejectTransaction(tx, adminUser, reason = "") {
     reviewedBy: adminUser.email || adminUser.uid,
     reviewedAt: serverTimestamp(),
     updatedAt: serverTimestamp()
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* email sale payouts (administrator only)                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Pay a seller for an approved email sale, straight into their wallet.
+ *
+ * This used to be a bare status update: an administrator typed a dollar
+ * amount, the sale document said "paid", and no money moved anywhere — the
+ * seller's wallet never heard about it. The payout now lands in one
+ * transaction: the sale is marked paid, the seller's balance is credited,
+ * and a completed `email_payout` row is appended to the ledger, so the
+ * balance change and its audit trail either both land or neither does.
+ *
+ * `amount` is naira, and must be a positive number.
+ */
+export async function payEmailSale({ sale, amount, adminUser }) {
+  const value = round2(amount);
+  if (!(value > 0)) throw new Error("Enter the payout amount in naira.");
+  if (!sale?.uid) throw new Error("That sale has no seller attached.");
+  if (sale.status === "paid") throw new Error("This sale has already been paid.");
+  if (sale.status === "rejected") throw new Error("This sale was rejected — it cannot be paid.");
+
+  const saleRef = doc(db, SALES, sale.id);
+  const sellerRef = doc(db, "users", sale.uid);
+  const reviewer = adminUser?.email || adminUser?.uid || "";
+
+  await runTransaction(db, async (t) => {
+    const saleSnap = await t.get(saleRef);
+    if (!saleSnap.exists()) throw new Error("That sale no longer exists.");
+    const saleData = saleSnap.data();
+    if (saleData.status === "paid") throw new Error("This sale has already been paid.");
+
+    const sellerSnap = await t.get(sellerRef);
+    if (!sellerSnap.exists()) {
+      throw new Error("The seller has no MailMart profile, so there is no wallet to pay into.");
+    }
+
+    const next = round2(Number(sellerSnap.data().balance || 0) + value);
+
+    // Marking the sale paid…
+    t.update(saleRef, {
+      status: "paid",
+      payout: value,
+      paidAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    // …is the same act as crediting the wallet…
+    t.update(sellerRef, {
+      balance: next,
+      updatedAt: serverTimestamp()
+    });
+
+    // …and the ledger says so, with the balance it produced. The owner of the
+    // wallet is the seller (users/{uid}.email); the mail they sold is the
+    // reference, so the history reads "Email sale payout — Sold that address".
+    t.set(doc(collection(db, TRANSACTIONS)), {
+      type: "email_payout",
+      direction: "credit",
+      status: "completed",
+      uid: sale.uid,
+      email: sellerSnap.data().email || "",
+      amount: value,
+      reference: saleData.email || "",
+      balanceAfter: next,
+      reviewedBy: reviewer,
+      reviewedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
   });
 }

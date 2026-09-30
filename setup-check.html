@@ -87,11 +87,12 @@ href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786
     <div class="card">
         <h3>What this page does</h3>
         <p class="hint">
-            Every page in MailMart talks to Cloud Firestore directly, so a page can only work
-            when the security rules in <b>firestore.rules</b> are deployed to the project and the
-            composite indexes in <b>firestore.indexes.json</b> exist. When either is missing, the
-            pages print "Check your Firestore security rules…". This page asks Firestore the same
-            questions the pages do, one at a time, and reports the answer it actually gives.
+            Every page in MailMart talks to Firebase Authentication and Cloud Firestore directly.
+            This page asks both the same questions the pages do, one at a time, and reports the
+            answer each one actually gives — including the two classic Authentication
+            misconfigurations: a sign-in provider that is still disabled in the console, and a
+            site address that is not on Firebase's authorised-domain list (which is what breaks
+            "Continue with Google" on any domain but the Firebase ones).
         </p>
 
         <div class="notice info" id="projectInfo">
@@ -109,8 +110,8 @@ href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786
     <div class="card" style="margin-top:16px">
         <h3>Checks</h3>
         <div id="results">
-            <div class="empty"><div class="big">Waiting for sign-in…</div>
-                <p>Reading the current session.</p></div>
+            <div class="empty"><div class="big">Running checks…</div>
+                <p>Asking Firebase the same questions the pages ask.</p></div>
         </div>
     </div>
 
@@ -230,6 +231,13 @@ async function probe(name, run, skip) {
         const detail = await run();
         report(name, "pass", detail || "Allowed.");
     } catch (err) {
+        /* The Authentication probes throw their own plain-language verdicts;
+           they are not Firestore errors and must not be dressed up as one. */
+        if (String(err?.code || "").startsWith("auth-probe/")) {
+            report(name, err.severity === "fail" ? "fail" : "warn", esc(err.message));
+            console.error(name, err);
+            return;
+        }
         const info = firestoreErrorInfo(err, name);
         const link = info.indexUrl
             ? ` <a href="${esc(info.indexUrl)}" target="_blank" rel="noopener">Create the index →</a>`
@@ -244,7 +252,112 @@ async function probe(name, run, skip) {
 }
 
 /* ------------------------------------------------------------------ */
-/* the checks                                                          */
+/* the Authentication checks                                           */
+/* ------------------------------------------------------------------ */
+// These need no signed-in session, so they run first. Both probe public
+// Identity Toolkit endpoints with the same web API key the app itself uses —
+// exactly what the Firebase SDK does under the hood — and neither creates,
+// modifies or reveals anything.
+
+const apiKey = auth.app.options.apiKey;
+const projectNumberOrId = auth.app.options.projectId;
+const identitytoolkit = "https://identitytoolkit.googleapis.com/v1";
+
+async function runAuthChecks() {
+
+    /* -- the API key and the project's public auth configuration -------- */
+    let authorizedDomains = null;
+    await probe("Authentication reachable (project config)", async () => {
+        const res = await fetch(`${identitytoolkit}/projects?key=${encodeURIComponent(apiKey)}`);
+        if (!res.ok) {
+            const body = await res.text();
+            throw Object.assign(
+                new Error(
+                    `Firebase Authentication did not answer the project-config request ` +
+                    `(HTTP ${res.status}). If this says anything about the API key, the web ` +
+                    `configuration in js/firebase.js does not match the project. ` +
+                    `Raw answer: ${body.slice(0, 200)}`
+                ),
+                { code: `auth-probe/http-${res.status}`, severity: res.status === 400 ? "fail" : "warn" }
+            );
+        }
+        const config = await res.json();
+        authorizedDomains = Array.isArray(config.authorizedDomains)
+            ? config.authorizedDomains
+            : [];
+        return `Answered. Project <code>${esc(config.projectId || projectNumberOrId)}</code>, ` +
+               `${authorizedDomains.length} authorised domains.`;
+    });
+
+    /* -- is this address on that list? (Google sign-in popup) ----------- */
+    if (!authorizedDomains) {
+        report("Domain authorised for Google sign-in", "skip",
+            "Could not read the authorised-domain list, so this could not be checked.");
+    } else if (!location.hostname || location.protocol === "file:") {
+        report("Domain authorised for Google sign-in", "skip",
+            "The page is open via <code>file://</code>. Serve the site over HTTP and check again.");
+    } else if (authorizedDomains.includes(location.hostname)) {
+        report("Domain authorised for Google sign-in", "pass",
+            `<code>${esc(location.hostname)}</code> is on the list — the Google popup works from here.`);
+    } else {
+        report("Domain authorised for Google sign-in", "fail",
+            `<code>${esc(location.hostname)}</code> is <b>not</b> on Firebase's authorised-domain ` +
+            `list, so "Continue with Google" fails here with ` +
+            "<code>auth/unauthorized-domain</code>. Add it under " +
+            "<b>Authentication → Settings → Authorized domains</b> in the Firebase console. " +
+            "Email and password sign-in is unaffected.");
+    }
+
+    /* -- is the Email/Password provider actually enabled? --------------- */
+    // A sign-in attempt for an address that cannot exist: EMAIL_NOT_FOUND
+    // means the provider is enabled and working; ADMIN_ONLY_OPERATION /
+    // OPERATION_NOT_ALLOWED means it is disabled in the console — the single
+    // most common reason "the auth isn't working" on a fresh project.
+    await probe("Email/Password sign-in enabled", async () => {
+        const probeAddress = `setup-probe-${Date.now()}@mailmart.invalid`;
+        const res = await fetch(
+            `${identitytoolkit}/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: probeAddress, password: "not-a-real-sign-in", returnSecureToken: false })
+            }
+        );
+        const body = await res.json().catch(() => ({}));
+        const reason = String((body.error && body.error.message) || "");
+
+        if (reason.includes("EMAIL_NOT_FOUND") || reason.includes("INVALID_PASSWORD")) {
+            return "Enabled — Firebase answered <code>" + esc(reason.split(" :")[0]) +
+                   "</code> for a deliberately impossible address, which is exactly what an " +
+                   "enabled provider says.";
+        }
+        if (reason.includes("ADMIN_ONLY_OPERATION") || reason.includes("OPERATION_NOT_ALLOWED")) {
+            throw Object.assign(
+                new Error(
+                    "The Email/Password provider is disabled in the Firebase console, so every " +
+                    "email sign-in and sign-up is refused. Enable it under " +
+                    "<b>Authentication → Sign-in method → Email/Password</b>."
+                ),
+                { code: "auth-probe/provider-disabled", severity: "fail" }
+            );
+        }
+        if (reason.includes("REQUEST_FAILED") || reason.includes("API_KEY")) {
+            throw Object.assign(
+                new Error("Firebase refused the request itself: " + esc(reason)),
+                { code: "auth-probe/key-or-network", severity: "fail" }
+            );
+        }
+        throw Object.assign(
+            new Error("Unexpected answer: " + (esc(reason) || res.status)),
+            { code: "auth-probe/unexpected" }
+        );
+    });
+}
+
+runAuthChecks();
+
+/* ------------------------------------------------------------------ */
+/* the Firestore checks                                                */
 /* ------------------------------------------------------------------ */
 onAuthStateChanged(auth, async (user) => {
 
