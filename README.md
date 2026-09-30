@@ -19,8 +19,11 @@ Firestore Security Rules.
    Until this step runs, the database uses the default deny-all rules and every
    page that reads Firestore fails. `.firebaserc` pins the project (`mailmartz`)
    so the command targets the right one; `setup-check.html` confirms it worked.
-4. Add your domain to **Authentication → Settings → Authorized domains**,
-   otherwise Google sign-in is blocked and sign-in emails are rejected.
+4. Add every host that serves MailMart to **Authentication → Settings → Authorized
+   domains**. For this repository's GitHub Pages site, add
+   **`easypay-ng.github.io`** (enter the hostname only: no `https://` and no
+   `/MailMart` path). Otherwise Google sign-in is blocked there with
+   `auth/unauthorized-domain`; Email/Password sign-in is unaffected.
 5. Register the administrator accounts. The addresses in `ADMIN_EMAILS` land on
    `admin.html` after signing in; everyone else lands on `dashboard.html`.
 
@@ -267,7 +270,9 @@ as well as Firestore, and the auth checks run even while signed out:
   Authorized domains**).
 * **Email/Password sign-in enabled** — a deliberately impossible sign-in probe
   tells you whether the provider is enabled, without creating or changing
-  anything. `ADMIN_ONLY_OPERATION` means it is still disabled in the console.
+  anything. `ADMIN_ONLY_OPERATION` means it is still disabled in the console;
+  Firebase's generic `INVALID_LOGIN_CREDENTIALS` response is a successful probe
+  when email-enumeration protection is enabled.
 
 Once signed in it runs the same reads the pages run, one at a time, and prints
 the verdict — rules live or not, which documents this account may read, and

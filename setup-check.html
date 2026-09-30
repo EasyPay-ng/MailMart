@@ -309,10 +309,12 @@ async function runAuthChecks() {
     }
 
     /* -- is the Email/Password provider actually enabled? --------------- */
-    // A sign-in attempt for an address that cannot exist: EMAIL_NOT_FOUND
-    // means the provider is enabled and working; ADMIN_ONLY_OPERATION /
-    // OPERATION_NOT_ALLOWED means it is disabled in the console — the single
-    // most common reason "the auth isn't working" on a fresh project.
+    // A sign-in attempt for an address that cannot exist establishes whether
+    // this provider is enabled without creating, changing or exposing an
+    // account. Firebase can return EMAIL_NOT_FOUND / INVALID_PASSWORD, or the
+    // deliberately generic INVALID_LOGIN_CREDENTIALS when email-enumeration
+    // protection is active. ADMIN_ONLY_OPERATION / OPERATION_NOT_ALLOWED means
+    // the provider is disabled in the console — the common fresh-project case.
     await probe("Email/Password sign-in enabled", async () => {
         const probeAddress = `setup-probe-${Date.now()}@mailmart.invalid`;
         const res = await fetch(
@@ -326,10 +328,14 @@ async function runAuthChecks() {
         const body = await res.json().catch(() => ({}));
         const reason = String((body.error && body.error.message) || "");
 
-        if (reason.includes("EMAIL_NOT_FOUND") || reason.includes("INVALID_PASSWORD")) {
+        if (reason.includes("EMAIL_NOT_FOUND")
+            || reason.includes("INVALID_PASSWORD")
+            || reason.includes("INVALID_LOGIN_CREDENTIALS")) {
+            const generic = reason.includes("INVALID_LOGIN_CREDENTIALS");
             return "Enabled — Firebase answered <code>" + esc(reason.split(" :")[0]) +
-                   "</code> for a deliberately impossible address, which is exactly what an " +
-                   "enabled provider says.";
+                   "</code> for a deliberately impossible address" +
+                   (generic ? " (the expected generic response with email-enumeration protection)" : "") +
+                   ".";
         }
         if (reason.includes("ADMIN_ONLY_OPERATION") || reason.includes("OPERATION_NOT_ALLOWED")) {
             throw Object.assign(
