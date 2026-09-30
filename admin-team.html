@@ -109,7 +109,7 @@ import {
 } from "./js/firebase.js";
 
 import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
-import { formatDate } from "./js/wallet.js";
+import { formatDate, formatNaira } from "./js/wallet.js";
 import {
     findUsersByEmail,
     setSubAdmin,
@@ -208,6 +208,7 @@ async function doFind() {
             <div class="found">
                 <div class="nm">${esc(u.email || u.uid)}
                     <div class="field tip" style="margin:2px 0 0">${esc(u.displayName || u.username || "")}</div>
+                    <div class="field tip" style="margin:2px 0 0">Wallet: ${esc(formatNaira(u.balance))}</div>
                 </div>
                 ${u.isSubAdmin
                     ? '<span class="status active">already on the desk</span>'
@@ -295,6 +296,7 @@ function renderTeam() {
                         <div class="fig">Handled<b>${s.handled}</b></div>
                         <div class="fig">Approved<b>${s.approved}</b></div>
                         <div class="fig">Rejected<b>${s.rejected}</b></div>
+                        <div class="fig">Wallet<b>${esc(formatNaira(u.balance))}</b></div>
                     </div>
                 </div>
                 <div class="acts">

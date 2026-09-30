@@ -1031,6 +1031,7 @@ body::before{
 
 import { auth, db, onAuthStateChanged, signOut, collection, addDoc, doc, getDocs, query, where, updateDoc, onSnapshot, arrayUnion, serverTimestamp, firestoreErrorText } from "./js/firebase.js";
 import { submitVerification } from "./js/emaildesk.js";
+import { formatNaira } from "./js/wallet.js";
 
 /* Auth guard — same pattern as the dashboard */
 onAuthStateChanged(auth,(user)=>{
@@ -1099,7 +1100,7 @@ function setStatus(status){
         },
         paid:{
             cls:"paid", label:"Paid",
-            msg:"💰 <b>Payment sent!</b> Your sale is <b>complete</b>. Thank you for selling with MailMart. You may now close this page."
+            msg:"💰 <b>Payment sent!</b> Your payout has been credited straight to your MailMart wallet — withdraw it any time from your <a href='wallet.html' style='color:#39c9ff;font-weight:700'>Wallet</a>. Thank you for selling with MailMart."
         },
         rejected:{
             cls:"rej", label:"Rejected",
@@ -1110,7 +1111,14 @@ function setStatus(status){
     const s=map[status]||map.pending;
     pill.className="pill "+s.cls;
     pill.textContent=s.label;
-    note.innerHTML=s.msg;
+    let msg=s.msg;
+    if(status==="paid"){
+        const payout=currentSale&&Number(currentSale.payout)||0;
+        if(payout>0){
+            msg="💰 <b>"+formatNaira(payout)+" paid!</b> It has been credited straight to your MailMart wallet — withdraw it any time from your <a href='wallet.html' style='color:#39c9ff;font-weight:700'>Wallet</a>. Thank you for selling with MailMart.";
+        }
+    }
+    note.innerHTML=msg;
 }
 
 /* Step 1 — submit for sale */
@@ -1318,135 +1326,5 @@ function escapeHtml(s){
 
 </script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a30994ef6fa26fa0',t:'MTc4NzY1MDI2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
-/* ------------------------------------------------------------------
-   VERIFICATION PANEL
-
-   The seller submits once, then waits. Someone at the desk claims the
-   mail and triggers Google's check; when they do, this panel opens with
-   a field for the code — or asks for "done" when it was a prompt.
------------------------------------------------------------------- */
-function setVerification(data){
-
-    const box=document.getElementById("verifyBox");
-    if(!box) return;
-
-    const title=document.getElementById("verifyTitle");
-    const help=document.getElementById("verifyHelp");
-    const wait=document.getElementById("verifyWait");
-    const waitText=document.getElementById("verifyWaitText");
-    const form=document.getElementById("verifyForm");
-    const label=document.getElementById("verifyLabel");
-    const input=document.getElementById("verifyInput");
-
-    const vs=(data&&data.verificationStatus)||"none";
-    const vt=data&&data.verificationType;
-
-    function waiting(text){
-        wait.style.display="flex";
-        waitText.textContent=text;
-        form.style.display="none";
-    }
-
-    function ask(){
-        wait.style.display="none";
-        form.style.display="block";
-    }
-
-    if(vs==="none"){
-        box.classList.add("show");
-        title.textContent="Queued — keep this account open";
-        help.innerHTML=
-            "Your mail has been <b>added to the queue</b> and a verification agent will pick it up shortly. "+
-            "<b>Stay logged in to this account and keep this page open.</b> "+
-            "Google will send a verification code or a sign-in prompt soon — "+
-            "when the agent is ready, this box will ask you for it.";
-        waiting("Waiting for an agent to pick up your mail…");
-        return;
-    }
-
-    if(vs==="requested"){
-        box.classList.add("show");
-        if(vt==="prompt"){
-            title.textContent="Approve the Google prompt";
-            help.innerHTML=
-                "Our agent has triggered a Google sign-in prompt on this account. "+
-                "<b>Tap Yes / Allow on the prompt</b>, then type <b>done</b> below.";
-            label.textContent="Type done once you have approved it";
-            input.placeholder="done";
-        }else{
-            title.textContent="Enter the Google code";
-            help.innerHTML=
-                "Google has sent a verification code for this account. "+
-                "<b>Type it exactly as it appears</b> so our agent can finish verifying.";
-            label.textContent="Google verification code";
-            input.placeholder="e.g. 123456";
-        }
-        ask();
-        return;
-    }
-
-    if(vs==="submitted"){
-        box.classList.add("show");
-        title.textContent="Sent to the agent";
-        help.innerHTML="We have passed that to the agent working your mail. Keep the account accessible in case they need one more check.";
-        waiting("Agent is checking what you sent…");
-        return;
-    }
-
-    if(vs==="verified"){
-        box.classList.add("show");
-        title.textContent="Verified";
-        help.innerHTML="Your mail checked out. Your sale is being completed.";
-        waiting("Verification passed.");
-        return;
-    }
-
-    if(vs==="failed"){
-        box.classList.add("show");
-        title.textContent="That code did not work";
-        help.innerHTML="The agent could not use what you sent. They will trigger a fresh check shortly — keep the account open.";
-        waiting("Waiting for the agent to request a new check…");
-        return;
-    }
-}
-
-/* Send the code — or "done" for a prompt — to whoever is working the mail */
-document.getElementById("verifyForm").addEventListener("submit",async(e)=>{
-
-    e.preventDefault();
-
-    if(!currentSale){
-        alert("Submit your email first.");
-        return;
-    }
-
-    const input=document.getElementById("verifyInput");
-    const btn=document.getElementById("verifyBtn");
-    const success=document.getElementById("verifySuccess");
-    const text=input.value.trim();
-
-    if(!text){
-        alert("Enter the code, or type done if you approved a prompt.");
-        return;
-    }
-
-    btn.disabled=true;
-    btn.textContent="Sending…";
-
-    try{
-        await submitVerification(currentSale,text);
-        input.value="";
-        success.textContent="Sent to the agent.";
-        success.classList.add("show");
-    }catch(err){
-        console.error(err);
-        alert(firestoreErrorText(err,"that verification reply"));
-    }finally{
-        btn.disabled=false;
-        btn.textContent="Send to the agent";
-    }
-});
-
-</script></body>
+</body>
 </html>

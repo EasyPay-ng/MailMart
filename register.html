@@ -1138,8 +1138,9 @@ class="home"
 
 <script type="module">
 
-import { auth, db, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, doc, setDoc, serverTimestamp } from "./js/firebase.js";
-import { isAdminEmail, redirectAfterAuth } from "./js/admin.js";
+import { auth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, firestoreErrorText } from "./js/firebase.js";
+import { redirectAfterAuth } from "./js/admin.js";
+import { friendlyAuthError, ensureUserProfile } from "./js/account.js";
 
 const provider=new GoogleAuthProvider();
 
@@ -1252,8 +1253,10 @@ document.getElementById(
 
 function showError(text){
 
-errorBox.textContent=
-text;
+errorBox.innerHTML=
+String(text)
+.replace(/[&<>]/g,(c)=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))
+.replace(/\n/g,"<br>");
 
 errorBox.style.display=
 "block";
@@ -1310,41 +1313,7 @@ registerLoading.style.display=
 
 function friendlyError(error){
 
-switch(error.code){
-
-case"auth/email-already-in-use":
-
-return"An account with this email already exists.";
-
-case"auth/invalid-email":
-
-return"Please enter a valid email address.";
-
-case"auth/weak-password":
-
-return"Password must contain at least 6 characters.";
-
-case"auth/network-request-failed":
-
-return"Network error. Check your internet connection.";
-
-case"auth/popup-closed-by-user":
-
-return"Google registration was cancelled.";
-
-case"auth/popup-blocked":
-
-return"Your browser blocked the Google registration window.";
-
-case"auth/operation-not-allowed":
-
-return"This registration method is not enabled in Firebase.";
-
-default:
-
-return"Unable to create your account. Please try again.";
-
-}
+return friendlyAuthError(error,"create your account");
 
 }
 
@@ -1605,40 +1574,60 @@ const user=
 credential.user;
 
 
-await setDoc(
-doc(
-db,
-"users",
-user.uid
-),
+/* The login exists from this point on, whatever happens next. A failure
+saving the profile must therefore NOT be reported as "unable to create
+your account" — that message used to send people back to this form,
+where the retry hit "email already in use" with no way forward. */
+
+let profileError=null;
+
+
+try{
+
+await ensureUserProfile(
+user,
 {
-
-uid:user.uid,
-
 username:usernameValue,
-
 phone:phoneValue,
-
-email:emailValue,
-
-displayName:usernameValue,
-
-photoURL:"",
-
-balance:0,
-
-status:"active",
-
-isAdmin:isAdminEmail(
-emailValue
-),
-
-createdAt:serverTimestamp(),
-
-updatedAt:serverTimestamp()
-
+displayName:usernameValue
 }
 );
+
+}catch(err){
+profileError=err;
+}
+
+
+if(profileError){
+
+console.error(
+"Could not save the new profile:",
+profileError
+);
+
+showError(
+"Your account was created, but your profile could not be saved yet.\n\n"+
+firestoreErrorText(
+profileError,
+"your profile"
+)+
+"\n\nContinuing to the dashboard in a moment — it will try to save your profile again."
+);
+
+setTimeout(
+async()=>{
+
+await redirectAfterAuth(
+user
+);
+
+},
+6000
+);
+
+return;
+
+}
 
 
 showSuccess(
@@ -1659,6 +1648,8 @@ user
 
 
 }catch(error){
+
+console.error(error);
 
 showError(
 friendlyError(error)
@@ -1714,54 +1705,62 @@ const user=
 result.user;
 
 
-await setDoc(
-doc(
-db,
-"users",
-user.uid
-),
+/* People land on "Create an account" and click Google even when they
+already have an account. The old write here blindly merged the whole
+sign-up shape back over an existing profile — including createdAt,
+balance and isAdmin — which firestore.rules rightly refuses, so a
+returning Google user was told registration had failed. The profile is
+now created only when it is genuinely missing, and never rewritten. */
+
+let profileError=null;
+
+try{
+
+await ensureUserProfile(
+user,
 {
+username:usernameValue||user.displayName||"",
+phone:phoneValue
+}
+);
 
-uid:user.uid,
+}catch(err){
+profileError=err;
+}
 
-username:
-usernameValue ||
-user.displayName ||
-"",
+if(profileError){
 
-phone:
-phoneValue ||
-"",
+console.error(
+"Could not save the profile:",
+profileError
+);
 
-email:
-user.email ||
-"",
+showError(
+"Signed in with Google, but your profile could not be saved yet.\n\n"+
+firestoreErrorText(
+profileError,
+"your profile"
+)+
+"\n\nContinuing to the dashboard in a moment — it will try to save your profile again."
+);
 
-displayName:
-user.displayName ||
-usernameValue ||
-"",
+setTimeout(
+async()=>{
 
-photoURL:
-user.photoURL ||
-"",
-
-balance:0,
-
-status:"active",
-
-isAdmin:isAdminEmail(
-user.email
-),
-
-createdAt:serverTimestamp(),
-
-updatedAt:serverTimestamp()
+await redirectAfterAuth(
+user
+);
 
 },
-{
-merge:true
+6000
+);
+
+return;
+
 }
+
+showSuccess(
+"Google registration successful. Redirecting..."
 );
 
 
@@ -1783,6 +1782,8 @@ user
 
 
 }catch(error){
+
+console.error(error);
 
 showError(
 friendlyError(error)

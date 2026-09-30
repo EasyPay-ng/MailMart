@@ -6,7 +6,9 @@ Firestore Security Rules.
 ## Firebase setup
 
 1. In the Firebase console, open **Build → Authentication → Sign-in method** and
-   enable **Email/Password** and **Google**.
+   enable **Email/Password** and **Google**. Until Email/Password is enabled,
+   every sign-up and sign-in is refused — `setup-check.html` reports exactly
+   this as "Email/Password sign-in enabled: fail".
 2. Open **Build → Firestore Database** and create a database.
 3. Deploy the access rules:
 
@@ -89,17 +91,48 @@ real seller — which stops someone using your project to send arbitrary mail.
 
 ## Wallet
 
+The wallet is **naira-only**. Every amount stored in `users/{uid}.balance` and
+every row of the `transactions` ledger is ₦, formatted with
+`formatNaira()` from `js/wallet.js`. Nothing in the app quotes, stores or pays
+a foreign currency.
+
+There is one balance per account (`users/{uid}.balance`) and one append-only
+ledger (`transactions`). A ledger row records the type, the direction, the
+amount, the balance it produced (`balanceAfter`), and — when an administrator
+acted — who acted. The types:
+
+| Type | Direction | Who creates it | What it means |
+| --- | --- | --- | --- |
+| `deposit` | credit | the user (pending) → admin settles | Bank transfer into the wallet |
+| `withdrawal` | debit | the user (pending) → admin settles | Payout to a Nigerian bank |
+| `order_payment` | debit | the buyer, when placing a marketplace order | Held pending until an administrator confirms the order |
+| `order_payout` | credit | settlement, atomically | The seller's share of a confirmed order |
+| `email_payout` | credit | the sales screen, atomically | Payment for an approved email sale |
+| `order_refund` | credit | a refund, atomically | A refunded order returned to the buyer |
+
 Money moves in two steps, so that no user can credit themselves:
 
 1. A user raises a **pending** request — a deposit (with a screenshot of the
-   transfer) or a withdrawal to a Nigerian bank. This appends a row to
+   transfer), a withdrawal to a Nigerian bank, or a marketplace order (which
+   raises its own pending `order_payment`). This appends a row to
    `transactions` and moves nothing.
-2. An administrator settles it from `admin-wallet.html`. This is the only thing
-   that changes a balance.
+2. An administrator settles it. This is the only thing that changes a balance:
+   * deposits and withdrawals are settled from `admin-wallet.html`;
+   * order payments are confirmed from **Marketplace Admin**, which charges the
+     buyer, pays the seller, completes the pending `order_payment` row and
+     writes the seller's `order_payout` row — all in one transaction;
+   * email sales are paid from the sales screen (**Pay into wallet**), which
+     marks the sale paid, credits the seller's balance and writes the
+     `email_payout` row — again in one transaction.
 
-Settlement runs inside a Firestore `runTransaction()`, so the ledger row and
-the balance update either both land or neither does — a half-applied transfer
-is the one outcome a wallet must never produce.
+Every settlement runs inside a Firestore `runTransaction()`, so the ledger
+row(s) and the balance update either all land or none does — a half-applied
+transfer is the one outcome a wallet must never produce. Settling an
+`order_payment` from the wallet screen is refused by `js/wallet.js` (and would
+charge the buyer twice); it belongs to the marketplace screen.
+
+A refund is a new `order_refund` credit row, not an edit of history: the
+purchase stays on the buyer's record and the refund sits next to it.
 
 Deposits are manual by design: the administrator publishes the account users
 transfer to, users upload proof, and an administrator confirms and credits —
@@ -222,11 +255,44 @@ produce it, in the order they are worth checking:
    `js/admin.js` and `adminEmails()` in `firestore.rules`, or the `isAdmin` /
    `isSeller` / `isSubAdmin` fields on the user's document.
 
-`setup-check.html` answers the question directly. Open it while signed in: it
-runs the same reads the pages run, one at a time, and prints the verdict — rules
-live or not, which documents this account may read, and which composite indexes
-exist. It is safe to run at any time and writes nothing except a skipped check's
-note.
+`setup-check.html` answers the question directly. It now checks Authentication
+as well as Firestore, and the auth checks run even while signed out:
+
+* **Authentication reachable** — the project's public auth config answers with
+  the web API key the app itself uses.
+* **Domain authorised for Google sign-in** — the address the site is open on is
+  compared with Firebase's authorised-domain list. A domain that is not on the
+  list is exactly what makes "Continue with Google" fail with
+  `auth/unauthorized-domain` (add it under **Authentication → Settings →
+  Authorized domains**).
+* **Email/Password sign-in enabled** — a deliberately impossible sign-in probe
+  tells you whether the provider is enabled, without creating or changing
+  anything. `ADMIN_ONLY_OPERATION` means it is still disabled in the console.
+
+Once signed in it runs the same reads the pages run, one at a time, and prints
+the verdict — rules live or not, which documents this account may read, and
+which composite indexes exist. It is safe to run at any time and writes
+nothing except a skipped check's note.
+
+## "Unable to sign in" — what that means
+
+Sign-in failures are translated by `friendlyAuthError()` in `js/account.js`,
+including the two that used to hide behind a generic message:
+
+* `auth/unauthorized-domain` — Google sign-in from an address not on Firebase's
+  authorised-domain list. Add the domain in the console; email/password sign-in
+  keeps working either way.
+* `auth/admin-restricted-operation` / `auth/operation-not-allowed` — the
+  provider is disabled in the console. Enable **Email/Password** (and **Google**)
+  under Authentication → Sign-in method.
+
+Registration also no longer dead-ends. It used to report "Unable to create your
+account" when the *profile* write failed — even though the login had already
+been created — and a retry then hit "email already in use" with no way forward.
+Now `ensureUserProfile()` (also in `js/account.js`) creates the profile if it is
+missing, is retried automatically by the dashboard and the wallet page, and the
+Google button on the register page no longer rewrites an existing profile
+(which the security rules rightly refused).
 
 ## Layout
 
@@ -234,13 +300,14 @@ note.
 | --- | --- |
 | `js/firebase.js` | Firebase app, Auth and Firestore clients, error diagnostics |
 | `js/admin.js` | Administrator list, access check, post-login redirect |
-| `setup-check.html` | Reports which Firestore rules/indexes/session the app has |
-| `js/image.js` | Image → base64 helper (not wired into a page yet) |
+| `js/account.js` | Auth error translation, profile creation/repair |
+| `setup-check.html` | Reports Authentication config, rules/indexes/session |
+| `js/image.js` | Image → base64 helper (receipts, listings, KYC) |
 | `firestore.rules` | Server-side access control |
 | `scripts/` | Optional Admin SDK helpers |
-| `wallet.html` | User wallet: deposit, withdraw, history |
+| `wallet.html` | User wallet: deposit, withdraw, full naira history |
 | `admin-wallet.html` | Administrator settlement desk |
-| `js/wallet.js` | Deposits, withdrawals, settlement |
+| `js/wallet.js` | Ledger, deposits, withdrawals, email sale payouts, settlement |
 | `js/data/nigeria.js` | 37 states, 774 LGAs, 48 banks with NIP codes |
 | `marketplace.html` | Browse and buy goods |
 | `sell.html` | Seller verification and listings |

@@ -242,6 +242,9 @@ service cloud.firestore {
     // ---------- transactions --------------------------------------------
     // Append-only ledger. Owners raise pending requests; only an
     // administrator can settle one, and settling is what moves money.
+    //
+    // Money is naira throughout: deposits, withdrawals, marketplace order
+    // payments and payouts, email sale payouts, and refunds.
     match /transactions/{txId} {
 
       // A withdrawal can never be raised for more than the wallet holds.
@@ -272,6 +275,10 @@ service cloud.firestore {
 
       // Administrators may only move a request along its allowed path, and the
       // reviewer recorded on it must be whoever is signed in.
+      //
+      // A marketplace order payment is settled in one step (pending ->
+      // completed) by the Marketplace Admin screen, which charges the buyer
+      // and pays the seller in the same transaction.
       function adminSettlement() {
         return isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys()
@@ -279,15 +286,41 @@ service cloud.firestore {
                          'rejectionReason', 'updatedAt', 'balanceAfter'])
           && ((resource.data.status == 'pending'
                && ['approved', 'rejected'].hasAny([request.resource.data.status]))
+              || (resource.data.status == 'pending'
+                  && request.resource.data.status == 'completed'
+                  && resource.data.type == 'order_payment')
               || (resource.data.status == 'approved'
                   && request.resource.data.status == 'completed'))
           && request.resource.data.reviewedBy == tokenEmail();
       }
 
+      // A completed credit an administrator writes when they pay money out of
+      // the platform's own pocket: a seller's email sale payout, a seller's
+      // marketplace payout, or a buyer's refund. The balance change itself is
+      // a separate write to users/{uid} that the rules already gate on
+      // isAdmin(); this row is the audit trail that must land with it.
+      function adminLedgerEntry() {
+        return isAdmin()
+          && request.resource.data.keys().hasAll(
+               ['type', 'direction', 'status', 'uid', 'email', 'amount',
+                'balanceAfter', 'reviewedBy', 'reviewedAt',
+                'createdAt', 'updatedAt'])
+          && ['email_payout', 'order_payout', 'order_refund']
+               .hasAny([request.resource.data.type])
+          && request.resource.data.direction == 'credit'
+          && request.resource.data.status == 'completed'
+          && request.resource.data.amount is number
+          && request.resource.data.amount > 0
+          && request.resource.data.balanceAfter is number
+          && request.resource.data.uid is string
+          && request.resource.data.reviewedBy == tokenEmail()
+          && request.resource.data.createdAt == request.time;
+      }
+
       allow read: if signedIn()
         && (resource.data.uid == uid() || isAdmin());
 
-      allow create: if signedIn() && ownPendingRequest();
+      allow create: if signedIn() && (ownPendingRequest() || adminLedgerEntry());
       allow update: if signedIn() && adminSettlement();
       allow delete: if false;
     }

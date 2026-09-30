@@ -344,7 +344,7 @@ a{color:inherit;text-decoration:none}
     <div class="panel" id="panel-history">
         <div class="card">
             <h3>Transaction history</h3>
-            <p class="hint">Every deposit and withdrawal, newest first.</p>
+            <p class="hint">Everything that has moved through your wallet — deposits, withdrawals, marketplace payments, email sale payouts and refunds — newest first.</p>
             <div id="historyList"></div>
         </div>
     </div>
@@ -366,9 +366,11 @@ import {
     requestDeposit,
     requestWithdrawal,
     watchMyTransactions,
+    describeTransaction,
     formatNaira,
     formatDate
 } from "./js/wallet.js";
+import { ensureUserProfile } from "./js/account.js";
 
 /* ------------------------------------------------------------------ */
 /* tiny DOM helpers                                                    */
@@ -390,6 +392,7 @@ let currentBalance = 0;
 let settings = null;
 let proofData = "";
 let unsubBalance = null;
+let profileRepairStarted = false;
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
@@ -415,6 +418,16 @@ async function start(user) {
         $("balanceEl").textContent = formatNaira(currentBalance);
         $("balanceSub").innerHTML =
             `Signed in as <b>${esc(user.email)}</b>`;
+
+        /* A login without a profile (a sign-up whose profile write was
+           refused) must not read as a permanent ₦0.00 wallet: create the
+           profile once, and this listener re-fires with the real document. */
+        if (!snap.exists() && !profileRepairStarted) {
+            profileRepairStarted = true;
+            $("balanceSub").innerHTML = "Setting up your wallet…";
+            ensureUserProfile(user).catch((err) =>
+                console.error("Could not create your profile:", err));
+        }
     });
 
     settings = await loadSettings().catch(() => null);
@@ -647,7 +660,8 @@ function renderHistory(rows) {
     if (!rows.length) {
         $("historyList").innerHTML =
             '<div class="empty"><div class="big">No transactions yet</div>' +
-            "<p>Your deposits and withdrawals will appear here.</p></div>";
+            "<p>Deposits, withdrawals, marketplace payments, email sale payouts " +
+            "and refunds will all appear here.</p></div>";
         return;
     }
 
@@ -655,11 +669,7 @@ function renderHistory(rows) {
         .map((tx) => {
             const credit = tx.direction === "credit";
             const arrow = credit ? "↓" : "↑";
-            const label = credit ? "Deposit" : "Withdrawal";
-            const detail =
-                tx.type === "withdrawal"
-                    ? `${esc(tx.bankName || "Bank")} · ${esc(tx.accountNumber || "")}`
-                    : esc(tx.depositorName || tx.bankUsed || "Bank transfer");
+            const { label, detail } = describeTransaction(tx);
 
             const reason =
                 tx.status === "rejected" && tx.rejectionReason
@@ -671,7 +681,7 @@ function renderHistory(rows) {
                     <div class="ic ${credit ? "credit" : "debit"}">${arrow}</div>
                     <div class="meta">
                         <div class="t">${label}</div>
-                        <div class="d">${detail}</div>
+                        <div class="d">${esc(detail)}</div>
                         <div class="d">${esc(formatDate(tx.createdAt))}</div>
                         ${reason}
                     </div>

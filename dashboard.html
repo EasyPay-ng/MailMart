@@ -115,6 +115,7 @@ body::before{
 }
 .msg.bad{ color:#ff9fb0; }
 .msg.good{ color:#7ef2b0; }
+.msg.info{ color:#9be3ff; }
 .msg a{ color:#39c9ff; text-decoration:none; }
 
 /* ---------- Layout ---------- */
@@ -1485,6 +1486,7 @@ import {
     sendPasswordResetEmail, firestoreErrorHtml
 } from "./js/firebase.js";
 import { adminStatus } from "./js/admin.js";
+import { ensureUserProfile } from "./js/account.js";
 import { formatNaira } from "./js/wallet.js";
 
 const $ = (id) => document.getElementById(id);
@@ -1534,6 +1536,13 @@ onAuthStateChanged(auth,(user)=>{
    Firestore read at all, so a refused read or a signed-out session was
    invisible here. Everything below reports what Firestore actually says.
 ------------------------------------------------------------------ */
+let profileRepairStarted=false;
+
+function profileErrorText(err){
+    const code=err&&err.code?String(err.code):"error";
+    return code+' — open <a href="setup-check.html">the setup check</a> to see what to fix.';
+}
+
 function startAccount(user){
 
     onSnapshot(doc(db,"users",user.uid),(snap)=>{
@@ -1556,11 +1565,28 @@ function startAccount(user){
         $("miniSeller").textContent=seller;
         $("miniAdmin").textContent=adminFlag;
 
-        $("profileMsg").innerHTML=
-            snap.exists()
-                ? ""
-                : '<div class="msg bad">No profile document yet. Anything that reads '+
-                  'your balance will treat it as zero until one is written.</div>';
+        if(snap.exists()){
+            $("profileMsg").innerHTML="";
+        }else{
+            /* A login without a profile is the residue of a sign-up whose
+               profile write was refused (usually undeployed rules). The page
+               heals it instead of showing a dead "no profile" notice — the
+               write is retried once, and the snapshot above re-fires with the
+               result either way. */
+            $("profileMsg").innerHTML=
+                '<div class="msg info">Setting up your profile…</div>';
+            if(!profileRepairStarted){
+                profileRepairStarted=true;
+                ensureUserProfile(user)
+                    .catch((err)=>{
+                        console.error("Could not create your profile:",err);
+                        $("profileMsg").innerHTML=
+                            '<div class="msg bad">Your profile is missing and could not be created. '+
+                            'Your balance reads as zero until it exists.<br>'+
+                            profileErrorText(err)+'</div>';
+                    });
+            }
+        }
 
     },(err)=>{
         console.error("Could not read your account:",err);

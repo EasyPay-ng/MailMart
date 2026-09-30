@@ -362,7 +362,8 @@ function workCard(m) {
                 <input class="payin" type="number" id="pay-${esc(m.id)}" min="0" step="1" placeholder="Payout ₦">
                 <button class="btn small good" data-act="approve" data-id="${esc(m.id)}">Worked — approve</button>
                 <button class="btn small bad" data-act="reject" data-id="${esc(m.id)}">Did not work</button>
-            </div>`;
+            </div>
+            <div class="sub" style="margin-top:8px">The payout is paid into the seller's wallet by an administrator, from the sales screen.</div>`;
     } else {
         stage = `
             <div class="notice ${vStatus === "verified" ? "good" : "bad"}" style="margin:12px 0 0">

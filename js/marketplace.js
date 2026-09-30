@@ -378,6 +378,12 @@ export async function advanceOrder(order, status, actor) {
  * The service fee is simply not paid out: the buyer is charged the full total
  * and the seller receives subtotal + delivery, so the difference stays with
  * the platform.
+ *
+ * The buyer's pending order_payment row — raised when the order was placed —
+ * is completed in the same transaction, and the seller's credit is written to
+ * the ledger as an order_payout row. Before this, settlement moved balances
+ * but left the ledger untouched: the buyer's wallet history never mentioned
+ * the purchase, and the pending payment row sat there forever.
  */
 export async function settleOrderPayment(order, adminUser) {
   await runTransaction(db, async (t) => {
@@ -393,6 +399,7 @@ export async function settleOrderPayment(order, adminUser) {
     const buyerSnap = await t.get(buyerRef);
     const sellerSnap = await t.get(sellerRef);
     if (!buyerSnap.exists()) throw new Error("The buyer account is missing.");
+    if (!sellerSnap.exists()) throw new Error("The seller account is missing.");
 
     const buyerBalance = Number(buyerSnap.data().balance || 0);
     const total = Number(data.total || 0);
@@ -402,13 +409,47 @@ export async function settleOrderPayment(order, adminUser) {
 
     const payout = Number(data.sellerPayout || 0);
     const nextBuyer = round2(buyerBalance - total);
-    const nextSeller = sellerSnap.exists()
-      ? round2(Number(sellerSnap.data().balance || 0) + payout)
-      : payout;
-    if (!sellerSnap.exists()) throw new Error("The seller account is missing.");
+    const nextSeller = round2(Number(sellerSnap.data().balance || 0) + payout);
+    const reviewer = adminUser?.email || adminUser?.uid || "";
 
     t.update(buyerRef, { balance: nextBuyer, updatedAt: serverTimestamp() });
     t.update(sellerRef, { balance: nextSeller, updatedAt: serverTimestamp() });
+
+    // Complete the pending payment row the order was placed with, so the
+    // buyer's history shows the purchase and the row stops waiting.
+    const pendingSnap = await t.get(
+      query(
+        collection(db, TRANSACTIONS),
+        where("orderId", "==", order.id),
+        where("status", "==", "pending"),
+        where("type", "==", "order_payment")
+      )
+    );
+    if (!pendingSnap.empty) {
+      t.update(doc(db, TRANSACTIONS, pendingSnap.docs[0].id), {
+        status: "completed",
+        balanceAfter: nextBuyer,
+        reviewedBy: reviewer,
+        reviewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    // And the seller's side of the same money, as its own ledger row.
+    t.set(doc(collection(db, TRANSACTIONS)), {
+      type: "order_payout",
+      direction: "credit",
+      status: "completed",
+      uid: data.sellerUid,
+      email: data.sellerEmail || "",
+      amount: payout,
+      reference: data.listingTitle || "Marketplace order",
+      balanceAfter: nextSeller,
+      reviewedBy: reviewer,
+      reviewedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
 
     t.update(doc(db, ORDERS, order.id), {
       status: "paid",
@@ -435,6 +476,23 @@ export async function refundOrder(order, adminUser) {
 
     const refunded = round2(Number(buyerSnap.data().balance || 0) + Number(data.total || 0));
     t.update(buyerRef, { balance: refunded, updatedAt: serverTimestamp() });
+
+    // The refund is its own ledger row, not an edit of history: the purchase
+    // stays on the buyer's record and the refund sits next to it.
+    t.set(doc(collection(db, TRANSACTIONS)), {
+      type: "order_refund",
+      direction: "credit",
+      status: "completed",
+      uid: data.buyerUid,
+      email: data.buyerEmail || "",
+      amount: Number(data.total || 0),
+      reference: data.listingTitle || "Marketplace order",
+      balanceAfter: refunded,
+      reviewedBy: adminUser?.email || adminUser?.uid || "",
+      reviewedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
 
     t.update(doc(db, ORDERS, order.id), {
       status: "refunded",
