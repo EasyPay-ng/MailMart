@@ -148,16 +148,26 @@ export async function saveSettings(values) {
 
 export async function requestDeposit({ amount, depositorName, bankUsed, proofImage }) {
   const user = requireUser();
+  const value = round2(amount);
+  const sender = String(depositorName || "").trim();
+  const bank = String(bankUsed || "").trim();
+  const proof = String(proofImage || "");
+
+  if (!(value > 0)) throw new Error("Enter the amount you transferred.");
+  if (!sender) throw new Error("Enter the name on the sending account.");
+  if (!bank) throw new Error("Select the bank you sent from.");
+  if (!proof) throw new Error("Attach a screenshot of your receipt.");
+
   return addDoc(collection(db, TRANSACTIONS), {
     type: "deposit",
     direction: "credit",
     status: "pending",
     uid: user.uid,
     email: user.email || "",
-    amount: round2(amount),
-    depositorName: depositorName || "",
-    bankUsed: bankUsed || "",
-    proofImage: proofImage || "",
+    amount: value,
+    depositorName: sender,
+    bankUsed: bank,
+    proofImage: proof,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
@@ -165,17 +175,27 @@ export async function requestDeposit({ amount, depositorName, bankUsed, proofIma
 
 export async function requestWithdrawal({ amount, bankName, accountNumber, accountName }) {
   const user = requireUser();
+  const value = round2(amount);
+  const bank = String(bankName || "").trim();
+  const account = String(accountNumber || "").trim();
+  const owner = String(accountName || "").trim();
+
+  if (!(value > 0)) throw new Error("Enter an amount to withdraw.");
+  if (!bank) throw new Error("Select the receiving bank.");
+  if (!/^\d{10}$/.test(account)) throw new Error("Account number must be 10 digits.");
+  if (!owner) throw new Error("Enter the account name.");
+
   return addDoc(collection(db, TRANSACTIONS), {
     type: "withdrawal",
     direction: "debit",
     status: "pending",
     uid: user.uid,
     email: user.email || "",
-    amount: round2(amount),
-    bankName: bankName || "",
-    bankCode: bankCodeFor(bankName),
-    accountNumber: accountNumber || "",
-    accountName: accountName || "",
+    amount: value,
+    bankName: bank,
+    bankCode: bankCodeFor(bank),
+    accountNumber: account,
+    accountName: owner,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });

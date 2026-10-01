@@ -253,6 +253,16 @@ service cloud.firestore {
                  >= request.resource.data.amount;
       }
 
+      // The browser shows the configured minimum, but the rules enforce it so
+      // a modified client cannot submit a smaller request.
+      function withdrawalMinimum() {
+        let path = /databases/$(database)/documents/settings/platform;
+        let minimum = exists(path)
+          ? get(path).data.get('minWithdrawal', 0)
+          : 0;
+        return minimum is number ? minimum : 0;
+      }
+
       function ownPendingRequest() {
         return request.resource.data.uid == uid()
           && request.resource.data.status == 'pending'
@@ -263,9 +273,23 @@ service cloud.firestore {
           && (request.resource.data.type != 'withdrawal'
               || (request.resource.data.keys().hasAll(
                     ['bankName', 'accountNumber', 'accountName'])
+                  && request.resource.data.direction == 'debit'
+                  && request.resource.data.bankName is string
+                  && request.resource.data.bankName.size() > 0
+                  && request.resource.data.accountNumber is string
+                  && request.resource.data.accountNumber.size() == 10
+                  && request.resource.data.accountName is string
+                  && request.resource.data.accountName.size() > 0
+                  && request.resource.data.amount >= withdrawalMinimum()
                   && withdrawalIsFunded()))
           && (request.resource.data.type != 'deposit'
-              || (request.resource.data.depositorName is string
+              || (request.resource.data.keys().hasAll(
+                    ['depositorName', 'bankUsed', 'proofImage'])
+                  && request.resource.data.direction == 'credit'
+                  && request.resource.data.depositorName is string
+                  && request.resource.data.depositorName.size() > 0
+                  && request.resource.data.bankUsed is string
+                  && request.resource.data.bankUsed.size() > 0
                   && request.resource.data.proofImage is string
                   && request.resource.data.proofImage.size() < 800000))
           && (request.resource.data.type != 'order_payment'
