@@ -211,9 +211,47 @@ a{color:inherit;text-decoration:none}
 
 .scroll{overflow-x:auto}
 
+/* ---------- wallet operations workspace ---------- */
+.page-heading{margin:6px 0 20px}
+.page-heading h1{font-size:clamp(23px,4vw,32px);letter-spacing:-1px}
+.page-heading p{margin-top:7px;color:#8ba3bd;font-size:12.5px;line-height:1.6}
+
+.queue-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.queue-grid .card{margin-bottom:0}
+.queue-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.queue-head .hint{margin:5px 0 0}
+.queue-count{
+    flex-shrink:0;min-width:31px;padding:6px 9px;border-radius:10px;
+    color:#6fe0ff;background:rgba(0,170,255,.11);border:1px solid rgba(0,205,255,.2);
+    text-align:center;font-size:11px;font-weight:900;
+}
+
+.history-tools{display:grid;grid-template-columns:1fr 170px 150px auto;gap:9px;margin-bottom:10px}
+.history-tools input,.history-tools select{
+    width:100%;height:42px;padding:0 12px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.035);
+    color:#fff;font-family:inherit;font-size:11.5px;font-weight:600;
+}
+.history-tools input:focus,.history-tools select:focus{outline:none;border-color:#00d5ff}
+.history-tools select option{background:#0b1524}
+.history-tools .btn{height:42px;white-space:nowrap}
+.history-result{color:#6e849c;font-size:10.5px;margin-bottom:10px}
+
+@media(max-width:920px){
+    .queue-grid{grid-template-columns:1fr}
+    .history-tools{grid-template-columns:1fr 1fr}
+    .history-tools input{grid-column:1/-1}
+}
+
 @media(max-width:820px){
     .stats{grid-template-columns:repeat(2,1fr)}
     .two{grid-template-columns:1fr}
+}
+
+@media(max-width:560px){
+    .stats{grid-template-columns:1fr 1fr}
+    .history-tools{grid-template-columns:1fr}
+    .history-tools input{grid-column:auto}
 }
 
 </style>
@@ -235,6 +273,11 @@ a{color:inherit;text-decoration:none}
             <a class="back-link" href="wallet.html">My Wallet</a>
             <button class="back-link" id="logoutBtn" style="cursor:pointer">Log out</button>
         </div>
+    </div>
+
+    <div class="page-heading">
+        <h1>Wallet operations</h1>
+        <p>Review money requests, settle balances, inspect the complete ledger and control the deposit account.</p>
     </div>
 
     <div class="stats">
@@ -266,16 +309,28 @@ a{color:inherit;text-decoration:none}
     <div class="panel active" id="panel-requests">
         <div id="orderPaymentNote"></div>
 
-        <div class="card">
-            <h3>Pending deposits</h3>
-            <p class="hint">Confirm the transfer landed in the account below, then approve. Approving credits the user's wallet immediately.</p>
-            <div id="pendingDeposits"></div>
-        </div>
+        <div class="queue-grid">
+            <div class="card">
+                <div class="queue-head">
+                    <div>
+                        <h3>Pending deposits</h3>
+                        <p class="hint">Verify the receipt against the bank account before crediting the wallet.</p>
+                    </div>
+                    <span class="queue-count" id="depositQueueCount">0</span>
+                </div>
+                <div id="pendingDeposits"></div>
+            </div>
 
-        <div class="card">
-            <h3>Withdrawals</h3>
-            <p class="hint">Approving releases the funds. Once you have actually sent the bank transfer, mark it paid.</p>
-            <div id="pendingWithdrawals"></div>
+            <div class="card">
+                <div class="queue-head">
+                    <div>
+                        <h3>Withdrawals</h3>
+                        <p class="hint">Approve the debit first, then mark it paid after sending the bank transfer.</p>
+                    </div>
+                    <span class="queue-count" id="withdrawQueueCount">0</span>
+                </div>
+                <div id="pendingWithdrawals"></div>
+            </div>
         </div>
     </div>
 
@@ -283,8 +338,29 @@ a{color:inherit;text-decoration:none}
     <div class="panel" id="panel-history">
         <div class="card">
             <h3>All transactions</h3>
-            <p class="hint">Every wallet movement on the platform — deposits, withdrawals, marketplace payments and payouts, email sale payouts and refunds — newest first.</p>
+            <p class="hint">Every wallet movement on the platform — deposits, withdrawals, marketplace payments, payouts and refunds — newest first.</p>
             <div id="msgHistory"></div>
+            <div class="history-tools">
+                <input type="search" id="historySearch" placeholder="Search user, type or reference…" aria-label="Search transactions">
+                <select id="historyType" aria-label="Filter transaction type">
+                    <option value="">All transaction types</option>
+                    <option value="deposit">Deposits</option>
+                    <option value="withdrawal">Withdrawals</option>
+                    <option value="order_payment">Marketplace purchases</option>
+                    <option value="order_payout">Marketplace payouts</option>
+                    <option value="email_payout">Email payouts</option>
+                    <option value="order_refund">Refunds</option>
+                </select>
+                <select id="historyStatus" aria-label="Filter transaction status">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+                <button class="btn ghost small" id="exportHistoryBtn" type="button">Export CSV</button>
+            </div>
+            <div class="history-result" id="historyResult">Loading ledger…</div>
             <div class="scroll"><table class="tbl" id="historyTable"></table></div>
         </div>
     </div>
@@ -405,13 +481,23 @@ async function start() {
 /* ------------------------------------------------------------------ */
 /* settlement actions                                                  */
 /* ------------------------------------------------------------------ */
-async function act(tx, action, reason = "") {
+async function act(tx, action, reason = "", button = null) {
+    const originalLabel = button?.textContent || "";
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Processing…";
+    }
     try {
         if (action === "approve") await approveTransaction(tx, adminUser);
         else await rejectTransaction(tx, adminUser, reason);
     } catch (err) {
         console.error(err);
         alert(firestoreErrorSummary(err, "that request"));
+    } finally {
+        if (button?.isConnected) {
+            button.disabled = false;
+            button.textContent = originalLabel;
+        }
     }
 }
 
@@ -421,11 +507,11 @@ $("pendingDeposits").addEventListener("click", (e) => {
         const tx = all.find((t) => t.id === btn.dataset.id);
         if (!tx) return;
         if (btn.dataset.act === "reject") {
-            const reason = prompt("Reason for rejecting this deposit?", "") ?? "";
+            const reason = prompt("Reason for rejecting this deposit?", "");
             if (reason === null) return;
-            act(tx, "reject", reason.trim());
-        } else {
-            act(tx, "approve");
+            act(tx, "reject", reason.trim(), btn);
+        } else if (confirm(`Credit ${formatNaira(tx.amount)} to ${tx.email || tx.uid}? Confirm the transfer is visible in the bank account first.`)) {
+            act(tx, "approve", "", btn);
         }
     }
     const img = e.target.closest("img.thumb");
@@ -441,11 +527,14 @@ $("pendingWithdrawals").addEventListener("click", (e) => {
     const tx = all.find((t) => t.id === btn.dataset.id);
     if (!tx) return;
     if (btn.dataset.act === "reject") {
-        const reason = prompt("Reason for rejecting this withdrawal?", "") ?? "";
+        const reason = prompt("Reason for rejecting this withdrawal?", "");
         if (reason === null) return;
-        act(tx, "reject", reason.trim());
+        act(tx, "reject", reason.trim(), btn);
     } else {
-        act(tx, "approve");
+        const message = tx.status === "pending"
+            ? `Approve ${formatNaira(tx.amount)} for ${tx.email || tx.uid}? This deducts the wallet balance.`
+            : `Mark ${formatNaira(tx.amount)} paid? Only continue after the bank transfer has been sent.`;
+        if (confirm(message)) act(tx, "approve", "", btn);
     }
 });
 
@@ -494,6 +583,8 @@ function render(rows) {
     const openWithdrawals = withdrawals.filter((t) => t.status === "pending" || t.status === "approved");
 
     $("pendingCount").textContent = String(pendingDeposits.length + openWithdrawals.length);
+    $("depositQueueCount").textContent = String(pendingDeposits.length);
+    $("withdrawQueueCount").textContent = String(openWithdrawals.length);
     $("statPendingDep").textContent = String(pendingDeposits.length);
     $("statPendingWd").textContent = String(openWithdrawals.length);
     /* Money in and money out across the whole ledger — deposits and
@@ -584,7 +675,25 @@ function withdrawalRow(tx) {
         </div>`;
 }
 
-function renderTable(rows) {
+function filteredHistory() {
+    const search = $("historySearch").value.trim().toLowerCase();
+    const type = $("historyType").value;
+    const status = $("historyStatus").value;
+
+    return all.filter((tx) => {
+        if (type && tx.type !== type) return false;
+        if (status && tx.status !== status) return false;
+        if (!search) return true;
+        const { label, detail } = describeTransaction(tx);
+        return [tx.email, tx.uid, tx.reference, tx.accountNumber, label, detail]
+            .join(" ").toLowerCase().includes(search);
+    });
+}
+
+function renderTable() {
+    const rows = filteredHistory();
+    $("historyResult").textContent = `${rows.length} of ${all.length} ledger entries`;
+
     if (!rows.length) {
         $("historyTable").innerHTML = "";
         return;
@@ -619,6 +728,37 @@ function renderTable(rows) {
 
     $("historyTable").innerHTML = head + `<tbody>${body}</tbody>`;
 }
+
+["historySearch", "historyType", "historyStatus"].forEach((id) => {
+    $(id).addEventListener(id === "historySearch" ? "input" : "change", renderTable);
+});
+
+function csvCell(value) {
+    return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+$("exportHistoryBtn").addEventListener("click", () => {
+    const rows = filteredHistory();
+    if (!rows.length) return alert("There are no matching transactions to export.");
+
+    const headings = ["Date", "User", "Type", "Detail", "Direction", "Amount", "Status", "Balance after", "Reviewed by"];
+    const lines = [headings.map(csvCell).join(",")];
+    rows.forEach((tx) => {
+        const { label, detail } = describeTransaction(tx);
+        lines.push([
+            formatDate(tx.createdAt), tx.email || tx.uid, label, detail,
+            tx.direction, tx.amount, tx.status, tx.balanceAfter ?? "", tx.reviewedBy || ""
+        ].map(csvCell).join(","));
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `mailmart-wallet-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+});
 
 /* ------------------------------------------------------------------ */
 /* tabs                                                                */

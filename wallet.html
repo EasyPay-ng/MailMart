@@ -225,8 +225,87 @@ a{color:inherit;text-decoration:none}
 .empty .big{font-size:15px;font-weight:800;color:#fff;margin-bottom:7px}
 .empty p{font-size:12.5px;line-height:1.6}
 
+/* ---------- wallet information architecture ---------- */
+.page-heading{margin:8px 0 20px}
+.page-heading h1{font-size:clamp(24px,4vw,34px);letter-spacing:-1.2px}
+.page-heading p{margin-top:7px;color:#8ba3bd;font-size:12.5px;line-height:1.6}
+
+.balance-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.balance-actions{display:flex;gap:9px;position:relative;z-index:1}
+.balance-action{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-height:40px;padding:0 15px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.07);color:#dff6ff;
+    font-size:11.5px;font-weight:800;cursor:pointer;transition:.2s;
+}
+.balance-action:hover{background:rgba(255,255,255,.13);transform:translateY(-2px)}
+.balance-action.primary{background:#fff;color:#07335d;border-color:#fff}
+
+.wallet-summary{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;
+}
+.summary-card{
+    padding:15px 16px;border-radius:15px;
+    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);
+}
+.summary-card .k{color:#8ba3bd;font-size:10px;font-weight:700;letter-spacing:.65px;text-transform:uppercase}
+.summary-card .v{margin-top:7px;font-size:18px;font-weight:900;letter-spacing:-.5px}
+.summary-card .s{margin-top:5px;color:#6e849c;font-size:10.5px;line-height:1.4}
+.summary-card .v.amber{color:#ffd479}
+.summary-card .v.cyan{color:#6fe0ff}
+.summary-card .v.green{color:#69edb8}
+
+.wallet-layout{display:grid;grid-template-columns:minmax(260px,.8fr) minmax(0,1.2fr);gap:16px;align-items:start}
+.wallet-layout.withdraw-layout{grid-template-columns:minmax(0,1.2fr) minmax(260px,.8fr)}
+.wallet-layout .card{margin-bottom:16px}
+.wallet-layout > * > .card:last-child{margin-bottom:0}
+
+.process-list{display:flex;flex-direction:column;gap:14px;margin-top:16px}
+.process-step{display:flex;align-items:flex-start;gap:11px}
+.process-step .num{
+    width:27px;height:27px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    border-radius:9px;background:rgba(0,130,255,.11);border:1px solid rgba(0,205,255,.18);
+    color:#6fe0ff;font-size:10px;font-weight:900;
+}
+.process-step strong{display:block;font-size:12px;margin-top:1px}
+.process-step p{margin-top:3px;color:#7c91a8;font-size:10.5px;line-height:1.5}
+
+.withdraw-summary{
+    padding:18px;border-radius:14px;margin-bottom:16px;
+    background:linear-gradient(135deg,rgba(8,124,255,.15),rgba(0,213,255,.05));
+    border:1px solid rgba(0,213,255,.18);
+}
+.withdraw-summary .k{font-size:10px;color:#8ba3bd;text-transform:uppercase;letter-spacing:.7px;font-weight:700}
+.withdraw-summary .v{font-size:25px;font-weight:900;letter-spacing:-.8px;margin-top:6px}
+.withdraw-summary .s{font-size:11px;color:#8ba3bd;margin-top:6px}
+
+.history-toolbar{display:grid;grid-template-columns:1fr 170px 150px;gap:9px;margin-bottom:8px}
+.history-toolbar input,.history-toolbar select{
+    width:100%;height:42px;padding:0 12px;border-radius:11px;
+    border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.035);
+    color:#fff;font-family:inherit;font-size:11.5px;font-weight:600;
+}
+.history-toolbar input:focus,.history-toolbar select:focus{outline:none;border-color:#00d5ff}
+.history-toolbar select option{background:#0b1524}
+.history-result{color:#6e849c;font-size:10.5px;margin:10px 0 4px}
+
+@media(max-width:820px){
+    .wallet-layout,.wallet-layout.withdraw-layout{grid-template-columns:1fr}
+    .wallet-summary{grid-template-columns:1fr 1fr}
+    .history-toolbar{grid-template-columns:1fr 1fr}
+    .history-toolbar input{grid-column:1/-1}
+}
+
 @media(max-width:620px){
+    .balance-card{padding:22px 18px}
     .balance-card .amt{font-size:31px}
+    .balance-head{align-items:flex-start}
+    .balance-actions{width:100%}
+    .balance-action{flex:1}
+    .wallet-summary{grid-template-columns:1fr}
+    .history-toolbar{grid-template-columns:1fr}
+    .history-toolbar input{grid-column:auto}
     .two{grid-template-columns:1fr}
     .wrap{padding:18px 14px 70px}
 }
@@ -245,98 +324,178 @@ a{color:inherit;text-decoration:none}
 
     <div class="topbar">
         <div class="brand"><span class="dot">M</span> MailMart Wallet</div>
-        <div style="display:flex;gap:9px">
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
             <a class="back-link" href="dashboard.html">Dashboard</a>
-            <a class="back-link" href="email-sale.html">Sell Email</a>
+            <a class="back-link" href="marketplace.html">Marketplace</a>
+            <a class="back-link" href="orders.html">Orders</a>
             <button class="back-link" id="logoutBtn" style="cursor:pointer">Log out</button>
         </div>
     </div>
 
-    <div class="balance-card">
-        <div class="lbl">Available Balance</div>
-        <div class="amt" id="balanceEl">₦0.00</div>
-        <div class="sub" id="balanceSub">Loading…</div>
+    <div class="page-heading">
+        <h1>Wallet</h1>
+        <p>Deposit funds, withdraw to your bank, and follow every movement in one ledger.</p>
     </div>
 
-    <div class="tabs">
+    <div class="balance-card">
+        <div class="balance-head">
+            <div>
+                <div class="lbl">Available Balance</div>
+                <div class="amt" id="balanceEl">₦0.00</div>
+                <div class="sub" id="balanceSub">Loading…</div>
+            </div>
+            <div class="balance-actions">
+                <button class="balance-action primary" type="button" data-open-tab="deposit">＋ Add money</button>
+                <button class="balance-action" type="button" data-open-tab="withdraw">↗ Withdraw</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wallet-summary" aria-label="Wallet request summary">
+        <div class="summary-card">
+            <div class="k">Pending deposits</div>
+            <div class="v amber" id="pendingDepositTotal">₦0.00</div>
+            <div class="s" id="pendingDepositNote">No deposit waiting</div>
+        </div>
+        <div class="summary-card">
+            <div class="k">Pending withdrawals</div>
+            <div class="v cyan" id="pendingWithdrawalTotal">₦0.00</div>
+            <div class="s" id="pendingWithdrawalNote">No withdrawal waiting</div>
+        </div>
+        <div class="summary-card">
+            <div class="k">Completed activity</div>
+            <div class="v green" id="completedTxCount">0</div>
+            <div class="s">Approved wallet movements</div>
+        </div>
+    </div>
+
+    <div class="tabs" aria-label="Wallet sections">
         <button class="tab active" data-tab="deposit">Deposit</button>
         <button class="tab" data-tab="withdraw">Withdraw</button>
-        <button class="tab" data-tab="history">History <span class="badge" id="txCount">0</span></button>
+        <button class="tab" data-tab="history">Transactions <span class="badge" id="txCount">0</span></button>
     </div>
 
     <!-- ---------------- DEPOSIT ---------------- -->
     <div class="panel active" id="panel-deposit">
+        <div class="wallet-layout">
+            <div>
+                <div id="depositSetup"></div>
 
-        <div id="depositSetup"></div>
-
-        <div class="card">
-            <h3>Confirm your transfer</h3>
-            <p class="hint">Transfer the exact amount, then upload a screenshot of the receipt. An administrator credits your wallet once the transfer is confirmed — usually within an hour.</p>
-
-            <div class="field">
-                <label for="depAmount">Amount (₦)</label>
-                <input type="number" id="depAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
+                <div class="card">
+                    <h3>How deposits work</h3>
+                    <p class="hint">Your balance changes only after the transfer has been checked.</p>
+                    <div class="process-list">
+                        <div class="process-step">
+                            <span class="num">1</span>
+                            <div><strong>Send the transfer</strong><p>Use the exact bank details shown above.</p></div>
+                        </div>
+                        <div class="process-step">
+                            <span class="num">2</span>
+                            <div><strong>Attach your receipt</strong><p>Submit the amount, sender name and proof.</p></div>
+                        </div>
+                        <div class="process-step">
+                            <span class="num">3</span>
+                            <div><strong>Admin confirms it</strong><p>The approved amount is added to your available balance.</p></div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="two">
+            <div class="card">
+                <h3>Confirm your transfer</h3>
+                <p class="hint">Transfer the exact amount, then upload a screenshot of the receipt. Confirmation usually takes less than an hour.</p>
+
                 <div class="field">
-                    <label for="depName">Name on the sending account</label>
-                    <input type="text" id="depName" placeholder="Full name used for the transfer">
+                    <label for="depAmount">Amount transferred (₦)</label>
+                    <input type="number" id="depAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
                 </div>
+
+                <div class="two">
+                    <div class="field">
+                        <label for="depName">Name on the sending account</label>
+                        <input type="text" id="depName" placeholder="Full name used for the transfer">
+                    </div>
+                    <div class="field">
+                        <label for="depBank">Bank you sent from</label>
+                        <select id="depBank"></select>
+                    </div>
+                </div>
+
                 <div class="field">
-                    <label for="depBank">Bank you sent from</label>
-                    <select id="depBank"></select>
+                    <label>Proof of payment</label>
+                    <div class="drop" id="dropZone" role="button" tabindex="0" aria-controls="proofInput">
+                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                        <div class="big" id="dropLabel">Choose a screenshot</div>
+                        <p>PNG, JPG or WEBP. The image is resized before upload.</p>
+                        <img id="proofPreview" alt="Proof preview">
+                    </div>
+                    <input type="file" id="proofInput" accept="image/*" style="display:none">
                 </div>
+
+                <div id="depositMsg"></div>
+                <button class="btn" id="depositBtn">Submit deposit for review</button>
             </div>
-
-            <div class="field">
-                <label>Proof of payment</label>
-                <div class="drop" id="dropZone">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-                    <div class="big" id="dropLabel">Choose a screenshot</div>
-                    <p>Tap to pick your receipt image.<br>It is resized before upload, so any size works.</p>
-                    <img id="proofPreview" alt="Proof preview">
-                </div>
-                <input type="file" id="proofInput" accept="image/*" style="display:none">
-            </div>
-
-            <div id="depositMsg"></div>
-
-            <button class="btn" id="depositBtn">Submit deposit</button>
         </div>
     </div>
 
     <!-- ---------------- WITHDRAW ---------------- -->
     <div class="panel" id="panel-withdraw">
-        <div class="card">
-            <h3>Withdraw to your bank</h3>
-            <p class="hint">Withdrawals are reviewed and paid out within 24 hours. Make sure the account name matches the name on your MailMart account.</p>
+        <div class="wallet-layout withdraw-layout">
+            <div class="card">
+                <h3>Withdraw to your bank</h3>
+                <p class="hint">Enter the account that should receive your funds. Review the details carefully before submitting.</p>
 
-            <div id="withdrawNotice"></div>
+                <div id="withdrawNotice"></div>
 
-            <div class="field">
-                <label for="wdAmount">Amount (₦)</label>
-                <input type="number" id="wdAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
+                <div class="field">
+                    <label for="wdAmount">Amount to withdraw (₦)</label>
+                    <input type="number" id="wdAmount" min="1" step="1" placeholder="e.g. 5000" inputmode="numeric">
+                </div>
+
+                <div class="field">
+                    <label for="wdBank">Receiving bank</label>
+                    <select id="wdBank"></select>
+                </div>
+
+                <div class="field">
+                    <label for="wdAccount">Account number</label>
+                    <input type="text" id="wdAccount" placeholder="0123456789" inputmode="numeric" maxlength="10">
+                </div>
+
+                <div class="field">
+                    <label for="wdAccountName">Account name</label>
+                    <input type="text" id="wdAccountName" placeholder="Exactly as it appears on the account">
+                </div>
+
+                <div id="withdrawMsg"></div>
+                <button class="btn" id="withdrawBtn">Request withdrawal</button>
             </div>
 
-            <div class="field">
-                <label for="wdBank">Bank</label>
-                <select id="wdBank"></select>
+            <div>
+                <div class="card">
+                    <h3>Withdrawal summary</h3>
+                    <p class="hint">Only your available balance can be withdrawn.</p>
+                    <div class="withdraw-summary">
+                        <div class="k">Available now</div>
+                        <div class="v" id="withdrawBalance">₦0.00</div>
+                        <div class="s" id="withdrawMinimum">No minimum configured</div>
+                    </div>
+                    <div class="process-list">
+                        <div class="process-step">
+                            <span class="num">1</span>
+                            <div><strong>Request submitted</strong><p>The amount is checked against your balance.</p></div>
+                        </div>
+                        <div class="process-step">
+                            <span class="num">2</span>
+                            <div><strong>Request approved</strong><p>The amount is reserved and your ledger updates.</p></div>
+                        </div>
+                        <div class="process-step">
+                            <span class="num">3</span>
+                            <div><strong>Bank transfer sent</strong><p>Withdrawals are normally completed within 24 hours.</p></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <div class="field">
-                <label for="wdAccount">Account number</label>
-                <input type="text" id="wdAccount" placeholder="0123456789" inputmode="numeric" maxlength="10">
-            </div>
-
-            <div class="field">
-                <label for="wdAccountName">Account name</label>
-                <input type="text" id="wdAccountName" placeholder="Exactly as it appears on the account">
-            </div>
-
-            <div id="withdrawMsg"></div>
-
-            <button class="btn" id="withdrawBtn">Request withdrawal</button>
         </div>
     </div>
 
@@ -344,7 +503,24 @@ a{color:inherit;text-decoration:none}
     <div class="panel" id="panel-history">
         <div class="card">
             <h3>Transaction history</h3>
-            <p class="hint">Everything that has moved through your wallet — deposits, withdrawals, marketplace payments, email sale payouts and refunds — newest first.</p>
+            <p class="hint">Deposits, withdrawals, marketplace payments, payouts and refunds are kept together in one audit trail.</p>
+
+            <div class="history-toolbar">
+                <input type="search" id="txSearch" placeholder="Search transactions…" aria-label="Search transactions">
+                <select id="txDirection" aria-label="Filter by direction">
+                    <option value="">Money in and out</option>
+                    <option value="credit">Money in</option>
+                    <option value="debit">Money out</option>
+                </select>
+                <select id="txStatus" aria-label="Filter by status">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                </select>
+            </div>
+            <div class="history-result" id="historyResult">Loading transactions…</div>
             <div id="historyList"></div>
         </div>
     </div>
@@ -393,6 +569,7 @@ let settings = null;
 let proofData = "";
 let unsubBalance = null;
 let profileRepairStarted = false;
+let allTransactions = [];
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
@@ -416,8 +593,10 @@ async function start(user) {
         const data = snap.exists() ? snap.data() : {};
         currentBalance = Number(data.balance || 0);
         $("balanceEl").textContent = formatNaira(currentBalance);
+        $("withdrawBalance").textContent = formatNaira(currentBalance);
         $("balanceSub").innerHTML =
             `Signed in as <b>${esc(user.email)}</b>`;
+        if (settings) renderWithdrawNotice();
 
         /* A login without a profile (a sign-up whose profile write was
            refused) must not read as a permanent ₦0.00 wallet: create the
@@ -464,10 +643,14 @@ function renderDepositSetup() {
     if (!settings || !settings.depositAccountNumber) {
         box.innerHTML =
             '<div class="notice warn">The administrator has not published a ' +
-            "deposit account yet. Check back shortly.</div>";
+            'deposit account yet. Check back shortly.</div>';
+        $("depositBtn").disabled = true;
+        $("depositBtn").textContent = "Deposits temporarily unavailable";
         return;
     }
 
+    $("depositBtn").disabled = false;
+    $("depositBtn").textContent = "Submit deposit for review";
     box.innerHTML = `
         <div class="card">
             <h3>Transfer to this account</h3>
@@ -516,6 +699,12 @@ function renderDepositSetup() {
 
 /* proof upload -> base64 */
 $("dropZone").addEventListener("click", () => $("proofInput").click());
+$("dropZone").addEventListener("keydown", (event) => {
+    if (["Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        $("proofInput").click();
+    }
+});
 
 $("proofInput").addEventListener("change", async (e) => {
     const file = e.target.files && e.target.files[0];
@@ -583,7 +772,7 @@ $("depositBtn").addEventListener("click", async () => {
         notice($("depositMsg"), "bad", esc(firestoreErrorSummary(err, "your deposit")));
     } finally {
         btn.disabled = false;
-        btn.textContent = "Submit deposit";
+        btn.textContent = "Submit deposit for review";
     }
 });
 
@@ -594,6 +783,10 @@ function renderWithdrawNotice() {
     const min = Number(settings?.minWithdrawal || 0);
     const bits = [`Available: <b>${formatNaira(currentBalance)}</b>`];
     if (min > 0) bits.push(`Minimum withdrawal: <b>${formatNaira(min)}</b>`);
+    $("withdrawBalance").textContent = formatNaira(currentBalance);
+    $("withdrawMinimum").textContent = min > 0
+        ? `Minimum withdrawal: ${formatNaira(min)}`
+        : "No minimum configured";
     $("withdrawNotice").innerHTML =
         `<div class="notice info">${bits.join(" &nbsp;·&nbsp; ")}</div>`;
 }
@@ -655,63 +848,123 @@ $("withdrawBtn").addEventListener("click", async () => {
 /* history                                                             */
 /* ------------------------------------------------------------------ */
 function renderHistory(rows) {
+    allTransactions = rows;
     $("txCount").textContent = String(rows.length);
 
+    const pendingDeposits = rows.filter((tx) =>
+        tx.type === "deposit" && tx.status === "pending");
+    const pendingWithdrawals = rows.filter((tx) =>
+        tx.type === "withdrawal" && ["pending", "approved"].includes(tx.status));
+    const completed = rows.filter((tx) => ["approved", "completed"].includes(tx.status));
+
+    const depositTotal = pendingDeposits.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+    const withdrawalTotal = pendingWithdrawals.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+
+    $("pendingDepositTotal").textContent = formatNaira(depositTotal);
+    $("pendingDepositNote").textContent = pendingDeposits.length
+        ? `${pendingDeposits.length} ${pendingDeposits.length === 1 ? "request" : "requests"} under review`
+        : "No deposit waiting";
+    $("pendingWithdrawalTotal").textContent = formatNaira(withdrawalTotal);
+    $("pendingWithdrawalNote").textContent = pendingWithdrawals.length
+        ? `${pendingWithdrawals.length} ${pendingWithdrawals.length === 1 ? "request" : "requests"} being processed`
+        : "No withdrawal waiting";
+    $("completedTxCount").textContent = String(completed.length);
+
+    applyHistoryFilters();
+}
+
+function filteredTransactions() {
+    const search = $("txSearch").value.trim().toLowerCase();
+    const direction = $("txDirection").value;
+    const status = $("txStatus").value;
+
+    return allTransactions.filter((tx) => {
+        if (direction && tx.direction !== direction) return false;
+        if (status && tx.status !== status) return false;
+        if (!search) return true;
+        const { label, detail } = describeTransaction(tx);
+        const haystack = [label, detail, tx.type, tx.status, tx.amount, tx.reference]
+            .join(" ").toLowerCase();
+        return haystack.includes(search);
+    });
+}
+
+function applyHistoryFilters() {
+    const rows = filteredTransactions();
+    $("historyResult").textContent = `${rows.length} of ${allTransactions.length} transactions`;
+
     if (!rows.length) {
-        $("historyList").innerHTML =
-            '<div class="empty"><div class="big">No transactions yet</div>' +
-            "<p>Deposits, withdrawals, marketplace payments, email sale payouts " +
-            "and refunds will all appear here.</p></div>";
+        const hasFilters = Boolean(
+            $("txSearch").value.trim() || $("txDirection").value || $("txStatus").value);
+        $("historyList").innerHTML = hasFilters
+            ? '<div class="empty"><div class="big">No matching transactions</div><p>Change or clear the filters above.</p></div>'
+            : '<div class="empty"><div class="big">No transactions yet</div><p>Deposits, withdrawals, marketplace payments, payouts and refunds will appear here.</p></div>';
         return;
     }
 
-    $("historyList").innerHTML = rows
-        .map((tx) => {
-            const credit = tx.direction === "credit";
-            const arrow = credit ? "↓" : "↑";
-            const { label, detail } = describeTransaction(tx);
-
-            const reason =
-                tx.status === "rejected" && tx.rejectionReason
-                    ? `<div class="d">${esc(tx.rejectionReason)}</div>`
-                    : "";
-
-            return `
-                <div class="tx">
-                    <div class="ic ${credit ? "credit" : "debit"}">${arrow}</div>
-                    <div class="meta">
-                        <div class="t">${label}</div>
-                        <div class="d">${esc(detail)}</div>
-                        <div class="d">${esc(formatDate(tx.createdAt))}</div>
-                        ${reason}
-                    </div>
-                    <div class="right">
-                        <div class="a ${credit ? "credit" : "debit"}">
-                            ${credit ? "+" : "−"}${esc(formatNaira(tx.amount))}
-                        </div>
-                        <span class="status ${esc(tx.status)}">${esc(tx.status)}</span>
-                    </div>
-                </div>`;
-        })
-        .join("");
+    $("historyList").innerHTML = rows.map(transactionRow).join("");
 }
+
+function transactionRow(tx) {
+    const credit = tx.direction === "credit";
+    const arrow = credit ? "↓" : "↑";
+    const { label, detail } = describeTransaction(tx);
+    const reason = tx.status === "rejected" && tx.rejectionReason
+        ? `<div class="d">Reason: ${esc(tx.rejectionReason)}</div>`
+        : "";
+    const balanceAfter = tx.balanceAfter !== undefined &&
+        tx.balanceAfter !== null && Number.isFinite(Number(tx.balanceAfter))
+        ? `<div class="d">Balance after: ${esc(formatNaira(tx.balanceAfter))}</div>`
+        : "";
+
+    return `
+        <div class="tx">
+            <div class="ic ${credit ? "credit" : "debit"}">${arrow}</div>
+            <div class="meta">
+                <div class="t">${esc(label)}</div>
+                <div class="d">${esc(detail)}</div>
+                <div class="d">${esc(formatDate(tx.createdAt))}</div>
+                ${balanceAfter}
+                ${reason}
+            </div>
+            <div class="right">
+                <div class="a ${credit ? "credit" : "debit"}">
+                    ${credit ? "+" : "−"}${esc(formatNaira(tx.amount))}
+                </div>
+                <span class="status ${esc(tx.status)}">${esc(tx.status)}</span>
+            </div>
+        </div>`;
+}
+
+["txSearch", "txDirection", "txStatus"].forEach((id) => {
+    $(id).addEventListener(id === "txSearch" ? "input" : "change", applyHistoryFilters);
+});
 
 /* ------------------------------------------------------------------ */
 /* tabs                                                                */
 /* ------------------------------------------------------------------ */
-function switchTab(name) {
+function switchTab(name, updateHash = true) {
+    const allowed = ["deposit", "withdraw", "history"];
+    const selected = allowed.includes(name) ? name : "deposit";
     document.querySelectorAll(".tab").forEach((t) =>
-        t.classList.toggle("active", t.dataset.tab === name));
+        t.classList.toggle("active", t.dataset.tab === selected));
     document.querySelectorAll(".panel").forEach((p) =>
-        p.classList.toggle("active", p.id === `panel-${name}`));
+        p.classList.toggle("active", p.id === `panel-${selected}`));
+    if (selected === "withdraw") renderWithdrawNotice();
+    if (updateHash) history.replaceState(null, "", `#${selected}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
-        switchTab(tab.dataset.tab);
-        if (tab.dataset.tab === "withdraw") renderWithdrawNotice();
-    });
+    tab.addEventListener("click", () => switchTab(tab.dataset.tab));
 });
+
+document.querySelectorAll("[data-open-tab]").forEach((button) => {
+    button.addEventListener("click", () => switchTab(button.dataset.openTab));
+});
+
+window.addEventListener("hashchange", () => switchTab(location.hash.slice(1), false));
+if (location.hash) switchTab(location.hash.slice(1), false);
 
 </script>
 

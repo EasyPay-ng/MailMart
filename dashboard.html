@@ -951,6 +951,265 @@ body::before{
     border:1px solid rgba(255,50,80,.2);
 }
 
+/* ---------- Dashboard workspace ---------- */
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(310px,.65fr);
+    gap:18px;
+    margin-bottom:26px;
+}
+
+.wallet-hub{
+    position:relative;
+    overflow:hidden;
+    background:
+        radial-gradient(circle at 92% 0%,rgba(0,213,255,.17),transparent 42%),
+        linear-gradient(145deg,rgba(8,57,115,.92),rgba(3,13,27,.97));
+}
+
+.wallet-hub::after{
+    content:"";
+    position:absolute;
+    width:180px;
+    height:180px;
+    border-radius:50%;
+    right:-90px;
+    bottom:-110px;
+    border:28px solid rgba(0,213,255,.05);
+    pointer-events:none;
+}
+
+.wallet-total{
+    margin:8px 0 24px;
+}
+
+.wallet-total .label{
+    color:#8ba3bd;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.7px;
+    text-transform:uppercase;
+}
+
+.wallet-total .amount{
+    margin-top:7px;
+    font-size:clamp(32px,4vw,46px);
+    line-height:1;
+    font-weight:900;
+    letter-spacing:-1.8px;
+}
+
+.wallet-total .helper{
+    margin-top:9px;
+    color:#8ba3bd;
+    font-size:11.5px;
+}
+
+.wallet-actions-wide{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+}
+
+.wallet-action{
+    min-height:43px;
+    padding:0 17px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    border-radius:12px;
+    border:1px solid rgba(0,205,255,.18);
+    color:#dff6ff;
+    background:rgba(255,255,255,.05);
+    font-size:11.5px;
+    font-weight:800;
+    transition:.2s;
+}
+
+.wallet-action.primary{
+    border-color:transparent;
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    color:#fff;
+}
+
+.wallet-action:hover{
+    transform:translateY(-2px);
+    background:rgba(255,255,255,.1);
+}
+
+.wallet-action.primary:hover{
+    background:linear-gradient(135deg,#087cff,#00d5ff);
+    box-shadow:0 12px 28px rgba(0,150,255,.24);
+}
+
+.wallet-metrics{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    position:relative;
+    z-index:1;
+}
+
+.wallet-metric{
+    min-width:0;
+    padding:12px 13px;
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:12px;
+    background:rgba(0,0,0,.14);
+}
+
+.wallet-metric span{
+    display:block;
+    color:#8ba3bd;
+    font-size:9.5px;
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+.wallet-metric strong{
+    display:block;
+    overflow:hidden;
+    color:#f2f8ff;
+    font-size:12px;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.quick-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.quick-action{
+    min-height:92px;
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    border:1px solid rgba(0,205,255,.13);
+    border-radius:14px;
+    background:rgba(255,255,255,.025);
+    transition:.22s;
+}
+
+.quick-action:hover{
+    transform:translateY(-3px);
+    border-color:rgba(0,205,255,.34);
+    background:rgba(0,130,255,.07);
+}
+
+.quick-action .qicon{
+    width:31px;
+    height:31px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    color:#6fe0ff;
+    background:rgba(0,130,255,.11);
+    border:1px solid rgba(0,205,255,.16);
+    font-size:14px;
+    font-weight:900;
+}
+
+.quick-action strong{
+    display:block;
+    margin-top:12px;
+    font-size:11.5px;
+}
+
+.quick-action small{
+    display:block;
+    margin-top:3px;
+    color:#758ba3;
+    font-size:9.5px;
+    line-height:1.4;
+}
+
+.activity-grid{
+    grid-template-columns:1.15fr .85fr;
+}
+
+.feed{
+    display:flex;
+    flex-direction:column;
+}
+
+.feed-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:13px 0;
+    border-bottom:1px solid rgba(255,255,255,.06);
+}
+
+.feed-row:first-child{padding-top:0}
+.feed-row:last-child{padding-bottom:0;border-bottom:0}
+
+.feed-icon{
+    width:38px;
+    height:38px;
+    flex:0 0 38px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:11px;
+    color:#6fe0ff;
+    background:rgba(0,130,255,.09);
+    border:1px solid rgba(0,205,255,.14);
+    font-size:12px;
+    font-weight:900;
+}
+
+.feed-icon.credit{color:#69edb8;background:rgba(0,220,150,.08);border-color:rgba(0,220,150,.16)}
+.feed-icon.debit{color:#ff9aa9;background:rgba(255,50,80,.08);border-color:rgba(255,90,110,.16)}
+
+.feed-main{flex:1;min-width:0}
+.feed-title{
+    overflow:hidden;
+    color:#e9f2fb;
+    font-size:12px;
+    font-weight:700;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.feed-meta{
+    overflow:hidden;
+    margin-top:4px;
+    color:#71869e;
+    font-size:10px;
+    line-height:1.4;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+.feed-side{text-align:right;flex-shrink:0}
+.feed-amount{font-size:12px;font-weight:800}
+.feed-amount.credit{color:#69edb8}
+.feed-amount.debit{color:#ff9aa9}
+.feed-side .pill{margin-top:5px}
+
+.empty-state{
+    padding:28px 10px;
+    text-align:center;
+    color:#71869e;
+    font-size:11.5px;
+    line-height:1.6;
+}
+
+.empty-state strong{
+    display:block;
+    margin-bottom:5px;
+    color:#dbe9f7;
+    font-size:13px;
+}
+
+.pill.ship{color:#6fe0ff;background:rgba(0,213,255,.10);border:1px solid rgba(0,213,255,.2)}
+.pill.cancel{color:#ff9aa9;background:rgba(255,50,80,.1);border:1px solid rgba(255,50,80,.2)}
+
 /* ---------- Loader ---------- */
 
 .loading-screen{
@@ -1001,7 +1260,9 @@ body::before{
         grid-template-columns:repeat(2,1fr);
     }
 
-    .grid-2{
+    .grid-2,
+    .dashboard-grid,
+    .activity-grid{
         grid-template-columns:1fr;
     }
 }
@@ -1053,7 +1314,16 @@ body::before{
 @media(max-width:560px){
 
     .stats{
-        grid-template-columns:1fr;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+    }
+
+    .stat{
+        padding:16px;
+    }
+
+    .stat .val{
+        font-size:21px;
     }
 
     .services{
@@ -1062,6 +1332,27 @@ body::before{
 
     .profile-chip .who{
         display:none;
+    }
+
+    .wallet-metrics{
+        grid-template-columns:1fr;
+    }
+
+    .wallet-actions-wide .wallet-action{
+        flex:1;
+        min-width:calc(50% - 6px);
+    }
+
+    .quick-grid{
+        grid-template-columns:1fr 1fr;
+    }
+
+    .feed-row{
+        align-items:flex-start;
+    }
+
+    .feed-side{
+        max-width:92px;
     }
 
     .table .hide-sm{
@@ -1170,8 +1461,7 @@ body::before{
 
             <div class="top-actions">
 
-                <button class="icon-btn" title="Notifications">
-                    <span class="dot"></span>
+                <button class="icon-btn" id="activityBtn" title="Recent activity" aria-label="Go to recent activity">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
                 </button>
 
@@ -1191,243 +1481,143 @@ body::before{
 
         </div>
 
-        <!-- Stats -->
-        <section class="stats">
+        <!-- Live account summary -->
+        <section class="stats" aria-label="Account overview">
 
             <div class="stat">
                 <div class="top">
-                    <span class="lbl">Wallet Balance</span>
+                    <span class="lbl">Available Balance</span>
                     <span class="badge">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M16 12h.01"/><path d="M3 9h18"/></svg>
                     </span>
                 </div>
-                <div class="val" id="statBalance">$0.00</div>
-                <div class="trend up">▲ 12.4% <span class="muted">vs last week</span></div>
+                <div class="val" id="statBalance">₦0.00</div>
+                <div class="trend up"><span id="balanceNote">Live wallet balance</span></div>
             </div>
 
             <div class="stat">
                 <div class="top">
-                    <span class="lbl">Active Orders</span>
+                    <span class="lbl">Wallet Requests</span>
+                    <span class="badge">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="m17 7-5-5-5 5"/><path d="m17 17-5 5-5-5"/></svg>
+                    </span>
+                </div>
+                <div class="val" id="statRequests">0</div>
+                <div class="trend"><span class="muted" id="requestNote">No request waiting</span></div>
+            </div>
+
+            <div class="stat">
+                <div class="top">
+                    <span class="lbl">Active Purchases</span>
                     <span class="badge">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     </span>
                 </div>
                 <div class="val" id="statOrders">0</div>
-                <div class="trend up">▲ 3 <span class="muted">new today</span></div>
+                <div class="trend"><span class="muted" id="orderNote">No purchase in progress</span></div>
             </div>
 
             <div class="stat">
                 <div class="top">
-                    <span class="lbl">Emails Purchased</span>
+                    <span class="lbl">Active Sales</span>
                     <span class="badge">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                     </span>
                 </div>
-                <div class="val" id="statEmails">0</div>
-                <div class="trend up">▲ 8.1% <span class="muted">this month</span></div>
-            </div>
-
-            <div class="stat">
-                <div class="top">
-                    <span class="lbl">Completed Jobs</span>
-                    <span class="badge">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="m9 11 3 3L22 4"/></svg>
-                    </span>
-                </div>
-                <div class="val" id="statDone">0</div>
-                <div class="trend down">▼ 2.0% <span class="muted">vs last month</span></div>
+                <div class="val" id="statSales">0</div>
+                <div class="trend"><span class="muted" id="salesNote">No sale in progress</span></div>
             </div>
 
         </section>
 
-        <!-- Chart + Wallet -->
-        <section class="grid-2">
-
-            <div class="panel">
+        <!-- Primary tasks: wallet first, then the actions people use most -->
+        <section class="dashboard-grid">
+            <div class="panel wallet-hub">
                 <div class="panel-head">
-                    <h2>Revenue &amp; Spend</h2>
-                    <a class="link">Last 7 days</a>
+                    <h2>Wallet</h2>
+                    <a class="link" href="wallet.html#history">Full history</a>
                 </div>
 
-                <svg class="chart" viewBox="0 0 600 200" preserveAspectRatio="none">
-                    <defs>
-                        <linearGradient id="fill1" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="rgba(0,213,255,.35)"/>
-                            <stop offset="100%" stop-color="rgba(0,213,255,0)"/>
-                        </linearGradient>
-                        <linearGradient id="fill2" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="rgba(8,124,255,.25)"/>
-                            <stop offset="100%" stop-color="rgba(8,124,255,0)"/>
-                        </linearGradient>
-                    </defs>
+                <div class="wallet-total">
+                    <div class="label">Ready to spend or withdraw</div>
+                    <div class="amount" id="walletAv">₦0.00</div>
+                    <div class="helper">Wallet updates appear here as soon as they are approved.</div>
+                </div>
 
-                    <!-- grid lines -->
-                    <g stroke="rgba(255,255,255,.05)" stroke-width="1">
-                        <line x1="0" y1="40" x2="600" y2="40"/>
-                        <line x1="0" y1="90" x2="600" y2="90"/>
-                        <line x1="0" y1="140" x2="600" y2="140"/>
-                        <line x1="0" y1="190" x2="600" y2="190"/>
-                    </g>
+                <div class="wallet-actions-wide">
+                    <a class="wallet-action primary" href="wallet.html#deposit">＋ Add money</a>
+                    <a class="wallet-action" href="wallet.html#withdraw">↗ Withdraw</a>
+                    <a class="wallet-action" href="wallet.html#history">≡ Transactions</a>
+                </div>
 
-                    <!-- area: revenue -->
-                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70 L600,200 L0,200 Z" fill="url(#fill1)"/>
-                    <path d="M0,150 L100,120 L200,135 L300,80 L400,95 L500,50 L600,70" fill="none" stroke="#00d5ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-
-                    <!-- area: spend -->
-                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145 L600,200 L0,200 Z" fill="url(#fill2)"/>
-                    <path d="M0,175 L100,165 L200,170 L300,150 L400,160 L500,130 L600,145" fill="none" stroke="#087cff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-
-                <div class="chart-legend">
-                    <div class="item"><span class="swatch" style="background:#00d5ff"></span> Revenue</div>
-                    <div class="item"><span class="swatch" style="background:#087cff"></span> Spend</div>
+                <div class="wallet-metrics">
+                    <div class="wallet-metric">
+                        <span>Money received</span>
+                        <strong id="walletReceived">₦0.00</strong>
+                    </div>
+                    <div class="wallet-metric">
+                        <span>Money spent</span>
+                        <strong id="walletSpent">₦0.00</strong>
+                    </div>
+                    <div class="wallet-metric">
+                        <span>Last activity</span>
+                        <strong id="walletLast">No activity yet</strong>
+                    </div>
                 </div>
             </div>
 
-            <div class="panel">
+            <div class="panel" id="services">
                 <div class="panel-head">
-                    <h2>My Wallet</h2>
-                    <a class="link" id="walletLink" href="wallet.html">Manage</a>
+                    <h2>Quick actions</h2>
+                    <a class="link" href="marketplace.html">Marketplace</a>
                 </div>
 
-                <div class="wallet">
-                    <div class="av" id="walletAv">$0.00</div>
-                    <div class="cap">Available balance</div>
-                    <div class="wallet-actions">
-                        <button class="btn-fill" id="addFundsBtn">Add Funds</button>
-                        <button class="btn-ghost" id="withdrawBtn">Withdraw</button>
-                    </div>
-                </div>
-
-                <div class="mini-list" id="miniList">
-                    <div class="mini">
-                        <div class="left"><span class="d">₦</span> Wallet</div>
-                        <div class="amt" id="miniWallet">—</div>
-                    </div>
-                    <div class="mini">
-                        <div class="left"><span class="d">✓</span> Seller</div>
-                        <div class="amt" id="miniSeller">—</div>
-                    </div>
-                    <div class="mini">
-                        <div class="left"><span class="d">★</span> Administrator</div>
-                        <div class="amt" id="miniAdmin">—</div>
-                    </div>
+                <div class="quick-grid">
+                    <a class="quick-action" href="marketplace.html">
+                        <span class="qicon">⌕</span>
+                        <span><strong>Browse</strong><small>Shop listings</small></span>
+                    </a>
+                    <a class="quick-action" href="orders.html">
+                        <span class="qicon">✓</span>
+                        <span><strong>Track orders</strong><small>Purchases &amp; sales</small></span>
+                    </a>
+                    <a class="quick-action" href="sell.html">
+                        <span class="qicon">＋</span>
+                        <span><strong>Sell an item</strong><small>Create a listing</small></span>
+                    </a>
+                    <a class="quick-action" href="email-sale.html">
+                        <span class="qicon">@</span>
+                        <span><strong>Sell email</strong><small>Submit an account</small></span>
+                    </a>
                 </div>
             </div>
-
         </section>
 
-        <!-- Services -->
-        <div class="section-title" id="services">
-            <h2>Our Services</h2>
-            <a class="link" href="marketplace.html">View all</a>
-        </div>
-
-        <section class="services">
-
-            <div class="svc">
-                <div class="ic">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3Z"/></svg>
-                </div>
-                <h3>Social Media</h3>
-                <p>Grow your reach with followers, likes, views &amp; engagement across platforms.</p>
-                <div class="go">Get started →</div>
-            </div>
-
-            <div class="svc">
-                <div class="ic">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
-                </div>
-                <h3>Digital Services</h3>
-                <p>Accounts, verification, boosting and other digital fulfillment services.</p>
-                <div class="go">Get started →</div>
-            </div>
-
-            <div class="svc">
-                <div class="ic">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-                </div>
-                <h3>We Buy Emails</h3>
-                <p>Sell your email lists to us at competitive rates — fast payouts, every time.</p>
-                <div class="go">Sell now →</div>
-            </div>
-
-            <div class="svc">
-                <div class="ic">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>
-                </div>
-                <h3>Fast Service</h3>
-                <p>Priority queue &amp; express delivery for every order you place with us.</p>
-                <div class="go">Learn more →</div>
-            </div>
-
-        </section>
-
-        <!-- Recent Orders -->
         <div class="section-title">
-            <h2>Recent Orders</h2>
-            <a class="link" href="orders.html">See all orders</a>
+            <h2>What needs your attention</h2>
+            <a class="link" href="orders.html">Open all orders</a>
         </div>
 
-        <section class="panel">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Order</th>
-                        <th>Product</th>
-                        <th class="hide-sm">Date</th>
-                        <th class="hide-sm">Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="ordersBody">
-                    <tr>
-                        <td class="id">#MM-2041</td>
-                        <td>
-                            <div class="prod"><span class="pdot">IG</span> Instagram Followers</div>
-                        </td>
-                        <td class="hide-sm">Aug 23, 2026</td>
-                        <td class="hide-sm">$14.00</td>
-                        <td><span class="pill prog">In Progress</span></td>
-                    </tr>
-                    <tr>
-                        <td class="id">#MM-2038</td>
-                        <td>
-                            <div class="prod"><span class="pdot">@</span> 5,000 Email List</div>
-                        </td>
-                        <td class="hide-sm">Aug 22, 2026</td>
-                        <td class="hide-sm">$8.75</td>
-                        <td><span class="pill done">Completed</span></td>
-                    </tr>
-                    <tr>
-                        <td class="id">#MM-2033</td>
-                        <td>
-                            <div class="prod"><span class="pdot">YT</span> YouTube Watch Hours</div>
-                        </td>
-                        <td class="hide-sm">Aug 21, 2026</td>
-                        <td class="hide-sm">$32.50</td>
-                        <td><span class="pill pend">Pending</span></td>
-                    </tr>
-                    <tr>
-                        <td class="id">#MM-2029</td>
-                        <td>
-                            <div class="prod"><span class="pdot">X</span> X (Twitter) Engagement</div>
-                        </td>
-                        <td class="hide-sm">Aug 19, 2026</td>
-                        <td class="hide-sm">$6.20</td>
-                        <td><span class="pill done">Completed</span></td>
-                    </tr>
-                    <tr>
-                        <td class="id">#MM-2021</td>
-                        <td>
-                            <div class="prod"><span class="pdot">!</span> Account Verification</div>
-                        </td>
-                        <td class="hide-sm">Aug 17, 2026</td>
-                        <td class="hide-sm">$45.00</td>
-                        <td><span class="pill fail">Failed</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <section class="grid-2 activity-grid" id="activity">
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Recent wallet activity</h2>
+                    <a class="link" href="wallet.html#history">View all</a>
+                </div>
+                <div class="feed" id="walletActivity">
+                    <div class="empty-state"><strong>Loading activity…</strong>Please wait while your wallet is checked.</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head">
+                    <h2>Recent orders</h2>
+                    <a class="link" href="orders.html">Manage</a>
+                </div>
+                <div class="feed" id="orderSnapshot">
+                    <div class="empty-state"><strong>Loading orders…</strong>Please wait while your orders are checked.</div>
+                </div>
+            </div>
         </section>
 
         <!-- Profile (the sidebar "Profile" item lands here) -->
@@ -1487,7 +1677,12 @@ import {
 } from "./js/firebase.js";
 import { adminStatus } from "./js/admin.js";
 import { ensureUserProfile } from "./js/account.js";
-import { formatNaira } from "./js/wallet.js";
+import {
+    formatNaira, formatDate, describeTransaction, watchMyTransactions
+} from "./js/wallet.js";
+import {
+    STATUS_LABEL, watchBuyerOrders, watchSellerOrders
+} from "./js/marketplace.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -1527,6 +1722,7 @@ onAuthStateChanged(auth,(user)=>{
     shell.style.display="grid";
 
     startAccount(user);
+    startDashboardFeeds();
 
 });
 
@@ -1552,7 +1748,6 @@ function startAccount(user){
 
         $("statBalance").textContent=formatNaira(balance);
         $("walletAv").textContent=formatNaira(balance);
-        $("miniWallet").textContent=formatNaira(balance);
         $("setBalance").textContent=formatNaira(balance);
 
         $("acctName").textContent=data.displayName||data.username||"—";
@@ -1562,8 +1757,6 @@ function startAccount(user){
         const adminFlag=data.isAdmin===true?"yes":"no";
         $("setSeller").textContent=seller;
         $("setAdmin").textContent=adminFlag;
-        $("miniSeller").textContent=seller;
-        $("miniAdmin").textContent=adminFlag;
 
         if(snap.exists()){
             $("profileMsg").innerHTML="";
@@ -1608,6 +1801,159 @@ function startAccount(user){
 
 }
 
+/* ------------------------------------------------------------------
+   Live dashboard feeds. The old dashboard showed a decorative chart,
+   made-up percentage changes and sample dollar orders. The overview now
+   comes from the same wallet ledger and order collections as the dedicated
+   wallet and order screens.
+------------------------------------------------------------------ */
+let walletRows=[];
+let buyerOrders=[];
+let sellerOrders=[];
+
+function startDashboardFeeds(){
+    watchMyTransactions((rows)=>{
+        walletRows=rows;
+        renderWalletSummary();
+    },(err)=>{
+        console.error("Could not read wallet activity:",err);
+        $("walletActivity").innerHTML=
+            '<div class="empty-state"><strong>Wallet activity unavailable</strong>'+esc(err.code||"Please try again shortly.")+'</div>';
+    });
+
+    watchBuyerOrders((rows)=>{
+        buyerOrders=rows;
+        renderOrderSummary();
+    },(err)=>orderFeedError(err));
+
+    watchSellerOrders((rows)=>{
+        sellerOrders=rows;
+        renderOrderSummary();
+    },(err)=>orderFeedError(err));
+}
+
+function isSettled(tx){
+    return ["approved","completed"].includes(tx.status);
+}
+
+function renderWalletSummary(){
+    const open=walletRows.filter((tx)=>
+        ["deposit","withdrawal"].includes(tx.type) &&
+        ["pending","approved"].includes(tx.status));
+    const received=walletRows
+        .filter((tx)=>tx.direction==="credit"&&isSettled(tx))
+        .reduce((sum,tx)=>sum+Number(tx.amount||0),0);
+    const spent=walletRows
+        .filter((tx)=>tx.direction==="debit"&&isSettled(tx))
+        .reduce((sum,tx)=>sum+Number(tx.amount||0),0);
+
+    $("statRequests").textContent=String(open.length);
+    $("requestNote").textContent=open.length
+        ? `${open.length} ${open.length===1?"request":"requests"} being processed`
+        : "No request waiting";
+    $("walletReceived").textContent=formatNaira(received);
+    $("walletSpent").textContent=formatNaira(spent);
+    $("walletLast").textContent=walletRows.length
+        ? formatDate(walletRows[0].createdAt)
+        : "No activity yet";
+
+    if(!walletRows.length){
+        $("walletActivity").innerHTML=
+            '<div class="empty-state"><strong>No wallet activity yet</strong>Your deposits, withdrawals, purchases and payouts will appear here.</div>';
+        return;
+    }
+
+    $("walletActivity").innerHTML=walletRows.slice(0,5).map((tx)=>{
+        const credit=tx.direction==="credit";
+        const info=describeTransaction(tx);
+        const cls=walletStatusClass(tx.status);
+        return `<div class="feed-row">
+            <div class="feed-icon ${credit?"credit":"debit"}">${credit?"＋":"−"}</div>
+            <div class="feed-main">
+                <div class="feed-title">${esc(info.label)}</div>
+                <div class="feed-meta">${esc(info.detail||formatDate(tx.createdAt))}</div>
+            </div>
+            <div class="feed-side">
+                <div class="feed-amount ${credit?"credit":"debit"}">${credit?"+":"−"}${esc(info.amount)}</div>
+                <span class="pill ${cls}">${esc(statusLabel(tx.status))}</span>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function orderFeedError(err){
+    console.error("Could not read orders:",err);
+    $("orderSnapshot").innerHTML=
+        '<div class="empty-state"><strong>Orders unavailable</strong>'+esc(err.code||"Please try again shortly.")+'</div>';
+}
+
+function renderOrderSummary(){
+    const openStatuses=new Set(["pending_payment","paid","shipped"]);
+    const activePurchases=buyerOrders.filter((o)=>openStatuses.has(o.status));
+    const activeSales=sellerOrders.filter((o)=>openStatuses.has(o.status));
+
+    $("statOrders").textContent=String(activePurchases.length);
+    $("orderNote").textContent=activePurchases.length
+        ? `${activePurchases.length} ${activePurchases.length===1?"purchase":"purchases"} in progress`
+        : "No purchase in progress";
+    $("statSales").textContent=String(activeSales.length);
+    $("salesNote").textContent=activeSales.length
+        ? `${activeSales.length} ${activeSales.length===1?"sale":"sales"} in progress`
+        : "No sale in progress";
+
+    const rows=[
+        ...buyerOrders.map((order)=>({...order,viewSide:"Purchase"})),
+        ...sellerOrders.map((order)=>({...order,viewSide:"Sale"}))
+    ].sort((a,b)=>timestampValue(b.createdAt)-timestampValue(a.createdAt));
+
+    if(!rows.length){
+        $("orderSnapshot").innerHTML=
+            '<div class="empty-state"><strong>No orders yet</strong>Browse the marketplace or list an item to get started.</div>';
+        return;
+    }
+
+    $("orderSnapshot").innerHTML=rows.slice(0,5).map((order)=>{
+        const status=order.status||"pending_payment";
+        return `<a class="feed-row" href="orders.html">
+            <div class="feed-icon">${order.viewSide==="Sale"?"↑":"↓"}</div>
+            <div class="feed-main">
+                <div class="feed-title">${esc(order.listingTitle||"Marketplace order")}</div>
+                <div class="feed-meta">${esc(order.viewSide)} · ${esc(formatDate(order.createdAt))}</div>
+            </div>
+            <div class="feed-side">
+                <div class="feed-amount">${esc(formatNaira(order.total))}</div>
+                <span class="pill ${orderStatusClass(status)}">${esc(STATUS_LABEL[status]||status)}</span>
+            </div>
+        </a>`;
+    }).join("");
+}
+
+function timestampValue(value){
+    if(!value) return 0;
+    if(typeof value.toMillis==="function") return value.toMillis();
+    if(typeof value.toDate==="function") return value.toDate().getTime();
+    const parsed=new Date(value).getTime();
+    return Number.isFinite(parsed)?parsed:0;
+}
+
+function statusLabel(value){
+    return String(value||"pending").replaceAll("_"," ");
+}
+
+function walletStatusClass(status){
+    if(["approved","completed"].includes(status)) return "done";
+    if(status==="rejected") return "fail";
+    return "pend";
+}
+
+function orderStatusClass(status){
+    if(status==="completed") return "done";
+    if(["cancelled","refunded"].includes(status)) return "cancel";
+    if(status==="shipped") return "ship";
+    if(status==="paid") return "prog";
+    return "pend";
+}
+
 /* Password reset straight from the settings block */
 $("resetBtn").addEventListener("click",async()=>{
     const user=auth.currentUser;
@@ -1632,14 +1978,17 @@ $("logoutBtn2").addEventListener("click",async()=>{
     catch(e){ console.error(e); }
 });
 
-/* The wallet buttons used to do nothing at all */
-["depositBtn","addFundsBtn","withdrawBtn"].forEach((id)=>{
-    const el=$(id);
-    if(el) el.addEventListener("click",()=>{ window.location.href="wallet.html"; });
+/* The top-bar shortcut opens the deposit task directly. */
+$("depositBtn").addEventListener("click",()=>{
+    window.location.href="wallet.html#deposit";
 });
 
 $("profileChip").addEventListener("click",()=>{
     document.getElementById("profile").scrollIntoView({behavior:"smooth",block:"start"});
+});
+
+$("activityBtn").addEventListener("click",()=>{
+    document.getElementById("activity").scrollIntoView({behavior:"smooth",block:"start"});
 });
 
 /* Logout */
@@ -1671,15 +2020,6 @@ document.querySelectorAll(".nav-item").forEach(item=>{
             .forEach(n=>n.classList.remove("active"));
         item.classList.add("active");
         document.body.classList.remove("nav-open");
-    });
-});
-
-/* Wallet actions go to the real wallet page */
-["depositBtn","addFundsBtn","walletLink","withdrawBtn"]
-.forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.addEventListener("click",()=>{
-        window.location.href="wallet.html";
     });
 });
 
