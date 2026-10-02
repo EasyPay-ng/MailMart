@@ -1,0 +1,108 @@
+name: Deploy Firestore rules and indexes
+
+# Why this exists
+# ---------------
+# The site is published with GitHub Pages, which copies the static files in
+# this repository to easypay-ng.github.io and stops there. It does not — and
+# cannot — push firestore.rules or firestore.indexes.json to Firebase. Those
+# two files only take effect when they are deployed to the Firebase project,
+# and until that happens the database keeps running whatever ruleset was last
+# published (for a database that has never had one, that is the default
+# deny-all ruleset, which refuses every read and write from every page).
+#
+# That mismatch is easy to miss: editing firestore.rules, committing, and
+# watching Pages go green looks exactly like a successful deploy. This
+# workflow closes the gap so the rules in git are the rules in production.
+
+on:
+  # Deploy whenever the rules or indexes actually change on main.
+  push:
+    branches: [main]
+    paths:
+      - firestore.rules
+      - firestore.indexes.json
+      - firebase.json
+      - .firebaserc
+      - .github/workflows/deploy-firestore.yml
+  # ...and allow a manual run from the Actions tab at any time.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firestore-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy rules and indexes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The workflow is deliberately inert until the service-account secret is
+      # added, so merging it can never turn the Actions tab red. It reports
+      # what to do instead of failing.
+      - name: Check for the service-account secret
+        id: guard
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Firestore deploy skipped"
+              echo
+              echo 'The `FIREBASE_SERVICE_ACCOUNT` repository secret is not set, so there is'
+              echo 'nothing to authenticate with. The rules in this repository are therefore'
+              echo '**not** live on the Firebase project yet.'
+              echo
+              echo 'To enable automatic deploys:'
+              echo
+              echo '1. Firebase Console -> Project settings -> Service accounts ->'
+              echo '   **Generate new private key**. A JSON file downloads.'
+              echo '2. GitHub -> Settings -> Secrets and variables -> Actions ->'
+              echo '   **New repository secret**, named `FIREBASE_SERVICE_ACCOUNT`.'
+              echo '3. Paste the entire contents of that JSON file as the value.'
+              echo
+              echo 'Then re-run this workflow from the Actions tab.'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Written to a file rather than passed inline so the key never appears in
+      # a command line or a log.
+      - name: Write service-account credentials
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$KEY" > "$RUNNER_TEMP/firebase-key.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-key.json" >> "$GITHUB_ENV"
+
+      - name: Deploy firestore.rules and firestore.indexes.json
+        if: steps.guard.outputs.configured == 'true'
+        run: npx --yes firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project mailmartz --non-interactive
+
+      - name: Remove credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/firebase-key.json"
+
+      - name: Report
+        if: steps.guard.outputs.configured == 'true' && success()
+        run: |
+          {
+            echo "### Firestore rules and indexes deployed"
+            echo
+            echo 'Project: `mailmartz`'
+            echo
+            echo 'Confirm from the live site with `setup-check.html`.'
+          } >> "$GITHUB_STEP_SUMMARY"
