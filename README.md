@@ -19,14 +19,58 @@ Firestore Security Rules.
    Until this step runs, the database uses the default deny-all rules and every
    page that reads Firestore fails. `.firebaserc` pins the project (`mailmartz`)
    so the command targets the right one; `setup-check.html` confirms it worked.
-4. Add your domain to **Authentication → Settings → Authorized domains**,
-   otherwise Google sign-in is blocked and sign-in emails are rejected.
+4. Add **`easypay-ng.github.io`** to **Authentication → Settings → Authorized
+   domains**, otherwise Google sign-in is blocked and sign-in emails are
+   rejected. Firebase ships that list containing only `localhost`,
+   `mailmartz.firebaseapp.com` and `mailmartz.web.app` — none of which is where
+   this site is actually served from (see **Hosting** below), so "Continue with
+   Google" fails with `auth/unauthorized-domain` until the Pages domain is
+   added by hand. Email/password sign-in is unaffected: it is not
+   origin-restricted, which is why this can go unnoticed for a long time.
 5. Register the administrator accounts. The addresses in `ADMIN_EMAILS` land on
    `admin.html` after signing in; everyone else lands on `dashboard.html`.
 
 The browser configuration lives in `js/firebase.js`. A Firebase web API key
 identifies the project — it is not a secret and is safe to ship in client code.
 Never commit a service-account key.
+
+## Hosting — and the trap that comes with it
+
+The site is served by **GitHub Pages**, from the `main` branch, at
+<https://easypay-ng.github.io/MailMart/>. It is *not* served by Firebase
+Hosting, even though `firebase.json` still carries a `hosting` block and
+`package.json` still has a `deploy:hosting` script.
+
+That split is the single most important thing to understand about deploying
+this app, because it is quietly asymmetric:
+
+| File | Published by pushing to `main`? |
+| --- | --- |
+| `*.html`, `css/`, `js/` | **Yes** — Pages copies them straight out |
+| `firestore.rules` | **No** — needs a Firebase deploy |
+| `firestore.indexes.json` | **No** — needs a Firebase deploy |
+
+Pushing to `main` therefore updates the *frontend* and nothing else. Editing
+`firestore.rules`, committing it, and watching the Pages build go green looks
+exactly like a successful deploy — but the database is still running whichever
+ruleset was last sent to Firebase. For a database that has never had one sent,
+that is the default **deny-all** ruleset, and then every page that reads
+Firestore fails at once with `permission-denied`, signed in or not, admin or
+not. That is the usual explanation for "it works locally but the live site
+can't load anything".
+
+Deploy the rules explicitly:
+
+```sh
+npm run deploy:rules      # firebase deploy --only firestore:rules,firestore:indexes
+```
+
+Or let CI do it: `.github/workflows/deploy-firestore.yml` deploys the rules and
+indexes whenever either file changes on `main`. It stays inert — reporting what
+is missing rather than failing — until a `FIREBASE_SERVICE_ACCOUNT` repository
+secret is added, holding a service-account JSON key from **Firebase Console →
+Project settings → Service accounts → Generate new private key**. That key is a
+real credential: it belongs in GitHub Secrets and must never be committed.
 
 ## How administrator access works
 
@@ -243,6 +287,11 @@ produce it, in the order they are worth checking:
 
    The same applies if the project was left in Firestore's "test mode": those
    rules allow everything for 30 days and then start refusing everything.
+
+   Note that **pushing to `main` does not do this for you.** GitHub Pages
+   publishes the HTML and JavaScript and ignores `firestore.rules` entirely, so
+   the rules can sit correct-looking in git while the live database still
+   refuses everything — see [Hosting](#hosting--and-the-trap-that-comes-with-it).
 
 2. **A composite index is missing.** That arrives as `failed-precondition`, not
    `permission-denied`, and Firebase prints a one-click create-index link in the
