@@ -191,10 +191,54 @@ export function watchActiveListings(onRows, onError = console.error) {
   return onSnapshot(q, (snap) => onRows(rows(snap)), onError);
 }
 
+function timestampMillis(value) {
+  if (value && typeof value.toMillis === "function") return value.toMillis();
+  if (value instanceof Date) return value.getTime();
+  const millis = new Date(value || 0).getTime();
+  return Number.isFinite(millis) ? millis : 0;
+}
+
+function newestListingFirst(a, b) {
+  const difference = timestampMillis(b.createdAt) - timestampMillis(a.createdAt);
+  // Firestore uses the document ID as its final ordering tie-breaker.
+  return difference || String(b.id).localeCompare(String(a.id));
+}
+
 export function watchMyListings(onRows, onError = console.error) {
   const user = requireUser();
-  const q = query(collection(db, LISTINGS), where("sellerUid", "==", user.uid), orderBy("createdAt", "desc"));
-  return onSnapshot(q, (snap) => onRows(rows(snap)), onError);
+  const indexedQuery = query(
+    collection(db, LISTINGS),
+    where("sellerUid", "==", user.uid),
+    orderBy("createdAt", "desc")
+  );
+
+  let unsubscribe;
+  unsubscribe = onSnapshot(indexedQuery, (snap) => onRows(rows(snap)), (error) => {
+    const code = String(error?.code || "").replace(/^firestore\//, "");
+    if (code !== "failed-precondition") {
+      onError(error);
+      return;
+    }
+
+    /* A seller only reads their own (normally small) set of listings. If the
+       composite index has not reached Firebase yet, use Firestore's automatic
+       sellerUid field index and retain the same newest-first presentation in
+       the browser. This keeps Sell usable while an index is being built. */
+    console.warn("The seller listings composite index is unavailable; using the indexed fallback.", error);
+    const fallbackQuery = query(
+      collection(db, LISTINGS),
+      where("sellerUid", "==", user.uid)
+    );
+    unsubscribe = onSnapshot(
+      fallbackQuery,
+      (snap) => onRows(rows(snap).sort(newestListingFirst)),
+      onError
+    );
+  });
+
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
 }
 
 /** Every listing, including paused ones. Administrator only. */
