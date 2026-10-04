@@ -13,6 +13,7 @@ import {
   db,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   collection,
   addDoc,
@@ -84,7 +85,8 @@ export const TX_LABELS = {
   order_payment: "Marketplace purchase",
   order_payout: "Marketplace sale",
   email_payout: "Email sale payout",
-  order_refund: "Order refund"
+  order_refund: "Order refund",
+  admin_credit: "Admin credit"
 };
 
 /**
@@ -117,6 +119,9 @@ export function describeTransaction(tx) {
       break;
     case "order_refund":
       detail = reference || "Cancelled order";
+      break;
+    case "admin_credit":
+      detail = reference || "Manual wallet credit";
       break;
     default:
       detail = reference || "";
@@ -292,6 +297,79 @@ export async function rejectTransaction(tx, adminUser, reason = "") {
     reviewedAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   });
+}
+
+/* ------------------------------------------------------------------ */
+/* manual wallet credit (administrator only)                           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Credit a user's wallet directly and append the matching audit row.
+ * The profile update and ledger write are one transaction, so an interrupted
+ * request can never change a balance without recording who did it and why.
+ */
+export async function creditWallet({ identifier, amount, reason, adminUser }) {
+  const lookup = String(identifier || "").trim();
+  const value = round2(amount);
+  const note = String(reason || "").trim();
+
+  if (!lookup) throw new Error("Enter the user's email address or user ID.");
+  if (!(value > 0)) throw new Error("Enter a credit amount greater than zero.");
+  if (value > 100000000) throw new Error("A single credit cannot exceed ₦100,000,000.");
+  if (!note) throw new Error("Enter a reason for this credit.");
+  if (note.length > 200) throw new Error("Keep the credit reason under 200 characters.");
+
+  let userRef = doc(db, "users", lookup);
+  let userSnap = await getDoc(userRef);
+
+  if (!userSnap.exists()) {
+    const matches = await getDocs(
+      query(collection(db, "users"), where("email", "==", lookup.toLowerCase()))
+    );
+    if (matches.empty) throw new Error("No MailMart user matches that email address or user ID.");
+    if (matches.size > 1) throw new Error("More than one profile uses that email. Use the user ID instead.");
+    userSnap = matches.docs[0];
+    userRef = userSnap.ref;
+  }
+
+  const reviewer = adminUser?.email || adminUser?.uid || "";
+  if (!reviewer) throw new Error("Administrator identity is missing. Sign in again.");
+
+  let result = null;
+  await runTransaction(db, async (t) => {
+    const fresh = await t.get(userRef);
+    if (!fresh.exists()) throw new Error("That user account no longer exists.");
+
+    const current = round2(fresh.data().balance || 0);
+    const next = round2(current + value);
+    if (!Number.isFinite(next)) throw new Error("The resulting wallet balance is invalid.");
+
+    t.update(userRef, { balance: next, updatedAt: serverTimestamp() });
+    t.set(doc(collection(db, TRANSACTIONS)), {
+      type: "admin_credit",
+      direction: "credit",
+      status: "completed",
+      uid: fresh.id,
+      email: fresh.data().email || "",
+      amount: value,
+      reference: note,
+      balanceAfter: next,
+      reviewedBy: reviewer,
+      reviewedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    result = {
+      uid: fresh.id,
+      email: fresh.data().email || "",
+      previousBalance: current,
+      balanceAfter: next,
+      amount: value
+    };
+  });
+
+  return result;
 }
 
 /* ------------------------------------------------------------------ */

@@ -337,8 +337,12 @@ service cloud.firestore {
                ['type', 'direction', 'status', 'uid', 'email', 'amount',
                 'balanceAfter', 'reviewedBy', 'reviewedAt',
                 'createdAt', 'updatedAt'])
-          && ['email_payout', 'order_payout', 'order_refund']
+          && ['email_payout', 'order_payout', 'order_refund', 'admin_credit']
                .hasAny([request.resource.data.type])
+          && (request.resource.data.type != 'admin_credit'
+              || (request.resource.data.reference is string
+                  && request.resource.data.reference.size() > 0
+                  && request.resource.data.reference.size() <= 200))
           && request.resource.data.direction == 'credit'
           && request.resource.data.status == 'completed'
           && request.resource.data.amount is number
