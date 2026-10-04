@@ -29,6 +29,14 @@ service cloud.firestore {
       return request.auth.token.email;
     }
 
+    // Audit fields use the same identity as the browser: prefer the Firebase
+    // email, but fall back to the uid for an administrator whose provider has
+    // no email claim. isAdmin() deliberately supports a profile flag, so its
+    // writes must not become impossible merely because tokenEmail() is null.
+    function adminActor() {
+      return tokenEmail() != null ? tokenEmail() : uid();
+    }
+
     // The signed-in user's own email is an administrator address. This is what
     // lets the named administrators in before their user document exists.
     function tokenEmailIsAdmin() {
@@ -315,7 +323,7 @@ service cloud.firestore {
                   && resource.data.type == 'order_payment')
               || (resource.data.status == 'approved'
                   && request.resource.data.status == 'completed'))
-          && request.resource.data.reviewedBy == tokenEmail();
+          && request.resource.data.reviewedBy == adminActor();
       }
 
       // A completed credit an administrator writes when they pay money out of
@@ -337,7 +345,7 @@ service cloud.firestore {
           && request.resource.data.amount > 0
           && request.resource.data.balanceAfter is number
           && request.resource.data.uid is string
-          && request.resource.data.reviewedBy == tokenEmail()
+          && request.resource.data.reviewedBy == adminActor()
           && request.resource.data.createdAt == request.time;
       }
 
@@ -367,7 +375,7 @@ service cloud.firestore {
                .hasOnly(['status', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
           && resource.data.status == 'pending'
           && ['approved', 'rejected'].hasAny([request.resource.data.status])
-          && request.resource.data.reviewedBy == tokenEmail();
+          && request.resource.data.reviewedBy == adminActor();
       }
 
       allow read: if signedIn()
