@@ -47,10 +47,10 @@ jobs:
         with:
           node-version: '20'
 
-      # The workflow is deliberately inert until the service-account secret is
-      # added, so merging it can never turn the Actions tab red. It reports
-      # what to do instead of failing.
-      - name: Check for the service-account secret
+      # A skipped rules deploy is a broken deploy: the frontend can start using
+      # a write that production Firestore still refuses. Fail loudly when the
+      # credential is absent instead of leaving a green, misleading workflow.
+      - name: Require the service-account secret
         id: guard
         env:
           KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
@@ -58,11 +58,11 @@ jobs:
           if [ -z "$KEY" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             {
-              echo "### Firestore deploy skipped"
+              echo "### Firestore deploy blocked"
               echo
-              echo 'The `FIREBASE_SERVICE_ACCOUNT` repository secret is not set, so there is'
-              echo 'nothing to authenticate with. The rules in this repository are therefore'
-              echo '**not** live on the Firebase project yet.'
+              echo 'The `FIREBASE_SERVICE_ACCOUNT` repository secret is not set. The rules'
+              echo 'in this commit were **not deployed**, so new wallet operations will be'
+              echo 'rejected by the older production rules with `permission-denied`.'
               echo
               echo 'To enable automatic deploys:'
               echo
@@ -74,9 +74,10 @@ jobs:
               echo
               echo 'Then re-run this workflow from the Actions tab.'
             } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo '::error::FIREBASE_SERVICE_ACCOUNT is missing; Firestore rules were not deployed.'
+            exit 1
           fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       # Written to a file rather than passed inline so the key never appears in
       # a command line or a log.

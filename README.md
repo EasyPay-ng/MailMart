@@ -66,11 +66,12 @@ npm run deploy:rules      # firebase deploy --only firestore:rules,firestore:ind
 ```
 
 Or let CI do it: `.github/workflows/deploy-firestore.yml` deploys the rules and
-indexes whenever either file changes on `main`. It stays inert — reporting what
-is missing rather than failing — until a `FIREBASE_SERVICE_ACCOUNT` repository
-secret is added, holding a service-account JSON key from **Firebase Console →
-Project settings → Service accounts → Generate new private key**. That key is a
-real credential: it belongs in GitHub Secrets and must never be committed.
+indexes whenever either file changes on `main`. The workflow fails loudly until
+a `FIREBASE_SERVICE_ACCOUNT` repository secret is added; a green Pages deploy
+does not mean Firestore rules were deployed. The secret holds a service-account
+JSON key from **Firebase Console → Project settings → Service accounts →
+Generate new private key**. That key is a real credential: it belongs in GitHub
+Secrets and must never be committed.
 
 ## How administrator access works
 
