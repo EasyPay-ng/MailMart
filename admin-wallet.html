@@ -301,6 +301,7 @@ a{color:inherit;text-decoration:none}
 
     <div class="tabs">
         <button class="tab active" data-tab="requests">Requests <span class="badge" id="pendingCount">0</span></button>
+        <button class="tab" data-tab="credit">Credit wallet</button>
         <button class="tab" data-tab="history">All transactions</button>
         <button class="tab" data-tab="settings">Settings</button>
     </div>
@@ -334,6 +335,33 @@ a{color:inherit;text-decoration:none}
         </div>
     </div>
 
+    <!-- ---------------- MANUAL CREDIT ---------------- -->
+    <div class="panel" id="panel-credit">
+        <div class="card">
+            <h3>Credit a user wallet</h3>
+            <p class="hint">Add funds directly using the user's email address or Firebase user ID. Every credit is permanent and recorded in the transaction ledger with your administrator identity.</p>
+
+            <div class="two">
+                <div class="field">
+                    <label for="creditUser">User email or ID</label>
+                    <input type="text" id="creditUser" placeholder="user@example.com" autocomplete="off">
+                </div>
+                <div class="field">
+                    <label for="creditAmount">Amount (₦)</label>
+                    <input type="number" id="creditAmount" min="0.01" max="100000000" step="0.01" placeholder="e.g. 5000">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="creditReason">Reason</label>
+                <textarea id="creditReason" maxlength="200" placeholder="Why is this wallet being credited?"></textarea>
+            </div>
+
+            <div id="msgCredit"></div>
+            <button class="btn good" id="creditWalletBtn" type="button">Credit wallet</button>
+        </div>
+    </div>
+
     <!-- ---------------- HISTORY ---------------- -->
     <div class="panel" id="panel-history">
         <div class="card">
@@ -350,6 +378,7 @@ a{color:inherit;text-decoration:none}
                     <option value="order_payout">Marketplace payouts</option>
                     <option value="email_payout">Email payouts</option>
                     <option value="order_refund">Refunds</option>
+                    <option value="admin_credit">Admin credits</option>
                 </select>
                 <select id="historyStatus" aria-label="Filter transaction status">
                     <option value="">All statuses</option>
@@ -417,6 +446,7 @@ import {
     watchAllTransactions,
     approveTransaction,
     rejectTransaction,
+    creditWallet,
     describeTransaction,
     formatNaira,
     formatDate
@@ -539,6 +569,49 @@ $("pendingWithdrawals").addEventListener("click", (e) => {
 });
 
 $("modal").addEventListener("click", () => $("modal").classList.remove("open"));
+
+/* ------------------------------------------------------------------ */
+/* manual wallet credit                                                */
+/* ------------------------------------------------------------------ */
+$("creditWalletBtn").addEventListener("click", async () => {
+    const btn = $("creditWalletBtn");
+    const identifier = $("creditUser").value.trim();
+    const amount = Number($("creditAmount").value);
+    const reason = $("creditReason").value.trim();
+
+    if (!identifier) return notice($("msgCredit"), "bad", "Enter the user's email address or user ID.");
+    if (!(amount > 0)) return notice($("msgCredit"), "bad", "Enter an amount greater than zero.");
+    if (!reason) return notice($("msgCredit"), "bad", "Enter a reason for the credit.");
+
+    const target = identifier.includes("@") ? identifier : `user ID ${identifier}`;
+    if (!confirm(`Credit ${formatNaira(amount)} to ${target}? This action is recorded in the ledger and cannot be undone here.`)) return;
+
+    btn.disabled = true;
+    btn.textContent = "Crediting…";
+    notice($("msgCredit"), "", "");
+
+    try {
+        const result = await creditWallet({ identifier, amount, reason, adminUser });
+        notice(
+            $("msgCredit"),
+            "good",
+            `Credited <b>${esc(formatNaira(result.amount))}</b> to <b>${esc(result.email || result.uid)}</b>. ` +
+            `New balance: <b>${esc(formatNaira(result.balanceAfter))}</b>.`
+        );
+        $("creditUser").value = "";
+        $("creditAmount").value = "";
+        $("creditReason").value = "";
+    } catch (err) {
+        console.error(err);
+        const message = err?.code
+            ? firestoreErrorSummary(err, "that wallet credit")
+            : (err?.message || "The wallet could not be credited.");
+        notice($("msgCredit"), "bad", esc(message));
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "Credit wallet";
+    }
+});
 
 /* ------------------------------------------------------------------ */
 /* settings                                                            */
