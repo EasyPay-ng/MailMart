@@ -27,6 +27,8 @@ import {
 } from "./firebase.js";
 import { bankCodeFor } from "./data/nigeria.js";
 import { SALES } from "./emaildesk.js";
+import { prepareEmailReferralReward } from "./referrals.js";
+import { prepareLifetimeReferral } from "./referral-rewards.js";
 
 export const SETTINGS_ID = "platform";
 export const TRANSACTIONS = "transactions";
@@ -86,7 +88,16 @@ export const TX_LABELS = {
   order_payout: "Marketplace sale",
   email_payout: "Email sale payout",
   order_refund: "Order refund",
-  admin_credit: "Admin credit"
+  admin_credit: "Admin credit",
+  email_referral: "Email referral reward",
+  purchase_referral: "Purchase referral reward",
+  purchase_welcome: "Referred buyer reward",
+  affiliate_commission: "Affiliate commission",
+  lifetime_commission: "Lifetime referral commission",
+  social_sale: "Social asset sale",
+  social_purchase: "Social asset purchase",
+  rental_payment: "Inbox code rental",
+  rental_refund: "Inbox rental refund"
 };
 
 /**
@@ -122,6 +133,17 @@ export function describeTransaction(tx) {
       break;
     case "admin_credit":
       detail = reference || "Manual wallet credit";
+      break;
+    case "email_referral":
+    case "purchase_referral":
+    case "purchase_welcome":
+    case "affiliate_commission":
+    case "lifetime_commission":
+    case "social_sale":
+    case "social_purchase":
+    case "rental_payment":
+    case "rental_refund":
+      detail = reference || "Referral program credit";
       break;
     default:
       detail = reference || "";
@@ -390,27 +412,35 @@ export async function creditWallet({ identifier, amount, reason, adminUser }) {
  */
 export async function payEmailSale({ sale, amount, adminUser }) {
   const value = round2(amount);
-  if (!(value > 0)) throw new Error("Enter the payout amount in naira.");
+  if (!Number.isFinite(value) || !(value > 0)) throw new Error("Enter the payout amount in naira.");
   if (!sale?.uid) throw new Error("That sale has no seller attached.");
   if (sale.status === "paid") throw new Error("This sale has already been paid.");
   if (sale.status === "rejected") throw new Error("This sale was rejected — it cannot be paid.");
 
   const saleRef = doc(db, SALES, sale.id);
-  const sellerRef = doc(db, "users", sale.uid);
   const reviewer = adminUser?.email || adminUser?.uid || "";
 
   await runTransaction(db, async (t) => {
     const saleSnap = await t.get(saleRef);
     if (!saleSnap.exists()) throw new Error("That sale no longer exists.");
     const saleData = saleSnap.data();
-    if (saleData.status === "paid") throw new Error("This sale has already been paid.");
+    if (saleData.status !== "approved") throw new Error("Approve this email sale before paying it. It may already be paid or rejected.");
 
+    const sellerRef = doc(db, "users", saleData.uid);
     const sellerSnap = await t.get(sellerRef);
     if (!sellerSnap.exists()) {
       throw new Error("The seller has no MailMart profile, so there is no wallet to pay into.");
     }
 
     const next = round2(Number(sellerSnap.data().balance || 0) + value);
+    if (!Number.isFinite(next)) throw new Error("The seller's wallet balance is invalid.");
+    const applyReferralReward = await prepareEmailReferralReward(t, {
+      saleId: sale.id, sellerUid: saleData.uid, sellerData: sellerSnap.data(), adminUser
+    });
+
+    const payoutId = "email_payout_" + sale.id;
+    const applyLifetime = await prepareLifetimeReferral(t, { uid: saleData.uid, profile: sellerSnap.data(),
+      sourceId: payoutId, type: "email_payout", amount: value, adminUser });
 
     // Marking the sale paid…
     t.update(saleRef, {
@@ -429,11 +459,12 @@ export async function payEmailSale({ sale, amount, adminUser }) {
     // …and the ledger says so, with the balance it produced. The owner of the
     // wallet is the seller (users/{uid}.email); the mail they sold is the
     // reference, so the history reads "Email sale payout — Sold that address".
-    t.set(doc(collection(db, TRANSACTIONS)), {
+    t.set(doc(db, TRANSACTIONS, payoutId), {
       type: "email_payout",
+      saleId: sale.id,
       direction: "credit",
       status: "completed",
-      uid: sale.uid,
+      uid: saleData.uid,
       email: sellerSnap.data().email || "",
       amount: value,
       reference: saleData.email || "",
@@ -443,5 +474,7 @@ export async function payEmailSale({ sale, amount, adminUser }) {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
+    applyReferralReward();
+    applyLifetime();
   });
 }

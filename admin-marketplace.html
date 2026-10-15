@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/services.css">
 
 <style>
 .app{
@@ -63,6 +63,8 @@
     <div class="topbar">
         <div class="brand"><span class="dot">M</span> Marketplace Admin</div>
         <div class="actions">
+            <a class="back-link" href="admin-referrals.html">Referral Admin</a>
+            <a class="back-link" href="admin-services.html">Service Admin</a>
             <a class="back-link" href="admin-wallet.html">Wallet Admin</a>
             <a class="back-link" href="admin.html">Sales Review</a>
             <a class="back-link" href="marketplace.html">Marketplace</a>
@@ -216,7 +218,7 @@
 import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import { fileToBase64 } from "./js/image.js";
-import { loadSettings, saveSettings, formatNaira, formatDate } from "./js/wallet.js";
+import { loadSettings, saveSettings, formatNaira, formatDate, watchAllTransactions } from "./js/wallet.js";
 import {
     CATEGORIES,
     STATUS_LABEL,
@@ -228,9 +230,13 @@ import {
     refundOrder,
     createListing,
     setListingStatus,
+    saveInstallmentTerms,
+    advanceOrder,
     hasDiscount,
     unitPriceOf
 } from "./js/marketplace.js";
+
+import { installmentAmount } from "./js/installments.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -239,6 +245,7 @@ const esc = (v) =>
 
 let adminUser = null;
 let orders = [];
+let paymentRequests = [];
 let listings = [];
 let kycRows = [];
 let settings = null;
@@ -277,6 +284,11 @@ async function start() {
             `<div class="empty">${firestoreErrorHtml(err, "the orders")}</div>`;
     });
 
+    watchAllTransactions((rows) => {
+        paymentRequests = rows.filter((tx) => tx.type === "order_payment" && tx.status === "pending");
+        renderOrders();
+    }, (err) => { $("awaiting").innerHTML = firestoreErrorHtml(err, "monthly payment requests"); });
+
     watchAllListings((rows) => {
         listings = rows;
         renderListings();
@@ -303,14 +315,19 @@ async function start() {
 /* orders                                                              */
 /* ------------------------------------------------------------------ */
 function renderOrders() {
-    const awaiting = orders.filter((o) => o.status === "pending_payment");
+    const awaiting = paymentRequests.map((request) => {
+        const order = orders.find((o) => o.id === request.orderId);
+        return order && !["cancelled", "refunded", "completed"].includes(order.status) ? { ...order, paymentRequest: request } : null;
+    }).filter(Boolean);
+    // Legacy full-payment orders may not have a stored payment reference.
+    awaiting.push(...orders.filter((o) => o.status === "pending_payment" && !awaiting.some((row) => row.id === o.id)));
 
     $("statAwaiting").textContent = String(awaiting.length);
     $("statListings").textContent = String(listings.filter((l) => l.status === "active").length);
     $("statKyc").textContent = String(kycRows.length);
     $("statFees").textContent = formatNaira(
-        orders.filter((o) => ["paid", "shipped", "completed"].includes(o.status))
-              .reduce((n, o) => n + Number(o.serviceFee || 0), 0));
+        orders.filter((o) => ["paid", "shipped", "delivered_pending_balance", "completed"].includes(o.status))
+              .reduce((n, o) => n + (o.paymentMode === "installment" ? Number(o.totalPaid || 0) - Number(o.sellerPaid || 0) : Number(o.serviceFee || 0)), 0));
     $("ordCount").textContent = String(awaiting.length);
 
     $("awaiting").innerHTML = awaiting.length
@@ -325,7 +342,7 @@ function renderOrders() {
 
     const head = `<thead><tr>
         <th>Placed</th><th>Item</th><th>Buyer</th><th>Seller</th>
-        <th>Total</th><th>Status</th>
+        <th>Total / paid</th><th>Status</th><th>Actions</th>
     </tr></thead>`;
 
     $("orderTable").innerHTML = head + "<tbody>" + orders.map((o) => `
@@ -334,13 +351,18 @@ function renderOrders() {
             <td>${esc(o.listingTitle || "—")} × ${esc(o.quantity || 1)}</td>
             <td class="small">${esc(o.buyerEmail || "—")}</td>
             <td class="small">${esc(o.sellerEmail || "—")}</td>
-            <td class="mono">${esc(formatNaira(o.total))}</td>
+            <td class="mono">${esc(formatNaira(o.total))}${o.paymentMode === "installment" ? `<br><span class="small">${esc(o.installmentsPaid || 0)}/12 · ${esc(formatNaira(o.totalPaid || 0))} paid</span>` : ""}</td>
             <td><span class="status ${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span></td>
+            <td>${["paid", "shipped", "delivered_pending_balance"].includes(o.status) ? `<button class="btn small ghost" data-act="refund" data-id="${esc(o.id)}">Review refund</button>` : "—"}</td>
         </tr>`).join("") + "</tbody>";
 }
 
 function awaitingRow(o) {
     const a = o.address || {};
+    const plan = o.paymentMode === "installment";
+    const number = o.paymentRequest?.installmentNumber || (plan ? Number(o.installmentsPaid || 0) + 1 : 0);
+    const due = o.paymentRequest?.amount || (plan ? installmentAmount(o.total, number) : o.total);
+    const payout = plan ? installmentAmount(o.sellerPayout, number) : o.sellerPayout;
     return `
         <div class="ord">
             <img class="shot" src="${esc(o.listingImage || "")}" alt="">
@@ -351,14 +373,14 @@ function awaitingRow(o) {
                     ${esc(formatDate(o.createdAt))}<br>
                     Ship to ${esc(a.name || "—")}, ${esc(a.street || "")}, ${esc(a.lga || "")}, ${esc(a.state || "")}
                 </div>
-                <div class="amt">${esc(formatNaira(o.total))}
+                <div class="amt">${esc(formatNaira(due))}${plan ? ` · month ${number}/12` : ""}
                     <span class="mt" style="display:inline;margin-left:8px">
-                        seller receives ${esc(formatNaira(o.sellerPayout))}
+                        seller receives ${esc(formatNaira(payout))} this payment
                     </span>
                 </div>
                 <div class="acts">
-                    <button class="btn small good" data-act="settle" data-id="${esc(o.id)}">Confirm payment</button>
-                    <button class="btn small ghost" data-act="cancel" data-id="${esc(o.id)}">Cancel order</button>
+                    <button class="btn small good" data-act="settle" data-id="${esc(o.id)}" data-payment="${esc(o.paymentRequest?.id || o.paymentTxId || "")}">Confirm payment</button>
+                    ${!o.paidAt ? `<button class="btn small ghost" data-act="cancel" data-id="${esc(o.id)}">Cancel unpaid order</button>` : ""}
                 </div>
             </div>
         </div>`;
@@ -372,36 +394,28 @@ $("awaiting").addEventListener("click", async (e) => {
 
     try {
         if (btn.dataset.act === "settle") {
-            if (!confirm(
-                `Charge ${formatNaira(order.total)} to ${order.buyerEmail} and pay ` +
-                `${formatNaira(order.sellerPayout)} to ${order.sellerEmail}?`
-            )) return;
-            await settleOrderPayment(order, adminUser);
+            const request = paymentRequests.find((tx) => tx.id === btn.dataset.payment);
+            const number = request?.installmentNumber || 1;
+            const due = request?.amount || (order.paymentMode === "installment" ? installmentAmount(order.total, number) : order.total);
+            const payout = order.paymentMode === "installment" ? installmentAmount(order.sellerPayout, number) : order.sellerPayout;
+            if (!confirm(`Charge ${formatNaira(due)} to ${order.buyerEmail} and pay ${formatNaira(payout)} to ${order.sellerEmail} for this payment only?`)) return;
+            btn.disabled = true;
+            await settleOrderPayment(order, adminUser, btn.dataset.payment);
         } else {
-            const reason = prompt("Reason for cancelling this order?", "") ?? "";
+            const reason = prompt("Reason for cancelling this unpaid order?", "");
             if (reason === null) return;
             await cancelAwaiting(order, reason.trim());
         }
     } catch (err) {
         console.error(err);
-        alert(firestoreErrorSummary(err, "that order"));
-    }
+        alert(err.code ? firestoreErrorSummary(err, "that order") : err.message);
+    } finally { btn.disabled = false; }
 });
 
 /* An order that was never paid has no money to return, so it is simply
    marked cancelled — no balance movement. */
 async function cancelAwaiting(order, reason) {
-    const { updateDoc, doc, serverTimestamp, arrayUnion, db } = await import("./js/firebase.js");
-    await updateDoc(doc(db, "orders", order.id), {
-        status: "cancelled",
-        cancellationReason: reason,
-        updatedAt: serverTimestamp(),
-        timeline: arrayUnion({
-            status: "cancelled",
-            at: new Date().toISOString(),
-            by: adminUser.email || ""
-        })
-    });
+    await advanceOrder(order, "cancelled", adminUser.email || adminUser.uid, reason);
 }
 
 $("orderTable").addEventListener("click", async (e) => {
@@ -410,8 +424,8 @@ $("orderTable").addEventListener("click", async (e) => {
     const order = orders.find((o) => o.id === btn.dataset.id);
     if (!order) return;
     if (!confirm(
-        `Refund ${formatNaira(order.total)} to ${order.buyerEmail} for ` +
-        `"${order.listingTitle || "this order"}"? This credits their wallet immediately.`
+        `Refund ${formatNaira(order.paymentMode === "installment" ? order.totalPaid : order.total)} actually paid to ${order.buyerEmail} for ` +
+        `"${order.listingTitle || "this order"}"? This credits their wallet immediately. Existing seller payouts are not reclaimed; resolve returns and seller recovery separately.`
     )) return;
 
     try {
@@ -509,6 +523,7 @@ function renderListings() {
                     <div class="name">${esc(l.title || "")}</div>
                     <div class="prices">${price}</div>
                     <div class="field tip" style="margin:0">${esc(l.sellerEmail || "—")}</div>
+                    <div class="field" style="margin-top:10px"><label>12-month instalments<select data-plan="${esc(l.id)}"><option value="off" ${!l.installmentEnabled ? "selected" : ""}>Disabled · full payment</option><option value="after_first" ${l.installmentEnabled && l.installmentDelivery === "after_first" ? "selected" : ""}>0% · deliver after first payment</option><option value="after_full" ${l.installmentEnabled && l.installmentDelivery !== "after_first" ? "selected" : ""}>0% · deliver after all 12 payments</option></select></label><div class="tip">Only changes future orders. Existing plans retain their terms.</div></div>
                     <div class="row-end" style="margin-top:4px">
                         <button class="btn small bad" data-act="remove" data-id="${esc(l.id)}">Remove</button>
                     </div>
@@ -516,6 +531,15 @@ function renderListings() {
             </div>`;
     }).join("");
 }
+
+$("adminListings").addEventListener("change", async (e) => {
+    const select = e.target.closest("[data-plan]");
+    if (!select) return;
+    select.disabled = true;
+    try { await saveInstallmentTerms(select.dataset.plan, select.value !== "off", select.value === "off" ? "after_full" : select.value); }
+    catch (err) { alert(err.message); renderListings(); }
+    finally { select.disabled = false; }
+});
 
 $("adminListings").addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-act]");

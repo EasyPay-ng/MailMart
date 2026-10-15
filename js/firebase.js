@@ -19,6 +19,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  getAdditionalUserInfo,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -42,7 +44,8 @@ import {
   serverTimestamp,
   arrayUnion,
   runTransaction,
-  writeBatch
+  writeBatch,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
 import {
@@ -84,6 +87,8 @@ export {
   createUserWithEmailAndPassword,
   signInWithPopup,
   sendPasswordResetEmail,
+  sendEmailVerification,
+  getAdditionalUserInfo,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
@@ -103,7 +108,8 @@ export {
   serverTimestamp,
   arrayUnion,
   runTransaction,
-  writeBatch
+  writeBatch,
+  Timestamp
 };
 
 // Collection names, so pages never hard-code them.

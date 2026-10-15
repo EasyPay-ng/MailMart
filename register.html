@@ -1050,6 +1050,14 @@ Show
 </div>
 
 
+<div class="field">
+<label for="referralCode">Referral code (optional)</label>
+<div class="input-wrap">
+<input id="referralCode" type="text" maxlength="131" placeholder="MM-… (case-sensitive)" autocomplete="off" spellcheck="false">
+</div>
+<p style="font-size:12px;color:#8ba3bd;line-height:1.6;margin-top:7px">Your inviter earns ₦200 after your first paid email sale. Your first completed goods purchase earns them ₦500 and you ₦200. No reward is paid just for signing up.</p>
+</div>
+
 <label class="terms">
 
 <input
@@ -1138,9 +1146,25 @@ class="home"
 
 <script type="module">
 
-import { auth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, firestoreErrorText } from "./js/firebase.js";
+import { auth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, firestoreErrorText, sendEmailVerification, getAdditionalUserInfo } from "./js/firebase.js";
 import { redirectAfterAuth } from "./js/admin.js";
 import { friendlyAuthError, ensureUserProfile } from "./js/account.js";
+import {
+    resolveReferralCode, captureRegistrationReferral, rememberRegistrationReferral,
+    bindRegistrationReferral, clearRegistrationReferral
+} from "./js/referrals.js";
+
+try {
+    document.getElementById("referralCode").value = captureRegistrationReferral();
+} catch (error) {
+    // Invalid URL codes are visible and can be corrected before signing up.
+    document.getElementById("referralCode").value = new URL(location.href).searchParams.get("ref") || "";
+}
+async function prepareInvitation() {
+    const code = document.getElementById("referralCode").value.trim();
+    await resolveReferralCode(code); // exact public code lookup, not a users query
+    rememberRegistrationReferral(code);
+}
 
 const provider=new GoogleAuthProvider();
 
@@ -1556,6 +1580,8 @@ loading(true);
 try{
 
 
+await prepareInvitation();
+
 await setPersistence(
 auth,
 browserLocalPersistence
@@ -1572,6 +1598,15 @@ passwordValue
 
 const user=
 credential.user;
+bindRegistrationReferral(user);
+let verificationMessage = "";
+try {
+    await sendEmailVerification(user);
+    verificationMessage = " Check your inbox to verify your email.";
+} catch (error) {
+    console.warn("Verification email could not be sent:", error);
+    verificationMessage = " You can send a verification email from Referrals & affiliates.";
+}
 
 
 /* The login exists from this point on, whatever happens next. A failure
@@ -1631,7 +1666,7 @@ return;
 
 
 showSuccess(
-"Account created successfully. Redirecting..."
+"Account created successfully." + verificationMessage + " Redirecting…"
 );
 
 
@@ -1688,6 +1723,8 @@ loading(true);
 try{
 
 
+await prepareInvitation();
+
 await setPersistence(
 auth,
 browserLocalPersistence
@@ -1703,6 +1740,8 @@ provider
 
 const user=
 result.user;
+if (getAdditionalUserInfo(result)?.isNewUser) bindRegistrationReferral(user);
+else clearRegistrationReferral(user);
 
 
 /* People land on "Create an account" and click Google even when they

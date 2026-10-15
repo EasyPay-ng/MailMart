@@ -30,6 +30,10 @@ import {
   runTransaction
 } from "./firebase.js";
 import { isAdminEmail } from "./admin.js";
+import {
+  referralCodeFor, registrationReferrer, clearRegistrationReferral,
+  REFERRAL_CODES, REFERRALS
+} from "./referrals.js";
 
 /* ------------------------------------------------------------------ */
 /* error translation                                                   */
@@ -126,6 +130,7 @@ export async function ensureUserProfile(user, profile = {}) {
   const ref = doc(db, "users", user.uid);
   const snap = await getDoc(ref);
   if (snap.exists()) {
+    clearRegistrationReferral(user);
     return { created: false, exists: true, data: snap.data() };
   }
 
@@ -137,6 +142,10 @@ export async function ensureUserProfile(user, profile = {}) {
   // wallet starts at ₦0.00, status active, and isAdmin only for the addresses
   // on the administrator list. Nothing here trusts the browser for value or
   // privilege — the rules re-check every field server-side.
+  const referralCode = referralCodeFor(user.uid);
+  // Only an invitation bound to this newly registered uid can survive a
+  // failed profile write. An unrelated returning user cannot consume it.
+  const referredBy = await registrationReferrer(user);
   const data = {
     uid: user.uid,
     username: profile.username || displayName,
@@ -147,6 +156,8 @@ export async function ensureUserProfile(user, profile = {}) {
     balance: 0,
     status: "active",
     isAdmin: isAdminEmail(email),
+    referralCode,
+    referredBy,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp()
   };
@@ -158,9 +169,24 @@ export async function ensureUserProfile(user, profile = {}) {
     const fresh = await t.get(ref);
     if (fresh.exists()) return false;
     t.set(ref, data);
+    t.set(doc(db, REFERRAL_CODES, referralCode), {
+      uid: user.uid, affiliateActive: false,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+    if (referredBy) t.set(doc(db, REFERRALS, user.uid), {
+      refereeUid: user.uid, referrerUid: referredBy, displayName,
+      joinedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      status: user.emailVerified ? "pending" : "unverified",
+      verifiedAt: user.emailVerified ? serverTimestamp() : null,
+      lifetimeRatePercent: 4, reviewReason: "", riskReason: "", firstPaidEmailSaleId: null,
+      emailSaleId: null, emailRewardPaidAt: null,
+      firstCompletedOrderId: null, firstPurchaseCompletedAt: null,
+      purchaseOrderId: null, purchaseRewardPaidAt: null
+    });
     return true;
   });
 
+  clearRegistrationReferral(user);
   if (created) return { created: true, exists: true, data };
 
   // Someone else created it mid-flight; report what is actually stored.

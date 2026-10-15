@@ -26,7 +26,7 @@ service cloud.firestore {
     }
 
     function tokenEmail() {
-      return request.auth.token.email;
+      return request.auth.token.get('email', null);
     }
 
     // Audit fields use the same identity as the browser: prefer the Firebase
@@ -79,6 +79,31 @@ service cloud.firestore {
         || (requested < expected + 0.01 && requested > expected - 0.01);
     }
 
+    function referralCodePath(ownerId) {
+      let code = 'MM-' + ownerId;
+      return /databases/$(database)/documents/referralCodes/$(code);
+    }
+
+    function monthlyAmount(total, number) {
+      let cents = math.round(total * 100.0);
+      let base = math.floor(cents / 12.0);
+      return (number == 12 ? cents - base * 11 : base) / 100.0;
+    }
+    function lifetimeTypes() {
+      return ['email_payout', 'order_payment', 'order_payout', 'social_sale', 'social_purchase', 'rental_payment'];
+    }
+    function lifetimeBusinessReady(tx) {
+      return (tx.get('orderId', null) == null
+          || (get(/databases/$(database)/documents/orders/$(tx.orderId)).data.status == 'completed'
+              && (get(/databases/$(database)/documents/orders/$(tx.orderId)).data.get('paymentMode', 'full') != 'installment'
+                  || get(/databases/$(database)/documents/orders/$(tx.orderId)).data.installmentsPaid == 12)))
+        && (tx.get('socialRequestId', null) == null || get(/databases/$(database)/documents/socialRequests/$(tx.socialRequestId)).data.status == 'completed')
+        && (tx.get('rentalId', null) == null || get(/databases/$(database)/documents/rentals/$(tx.rentalId)).data.status == 'completed')
+        && (tx.type != 'email_payout' || (tx.saleId is string && get(/databases/$(database)/documents/sales/$(tx.saleId)).data.status == 'paid'
+            && get(/databases/$(database)/documents/sales/$(tx.saleId)).data.uid == tx.uid
+            && get(/databases/$(database)/documents/sales/$(tx.saleId)).data.payout == tx.amount));
+    }
+
     // ---------- users ----------------------------------------------------
     match /users/{userId} {
 
@@ -105,7 +130,18 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(
              ['uid', 'username', 'phone', 'email', 'displayName',
               'photoURL', 'balance', 'status', 'isAdmin',
-              'createdAt', 'updatedAt'])
+              'createdAt', 'updatedAt', 'referralCode', 'referredBy'])
+        && request.resource.data.keys().hasOnly(
+             ['uid', 'username', 'phone', 'email', 'displayName',
+              'photoURL', 'balance', 'status', 'isAdmin',
+              'createdAt', 'updatedAt', 'referralCode', 'referredBy'])
+        && request.resource.data.referralCode == 'MM-' + uid()
+        && getAfter(/databases/$(database)/documents/referralCodes/$(request.resource.data.referralCode)).data.uid == uid()
+        && (request.resource.data.referredBy == null
+            || (request.resource.data.referredBy is string
+                && request.resource.data.referredBy != uid()
+                && get(referralCodePath(request.resource.data.referredBy)).data.uid == request.resource.data.referredBy
+                && getAfter(/databases/$(database)/documents/referrals/$(uid())).data.referrerUid == request.resource.data.referredBy))
         && request.resource.data.uid == uid()
         && request.resource.data.email.lower() == tokenEmail().lower()
         && request.resource.data.balance == 0
@@ -122,10 +158,203 @@ service cloud.firestore {
       allow update: if signedIn() && (
         (userId == uid() && ownProfileEdit())
         || (isAdmin()
+            && request.resource.data.uid == resource.data.uid
+            && request.resource.data.get('referredBy', null) == resource.data.get('referredBy', null)
+            && request.resource.data.get('referralCode', null) == resource.data.get('referralCode', null)
             && (request.resource.data.isAdmin == resource.data.isAdmin
                 || request.resource.data.isAdmin == emailIsAdmin(resource.data.email)))
       );
 
+      allow delete: if false;
+    }
+
+    // ---------- referrals and affiliates --------------------------------
+    // Codes are safe to resolve before sign-up. A single exact lookup reveals
+    // only a uid and affiliate availability. Profiles remain private, and
+    // public enumeration/list queries are forbidden.
+    match /referralCodes/{code} {
+      function codeShape() {
+        return request.resource.data.keys().hasOnly(['uid', 'affiliateActive', 'createdAt', 'updatedAt'])
+          && request.resource.data.uid is string
+          && code == 'MM-' + request.resource.data.uid
+          && request.resource.data.affiliateActive is bool
+          && request.resource.data.updatedAt == request.time;
+      }
+      function approvedAffiliate() {
+        return !request.resource.data.affiliateActive
+          || getAfter(/databases/$(database)/documents/affiliateApplications/$(request.resource.data.uid)).data.status == 'approved';
+      }
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if signedIn() && codeShape()
+        && request.resource.data.createdAt == request.time
+        && getAfter(/databases/$(database)/documents/users/$(request.resource.data.uid)).data.uid == request.resource.data.uid
+        && ((request.resource.data.uid == uid() && !request.resource.data.affiliateActive)
+            || (isAdmin() && approvedAffiliate()));
+      allow update: if isAdmin() && codeShape() && approvedAffiliate()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['affiliateActive', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    match /referrals/{refereeId} {
+      function newReferral() {
+        let d = request.resource.data;
+        return refereeId == uid() && d.refereeUid == uid()
+          && d.keys().hasOnly(['refereeUid', 'referrerUid', 'displayName', 'joinedAt', 'updatedAt',
+              'emailSaleId', 'emailRewardPaidAt', 'firstCompletedOrderId', 'firstPurchaseCompletedAt',
+              'purchaseOrderId', 'purchaseRewardPaidAt', 'status', 'verifiedAt', 'lifetimeRatePercent',
+              'reviewReason', 'riskReason', 'firstPaidEmailSaleId'])
+          && !exists(/databases/$(database)/documents/users/$(uid()))
+          && d.referrerUid is string && d.referrerUid != uid()
+          && getAfter(/databases/$(database)/documents/users/$(uid())).data.referredBy == d.referrerUid
+          && getAfter(/databases/$(database)/documents/users/$(uid())).data.displayName == d.displayName
+          && d.lifetimeRatePercent == 4 && d.reviewReason == '' && d.riskReason == '' && d.firstPaidEmailSaleId == null
+          && ((request.auth.token.email_verified == true && d.status == 'pending' && d.verifiedAt == request.time)
+              || (request.auth.token.email_verified != true && d.status == 'unverified' && d.verifiedAt == null))
+          && d.emailSaleId == null && d.emailRewardPaidAt == null
+          && d.firstCompletedOrderId == null && d.firstPurchaseCompletedAt == null
+          && d.purchaseOrderId == null && d.purchaseRewardPaidAt == null
+          && d.joinedAt == request.time && d.updatedAt == request.time;
+      }
+      // The buyer may record the FIRST delivery milestone, but cannot credit
+      // either wallet. It must accompany a real shipped -> completed order.
+      function firstDelivery() {
+        let d = request.resource.data;
+        let path = /databases/$(database)/documents/orders/$(d.firstCompletedOrderId);
+        return refereeId == uid() && resource.data.firstCompletedOrderId == null
+          && d.diff(resource.data).affectedKeys().hasOnly(['firstCompletedOrderId', 'firstPurchaseCompletedAt', 'updatedAt'])
+          && get(path).data.status == 'shipped'
+          && getAfter(path).data.status == 'completed'
+          && getAfter(path).data.buyerUid == uid()
+          && getAfter(path).data.referrerUid == resource.data.referrerUid
+          && getAfter(path).data.completedAt == request.time
+          && d.firstPurchaseCompletedAt == request.time && d.updatedAt == request.time;
+      }
+      function adminMilestone() {
+        let d = request.resource.data;
+        return isAdmin() && d.diff(resource.data).affectedKeys().hasOnly([
+            'emailSaleId', 'emailRewardPaidAt', 'firstCompletedOrderId', 'firstPurchaseCompletedAt',
+            'purchaseOrderId', 'purchaseRewardPaidAt', 'updatedAt', 'firstPaidEmailSaleId',
+            'status', 'lifetimeRatePercent', 'reviewReason', 'riskReason', 'reviewedBy', 'reviewedAt'])
+          && (resource.data.get('firstPaidEmailSaleId', null) == null || d.firstPaidEmailSaleId == resource.data.firstPaidEmailSaleId)
+          && ['unverified', 'pending', 'approved', 'flagged', 'rejected'].hasAny([d.get('status', 'unverified')])
+          && ['', 'spam', 'bot', 'duplicate', 'abuse', 'other'].hasAny([d.get('riskReason', '')])
+          && d.get('reviewReason', '') is string && d.get('reviewReason', '').size() <= 500
+          && (!d.diff(resource.data).affectedKeys().hasAny(['status', 'lifetimeRatePercent', 'reviewReason', 'riskReason'])
+              || (d.reviewedBy == adminActor() && d.reviewedAt == request.time))
+          && d.get('lifetimeRatePercent', 4) >= 4 && d.get('lifetimeRatePercent', 4) <= 5
+          && (d.get('status', 'unverified') != 'approved' || d.verifiedAt != null)
+          && (resource.data.emailSaleId == null || d.emailSaleId == resource.data.emailSaleId)
+          && (resource.data.firstCompletedOrderId == null || d.firstCompletedOrderId == resource.data.firstCompletedOrderId)
+          && (resource.data.purchaseOrderId == null || d.purchaseOrderId == resource.data.purchaseOrderId)
+          && d.updatedAt == request.time;
+      }
+      function ownVerification() {
+        return refereeId == uid() && request.auth.token.email_verified == true
+          && resource.data.get('verifiedAt', null) == null
+          && request.resource.data.status == (resource.data.get('status', 'unverified') == 'unverified' ? 'pending' : resource.data.status)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'verifiedAt', 'updatedAt'])
+          && request.resource.data.verifiedAt == request.time
+          && request.resource.data.updatedAt == request.time;
+      }
+      allow read: if signedIn() && (refereeId == uid() || isAdmin() || resource.data.referrerUid == uid());
+      allow create: if signedIn() && newReferral();
+      allow update: if signedIn() && (adminMilestone() || firstDelivery() || ownVerification());
+      allow delete: if false;
+    }
+
+    match /referralAudit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.reviewedBy == adminActor()
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+    match /referralClaims/{claimId} {
+      function validClaimSource() {
+        let d = request.resource.data;
+        let r = get(/databases/$(database)/documents/referrals/$(d.refereeUid)).data;
+        return d.referrerUid == r.referrerUid && (d.uid == r.referrerUid || (d.type == 'purchase_welcome' && d.uid == d.refereeUid))
+          && ((d.sourceKind == 'transaction' && d.type == 'lifetime_commission' && claimId == 'lifetime_' + d.sourceId && lifetimeSource(d, r))
+              || (d.sourceKind == 'email' && d.type == 'email_referral' && claimId == 'email_referral_' + d.refereeUid
+                  && d.amount == 200 && getAfter(/databases/$(database)/documents/sales/$(d.sourceId)).data.status == 'paid'
+                  && getAfter(/databases/$(database)/documents/sales/$(d.sourceId)).data.uid == d.refereeUid
+                  && getAfter(/databases/$(database)/documents/referrals/$(d.refereeUid)).data.firstPaidEmailSaleId == d.sourceId)
+              || (d.sourceKind == 'order' && get(/databases/$(database)/documents/orders/$(d.sourceId)).data.status == 'completed'
+                  && r.firstCompletedOrderId == d.sourceId && get(/databases/$(database)/documents/orders/$(d.sourceId)).data.buyerUid == d.refereeUid
+                  && ((d.type == 'purchase_referral' && d.amount == 500 && claimId == 'purchase_referral_' + d.refereeUid)
+                      || (d.type == 'purchase_welcome' && d.amount == 200 && claimId == 'purchase_welcome_' + d.refereeUid))));
+      }
+      function lifetimeSource(d, r) {
+        let tx = getAfter(/databases/$(database)/documents/transactions/$(d.sourceId)).data;
+        return tx.uid == d.refereeUid && tx.status == 'completed' && lifetimeTypes().hasAny([tx.type])
+          && d.sourceType == tx.type && d.baseAmount == tx.amount
+          && d.ratePercent == r.get('lifetimeRatePercent', 4) && d.ratePercent >= 4 && d.ratePercent <= 5
+          && sameMoney(d.amount, math.round(d.baseAmount * d.ratePercent) / 100.0);
+      }
+      function claimDecision() {
+        let d = request.resource.data;
+        return isAdmin() && resource.data.status == 'pending'
+          && d.diff(resource.data).affectedKeys().hasOnly(['status', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time
+          && (d.status == 'rejected' || (d.status == 'completed'
+              && getAfter(/databases/$(database)/documents/transactions/$(claimId)).data.amount == resource.data.amount
+              && getAfter(/databases/$(database)/documents/transactions/$(claimId)).data.uid == resource.data.uid
+              && getAfter(/databases/$(database)/documents/transactions/$(claimId)).data.claimId == claimId
+              && (resource.data.type != 'purchase_referral' || pairedWelcome())
+              && (resource.data.type != 'purchase_welcome' || pairedReferrer())));
+      }
+      function pairedWelcome() {
+        let pair = 'purchase_welcome_' + resource.data.refereeUid;
+        return getAfter(/databases/$(database)/documents/referralClaims/$(pair)).data.status == 'completed';
+      }
+      function pairedReferrer() {
+        let pair = 'purchase_referral_' + resource.data.refereeUid;
+        return getAfter(/databases/$(database)/documents/referralClaims/$(pair)).data.status == 'completed';
+      }
+      allow read: if signedIn() && (isAdmin() || resource.data.uid == uid());
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly([
+          'type', 'uid', 'refereeUid', 'referrerUid', 'sourceKind', 'sourceId', 'sourceType',
+          'amount', 'baseAmount', 'ratePercent', 'reference', 'status', 'createdBy', 'createdAt', 'updatedAt'])
+        && request.resource.data.status == 'pending' && request.resource.data.amount > 0
+        && request.resource.data.createdBy == adminActor() && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time && validClaimSource();
+      allow update: if claimDecision();
+      allow delete: if false;
+    }
+
+    match /affiliateApplications/{applicantId} {
+      function applicationShape() {
+        return request.resource.data.promotionPlan is string
+          && request.resource.data.promotionPlan.size() >= 10 && request.resource.data.promotionPlan.size() <= 1000
+          && request.resource.data.acceptedTerms == true
+          && request.resource.data.termsVersion == '2026-10'
+          && request.resource.data.termsAcceptedAt == request.time
+          && request.resource.data.status == 'pending'
+          && request.resource.data.updatedAt == request.time;
+      }
+      function ownApplication() {
+        return applicantId == uid() && request.auth.token.email_verified == true && applicationShape();
+      }
+      function adminDecision() {
+        let d = request.resource.data;
+        return isAdmin() && d.diff(resource.data).affectedKeys().hasOnly([
+            'status', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+          && ((resource.data.status == 'pending' && ['approved', 'rejected'].hasAny([d.status]))
+              || (resource.data.status == 'approved' && d.status == 'suspended')
+              || (resource.data.status == 'suspended' && d.status == 'approved'))
+          && getAfter(referralCodePath(applicantId)).data.affiliateActive == (d.status == 'approved')
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time;
+      }
+      allow read: if signedIn() && (applicantId == uid() || isAdmin());
+      allow create: if signedIn() && ownApplication()
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'promotionPlan', 'acceptedTerms',
+            'termsVersion', 'termsAcceptedAt', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.uid == uid() && request.resource.data.email == tokenEmail()
+        && request.resource.data.createdAt == request.time;
+      allow update: if signedIn() && (adminDecision()
+        || (ownApplication() && resource.data.status == 'rejected'
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                'promotionPlan', 'acceptedTerms', 'termsVersion', 'termsAcceptedAt', 'status', 'updatedAt'])));
       allow delete: if false;
     }
 
@@ -271,6 +500,19 @@ service cloud.firestore {
         return minimum is number ? minimum : 0;
       }
 
+      function validOrderDebit() {
+        let d = request.resource.data;
+        let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
+        let n = d.get('installmentNumber', 0);
+        return d.direction == 'debit' && o.buyerUid == uid()
+          && !['cancelled', 'refunded', 'completed'].hasAny([o.status])
+          && (o.get('paymentMode', 'full') == 'installment'
+              ? (n == o.installmentsPaid + 1 && n >= 1 && n <= 12
+                 && txId == d.orderId + '_month_' + string(n)
+                 && sameMoney(d.amount, monthlyAmount(o.total, n))
+                 && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount)
+              : (o.status == 'pending_payment' && o.paymentTxId == txId && n == 0 && sameMoney(d.amount, o.total)));
+      }
       function ownPendingRequest() {
         return request.resource.data.uid == uid()
           && request.resource.data.status == 'pending'
@@ -300,9 +542,7 @@ service cloud.firestore {
                   && request.resource.data.bankUsed.size() > 0
                   && request.resource.data.proofImage is string
                   && request.resource.data.proofImage.size() < 800000))
-          && (request.resource.data.type != 'order_payment'
-              || (request.resource.data.orderId is string
-                  && request.resource.data.direction == 'debit'));
+          && (request.resource.data.type != 'order_payment' || validOrderDebit());
       }
 
       // Administrators may only move a request along its allowed path, and the
@@ -311,18 +551,22 @@ service cloud.firestore {
       // A marketplace order payment is settled in one step (pending ->
       // completed) by the Marketplace Admin screen, which charges the buyer
       // and pays the seller in the same transaction.
+      function rentalSettlement() {
+        let rental = getAfter(/databases/$(database)/documents/rentals/$(resource.data.rentalId)).data;
+        return resource.data.status == 'approved'
+          && ((request.resource.data.status == 'completed' && rental.status == 'completed'
+               && getAfter(/databases/$(database)/documents/rentalCodes/$(resource.data.rentalId)).data.uid == resource.data.uid)
+              || (request.resource.data.status == 'refunded' && rental.status == 'refunded'));
+      }
       function adminSettlement() {
         return isAdmin()
           && request.resource.data.diff(resource.data).affectedKeys()
                .hasOnly(['status', 'reviewedBy', 'reviewedAt',
                          'rejectionReason', 'updatedAt', 'balanceAfter'])
-          && ((resource.data.status == 'pending'
-               && ['approved', 'rejected'].hasAny([request.resource.data.status]))
-              || (resource.data.status == 'pending'
-                  && request.resource.data.status == 'completed'
-                  && resource.data.type == 'order_payment')
-              || (resource.data.status == 'approved'
-                  && request.resource.data.status == 'completed'))
+          && (resource.data.type == 'rental_payment' ? rentalSettlement()
+              : ((resource.data.status == 'pending' && ['approved', 'rejected'].hasAny([request.resource.data.status]))
+                  || (resource.data.status == 'pending' && request.resource.data.status == 'completed' && resource.data.type == 'order_payment')
+                  || (resource.data.status == 'approved' && request.resource.data.status == 'completed')))
           && request.resource.data.reviewedBy == adminActor();
       }
 
@@ -353,10 +597,117 @@ service cloud.firestore {
           && request.resource.data.createdAt == request.time;
       }
 
-      allow read: if signedIn()
-        && (resource.data.uid == uid() || isAdmin());
+      // Referral credits have deterministic IDs and validated source events.
+      // They are completed-only, immutable, and can NEVER be requested by a
+      // normal user through the deposit/withdrawal settlement screen.
+      function emailRewardMatches() {
+        let d = request.resource.data;
+        let r = getAfter(/databases/$(database)/documents/referrals/$(d.sourceUid)).data;
+        let sale = getAfter(/databases/$(database)/documents/sales/$(d.saleId)).data;
+        return txId == 'email_referral_' + d.sourceUid
+          && r.referrerUid == d.uid && r.refereeUid == d.sourceUid
+          && r.status == 'approved' && r.verifiedAt != null
+          && r.emailSaleId == d.saleId && r.emailRewardPaidAt == request.time
+          && sale.uid == d.sourceUid && sale.status == 'paid'
+          && (sale.paidAt == request.time || heldClaimMatches())
+          && d.amount == 200;
+      }
+      function purchaseRewardMatches() {
+        let d = request.resource.data;
+        let r = getAfter(/databases/$(database)/documents/referrals/$(d.sourceUid)).data;
+        let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
+        return o.status == 'completed' && o.paidAt != null && o.rewardsSettledAt == request.time
+          && (o.get('paymentMode', 'full') != 'installment' || (o.installmentsPaid == 12 && sameMoney(o.totalPaid, o.total)))
+          && r.status == 'approved' && r.verifiedAt != null
+          && o.buyerUid == d.sourceUid && o.referrerUid == r.referrerUid
+          && r.purchaseOrderId == d.orderId && r.firstCompletedOrderId == d.orderId
+          && r.purchaseRewardPaidAt == request.time
+          && ((d.type == 'purchase_referral' && txId == 'purchase_referral_' + d.sourceUid
+               && d.uid == r.referrerUid && d.amount == 500)
+              || (d.type == 'purchase_welcome' && txId == 'purchase_welcome_' + d.sourceUid
+                  && d.uid == d.sourceUid && d.amount == 200));
+      }
+      function affiliateRewardMatches() {
+        let d = request.resource.data;
+        let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
+        return txId == 'affiliate_' + d.orderId && o.status == 'completed'
+          && o.paidAt != null && o.rewardsSettledAt == request.time
+          && (o.get('paymentMode', 'full') != 'installment' || (o.installmentsPaid == 12 && sameMoney(o.totalPaid, o.total)))
+          && o.buyerUid == d.sourceUid && o.affiliateUid == d.uid
+          && d.uid != o.buyerUid && d.uid != o.sellerUid
+          && sameMoney(d.amount, math.round(o.subtotal * 15.0) / 100.0);
+      }
+      function heldClaimMatches() {
+        let d = request.resource.data;
+        let c = getAfter(/databases/$(database)/documents/referralClaims/$(d.claimId)).data;
+        return d.claimId == txId && c.status == 'completed' && c.uid == d.uid && c.amount == d.amount
+          && c.refereeUid == d.sourceUid && c.type == d.type
+          && (d.type != 'lifetime_commission' || (c.sourceId == d.sourceTxId && c.baseAmount == d.baseAmount && c.ratePercent == d.ratePercent));
+      }
+      function lifetimeRewardMatches() {
+        let d = request.resource.data;
+        let tx = get(/databases/$(database)/documents/transactions/$(d.sourceTxId)).data;
+        let r = get(/databases/$(database)/documents/referrals/$(d.sourceUid)).data;
+        return heldClaimMatches() && txId == 'lifetime_' + d.sourceTxId
+          && r.status == 'approved' && r.verifiedAt != null && r.referrerUid == d.uid
+          && tx.uid == d.sourceUid && tx.status == 'completed' && lifetimeTypes().hasAny([tx.type])
+          && d.baseAmount == tx.amount && d.ratePercent >= 4 && d.ratePercent <= 5
+          && sameMoney(d.amount, math.round(d.baseAmount * d.ratePercent) / 100.0)
+          && lifetimeBusinessReady(tx);
+      }
+      function adminServiceEntry() {
+        let d = request.resource.data;
+        return isAdmin() && d.uid is string && d.amount > 0 && d.balanceAfter is number
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time
+          && d.createdAt == request.time && d.updatedAt == request.time
+          && ((['social_sale', 'social_purchase'].hasAny([d.type]) && socialEntry())
+              || (d.type == 'rental_payment' && rentalEntry()) || (d.type == 'rental_refund' && rentalRefund()));
+      }
+      function socialEntry() {
+        let d = request.resource.data;
+        let r = getAfter(/databases/$(database)/documents/socialRequests/$(d.socialRequestId)).data;
+        return r.status == 'completed' && r.uid == d.uid && r.amount == d.amount && r.ownershipReviewed == true
+          && d.status == 'completed' && txId == 'social_' + r.side + '_' + d.socialRequestId
+          && ((r.side == 'sell' && d.type == 'social_sale' && d.direction == 'credit')
+              || (r.side == 'buy' && d.type == 'social_purchase' && d.direction == 'debit'));
+      }
+      function rentalEntry() {
+        let d = request.resource.data;
+        let r = getAfter(/databases/$(database)/documents/rentals/$(d.rentalId)).data;
+        return txId == 'rental_payment_' + d.rentalId && r.paymentTxId == txId && r.status == 'awaiting_code'
+          && d.status == 'approved' && d.direction == 'debit' && d.uid == r.uid && d.amount == r.amount && d.amount >= 50;
+      }
+      function rentalRefund() {
+        let d = request.resource.data;
+        let r = getAfter(/databases/$(database)/documents/rentals/$(d.rentalId)).data;
+        return txId == 'rental_refund_' + d.rentalId && r.status == 'refunded'
+          && d.status == 'completed' && d.direction == 'credit' && d.uid == r.uid && d.amount == r.amount
+          && getAfter(/databases/$(database)/documents/transactions/$(r.paymentTxId)).data.status == 'refunded';
+      }
+      function adminRewardEntry() {
+        let d = request.resource.data;
+        return isAdmin()
+          && d.keys().hasAll(['type', 'direction', 'status', 'uid', 'email', 'amount', 'balanceAfter',
+              'reference', 'sourceUid', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['type', 'direction', 'status', 'uid', 'email', 'amount', 'balanceAfter',
+              'reference', 'sourceUid', 'saleId', 'orderId', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt',
+              'claimId', 'sourceTxId', 'baseAmount', 'ratePercent'])
+          && d.direction == 'credit' && d.status == 'completed'
+          && d.amount is number && d.amount > 0 && d.balanceAfter is number && d.balanceAfter >= 0
+          && d.uid is string && d.sourceUid is string
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time
+          && d.createdAt == request.time && d.updatedAt == request.time
+          && ((d.type == 'email_referral' && d.keys().hasAll(['saleId']) && emailRewardMatches())
+              || (['purchase_referral', 'purchase_welcome'].hasAny([d.type])
+                  && d.keys().hasAll(['orderId']) && purchaseRewardMatches())
+              || (d.type == 'affiliate_commission' && d.keys().hasAll(['orderId']) && affiliateRewardMatches())
+              || (d.type == 'lifetime_commission' && lifetimeRewardMatches()));
+      }
 
-      allow create: if signedIn() && (ownPendingRequest() || adminLedgerEntry());
+      allow read: if signedIn()
+        && (isAdmin() || resource.data.uid == uid());
+
+      allow create: if signedIn() && (ownPendingRequest() || adminLedgerEntry() || adminRewardEntry() || adminServiceEntry());
       allow update: if signedIn() && adminSettlement();
       allow delete: if false;
     }
@@ -417,6 +768,7 @@ service cloud.firestore {
       allow create: if (isVerifiedSeller() || isAdmin())
         && request.resource.data.sellerUid == request.auth.uid
         && listingShape()
+        && (isAdmin() || request.resource.data.get('installmentEnabled', false) == false)
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
@@ -424,6 +776,8 @@ service cloud.firestore {
       allow update: if signedIn()
         && (resource.data.sellerUid == request.auth.uid || isAdmin())
         && request.resource.data.sellerUid == resource.data.sellerUid
+        && (isAdmin() || (request.resource.data.get('installmentEnabled', false) == resource.data.get('installmentEnabled', false)
+            && request.resource.data.get('installmentDelivery', 'after_full') == resource.data.get('installmentDelivery', 'after_full')))
         && listingShape();
 
       allow delete: if signedIn()
@@ -483,46 +837,215 @@ service cloud.firestore {
           && request.resource.data.sellerEmail == listing.sellerEmail;
       }
 
+      function affiliateAttribution() {
+        let d = request.resource.data;
+        return d.affiliateUid == null ? d.affiliateCode == ''
+          : (d.affiliateUid is string && d.affiliateUid != uid() && d.affiliateUid != d.sellerUid
+             && d.affiliateCode == 'MM-' + d.affiliateUid
+             && get(/databases/$(database)/documents/referralCodes/$(d.affiliateCode)).data.affiliateActive == true);
+      }
+      function matchingPayment() {
+        let d = request.resource.data;
+        let p = getAfter(/databases/$(database)/documents/transactions/$(d.paymentTxId)).data;
+        return p.uid == uid() && p.type == 'order_payment' && p.orderId == orderId
+          && p.status == 'pending' && p.direction == 'debit'
+          && sameMoney(p.amount, d.get('paymentMode', 'full') == 'installment' ? monthlyAmount(d.total, 1) : d.total);
+      }
+      function completionRecordsReferral() {
+        let referrer = resource.data.get('referrerUid', null);
+        let r = /databases/$(database)/documents/referrals/$(uid());
+        return referrer == null || (getAfter(r).data.firstCompletedOrderId != null
+          && (get(r).data.firstCompletedOrderId != null || getAfter(r).data.firstCompletedOrderId == orderId));
+      }
+
+      function planTerms() {
+        let d = request.resource.data;
+        let l = get(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        return ['full', 'installment'].hasAny([d.get('paymentMode', 'full')])
+          && d.get('installmentsPaid', 0) == 0 && d.get('totalPaid', 0) == 0 && d.get('sellerPaid', 0) == 0
+          && d.get('paidAt', null) == null && d.get('completedAt', null) == null
+          && d.get('deliveredAt', null) == null && d.get('fullyPaidAt', null) == null
+          && (d.get('paymentMode', 'full') != 'installment' || (l.get('installmentEnabled', false) == true
+              && d.installmentMonths == 12 && d.total >= 0.12 && d.sellerPayout >= 0.12 && d.installmentDelivery == l.installmentDelivery
+              && ['after_first', 'after_full'].hasAny([d.installmentDelivery])));
+      }
+      function fullyPaid() {
+        return resource.data.get('paymentMode', 'full') != 'installment'
+          || (resource.data.installmentsPaid == 12 && sameMoney(resource.data.totalPaid, resource.data.total));
+      }
+      function buyerDelivery() {
+        return resource.data.buyerUid == uid() && resource.data.status == 'shipped'
+          && request.resource.data.deliveredAt == request.time
+          && (fullyPaid() ? (request.resource.data.status == 'completed' && request.resource.data.completedAt == request.time && completionRecordsReferral())
+              : (request.resource.data.status == 'delivered_pending_balance' && noCompletionEdit()));
+      }
       function ownOrder() {
         return request.resource.data.buyerUid == request.auth.uid
           && request.resource.data.status == 'pending_payment'
           && request.resource.data.keys().hasAll(
                ['listingId', 'sellerUid', 'sellerEmail', 'quantity', 'itemPrice',
                 'subtotal', 'deliveryFee', 'serviceFee', 'total', 'sellerPayout',
-                'address', 'timeline', 'createdAt', 'updatedAt'])
-          && pricedCorrectly()
-          && request.resource.data.createdAt == request.time;
+                'address', 'timeline', 'createdAt', 'updatedAt', 'paymentTxId',
+                'referrerUid', 'affiliateUid', 'affiliateCode', 'rewardsSettledAt'])
+          && request.resource.data.quantity is int
+          && request.resource.data.buyerUid != request.resource.data.sellerUid
+          && request.resource.data.buyerEmail == tokenEmail()
+          && request.resource.data.referrerUid == get(/databases/$(database)/documents/users/$(uid())).data.get('referredBy', null)
+          && request.resource.data.rewardsSettledAt == null
+          && request.resource.data.get('rewardsSummary', null) == null
+          && request.resource.data.paymentTxId is string && matchingPayment()
+          && affiliateAttribution() && pricedCorrectly() && planTerms()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
       }
 
       function statusStep() {
         return request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['status', 'updatedAt', 'timeline',
-                           'paidAt', 'completedAt', 'refundedAt']);
+                 .hasOnly(['status', 'updatedAt', 'timeline', 'completedAt', 'deliveredAt'])
+          && request.resource.data.updatedAt == request.time;
+      }
+      function noCompletionEdit() {
+        return request.resource.data.get('completedAt', null) == resource.data.get('completedAt', null);
+      }
+      function adminOrderEdit() {
+        return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'updatedAt', 'timeline', 'paidAt', 'completedAt', 'refundedAt',
+          'cancellationReason', 'rewardsSettledAt', 'rewardsSummary', 'deliveredAt', 'totalPaid', 'sellerPaid',
+          'installmentsPaid', 'fullyPaidAt'])
+          && request.resource.data.updatedAt == request.time;
       }
 
       allow read: if signedIn()
-        && (resource.data.buyerUid == request.auth.uid
-            || resource.data.sellerUid == request.auth.uid
-            || isAdmin());
-
+        && (resource.data.buyerUid == uid() || resource.data.sellerUid == uid() || isAdmin());
       allow create: if signedIn() && ownOrder();
-
-      // The seller ships a paid order; the buyer confirms delivery, or cancels
-      // before it ships; an administrator may move an order anywhere.
-      allow update: if signedIn() && statusStep() && (
-        (resource.data.sellerUid == request.auth.uid
-          && resource.data.status == 'paid'
-          && request.resource.data.status == 'shipped')
-        || (resource.data.buyerUid == request.auth.uid
-            && resource.data.status == 'shipped'
-            && request.resource.data.status == 'completed')
-        || (resource.data.buyerUid == request.auth.uid
-            && ['pending_payment', 'paid'].hasAny([resource.data.status])
-            && request.resource.data.status == 'cancelled')
-        || isAdmin()
-      );
+      // Attribution, price and payment reference are immutable even for an
+      // administrator. Normal delivery transitions cannot touch paidAt or
+      // reward-review fields. A delivery milestone never changes a balance.
+      allow update: if signedIn() && (adminOrderEdit() || (statusStep() && (
+        (resource.data.sellerUid == uid() && resource.data.status == 'paid'
+          && request.resource.data.status == 'shipped' && noCompletionEdit()
+          && (fullyPaid() || resource.data.get('installmentDelivery', 'after_full') == 'after_first'))
+        || buyerDelivery()
+        || (resource.data.buyerUid == uid() && resource.data.status == 'pending_payment'
+            && resource.data.get('totalPaid', 0) == 0 && request.resource.data.status == 'cancelled' && noCompletionEdit())
+      )));
 
       allow delete: if false;
+    }
+
+    // ---------- reviewed social assets and authorized manual rentals -----
+    match /socialOffers/{offerId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['title', 'platform', 'description', 'buyPrice', 'sellPrice', 'stock',
+            'active', 'authorizedTransfersOnly', 'createdAt', 'updatedAt', 'updatedBy'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 120
+        && ['Facebook', 'Instagram', 'X', 'Other'].hasAny([request.resource.data.platform])
+        && request.resource.data.description is string && request.resource.data.description.size() <= 1000
+        && request.resource.data.buyPrice >= 0 && request.resource.data.sellPrice >= 0
+        && request.resource.data.buyPrice <= 100000000 && request.resource.data.sellPrice <= 100000000
+        && request.resource.data.stock is int && request.resource.data.stock >= 0
+        && request.resource.data.active is bool && request.resource.data.authorizedTransfersOnly == true
+        && request.resource.data.updatedAt == request.time && request.resource.data.updatedBy == adminActor();
+      allow delete: if false;
+    }
+    match /rentalCategories/{categoryId} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['name', 'description', 'price', 'active', 'manualOnly', 'createdAt', 'updatedAt', 'updatedBy'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 100
+        && request.resource.data.description is string && request.resource.data.description.size() <= 1000
+        && request.resource.data.price is number && request.resource.data.price >= 50 && request.resource.data.price <= 100000000
+        && request.resource.data.active is bool && request.resource.data.manualOnly == true
+        && request.resource.data.updatedAt == request.time && request.resource.data.updatedBy == adminActor();
+      allow delete: if false;
+    }
+    match /socialRequests/{requestId} {
+      function newRequest() {
+        let d = request.resource.data;
+        let offer = get(/databases/$(database)/documents/socialOffers/$(d.offerId)).data;
+        return d.keys().hasOnly(['uid', 'email', 'offerId', 'platform', 'title', 'side', 'amount', 'accountUrl',
+            'ownershipNote', 'acceptedTerms', 'status', 'createdAt', 'updatedAt'])
+          && d.uid == uid() && d.email == tokenEmail() && request.auth.token.email_verified == true
+          && d.status == 'pending' && d.acceptedTerms == true && offer.active == true
+          && d.title == offer.title && d.platform == offer.platform && d.amount > 0
+          && ((d.side == 'buy' && d.amount == offer.sellPrice && offer.stock > 0
+               && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount)
+              || (d.side == 'sell' && d.amount == offer.buyPrice && d.accountUrl is string
+                  && d.accountUrl.matches('https://.+') && d.accountUrl.size() <= 1000
+                  && d.ownershipNote is string && d.ownershipNote.size() >= 10 && d.ownershipNote.size() <= 1000))
+          && d.createdAt == request.time && d.updatedAt == request.time;
+      }
+      function decision() {
+        let d = request.resource.data;
+        return isAdmin() && resource.data.status == 'pending'
+          && d.diff(resource.data).affectedKeys().hasOnly(['status', 'ownershipReviewed', 'transferReference', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+          && ['completed', 'rejected'].hasAny([d.status])
+          && (d.status != 'completed' || (d.ownershipReviewed == true && d.transferReference is string && d.transferReference.size() <= 800))
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time;
+      }
+      allow read: if signedIn() && (isAdmin() || resource.data.uid == uid());
+      allow create: if signedIn() && newRequest();
+      allow update: if signedIn() && (decision() || (resource.data.uid == uid() && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled' && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])));
+      allow delete: if false;
+    }
+    match /rentals/{rentalId} {
+      function rentalRequest() {
+        let d = request.resource.data;
+        let category = get(/databases/$(database)/documents/rentalCategories/$(d.categoryId)).data;
+        return d.keys().hasOnly(['uid', 'email', 'categoryId', 'categoryName', 'amount', 'purpose', 'acceptedTerms', 'status', 'createdAt', 'updatedAt'])
+          && d.uid == uid() && d.email == tokenEmail() && request.auth.token.email_verified == true
+          && d.status == 'pending' && d.acceptedTerms == true && category.active == true
+          && d.categoryName == category.name && d.amount == category.price && d.amount >= 50
+          && d.purpose is string && d.purpose.size() >= 5 && d.purpose.size() <= 500
+          && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount
+          && d.createdAt == request.time && d.updatedAt == request.time;
+      }
+      function rentalDecision() {
+        let d = request.resource.data;
+        let refundId = 'rental_refund_' + rentalId;
+        return isAdmin() && d.diff(resource.data).affectedKeys().hasOnly(['status', 'inbox', 'inboxKey', 'authorizedMailbox',
+            'paymentTxId', 'assignedBy', 'assignedAt', 'completedAt', 'codeExpiresAt', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
+          && d.updatedAt == request.time
+          && ((resource.data.status == 'pending' && d.status == 'awaiting_code' && d.authorizedMailbox == true
+               && d.assignedBy == adminActor() && d.assignedAt == request.time
+               && getAfter(/databases/$(database)/documents/transactions/$(d.paymentTxId)).data.amount == resource.data.amount
+               && getAfter(/databases/$(database)/documents/transactions/$(d.paymentTxId)).data.status == 'approved')
+              || (resource.data.status == 'pending' && d.status == 'rejected' && d.reviewedBy == adminActor())
+              || (resource.data.status == 'awaiting_code' && d.status == 'completed' && d.reviewedBy == adminActor()
+                  && getAfter(/databases/$(database)/documents/rentalCodes/$(rentalId)).data.uid == resource.data.uid)
+              || (resource.data.status == 'awaiting_code' && d.status == 'refunded' && d.reviewedBy == adminActor()
+                  && getAfter(/databases/$(database)/documents/transactions/$(refundId)).data.amount == resource.data.amount));
+      }
+      allow read: if signedIn() && (isAdmin() || resource.data.uid == uid());
+      allow create: if signedIn() && rentalRequest();
+      allow update: if signedIn() && (rentalDecision() || (resource.data.uid == uid() && resource.data.status == 'pending'
+        && request.resource.data.status == 'cancelled' && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])));
+      allow delete: if false;
+    }
+    match /rentalInboxes/{mailboxId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['ownerUid', 'activeRentalId', 'updatedAt'])
+        && request.resource.data.ownerUid is string && request.resource.data.updatedAt == request.time;
+      allow update: if isAdmin() && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeRentalId', 'updatedAt'])
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+    match /rentalCodes/{rentalId} {
+      allow get: if signedIn() && (isAdmin() || resource.data.uid == uid()) && request.time < resource.data.expiresAt;
+      allow list: if false;
+      allow create: if isAdmin() && request.resource.data.keys().hasOnly(['uid', 'rentalId', 'code', 'expiresAt', 'createdAt'])
+        && request.resource.data.rentalId == rentalId
+        && getAfter(/databases/$(database)/documents/rentals/$(rentalId)).data.status == 'completed'
+        && request.resource.data.uid == get(/databases/$(database)/documents/rentals/$(rentalId)).data.uid
+        && request.resource.data.code is string && request.resource.data.code.size() >= 4 && request.resource.data.code.size() <= 64
+        && request.resource.data.createdAt == request.time && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(15, 'm');
+      allow update, delete: if false;
     }
 
     // ---------- outgoing mail ---------------------------------------------

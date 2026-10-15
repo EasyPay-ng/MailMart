@@ -10,6 +10,8 @@ import {
   auth,
   db,
   doc,
+  getDoc,
+  getDocs,
   collection,
   addDoc,
   setDoc,
@@ -25,6 +27,9 @@ import {
 } from "./firebase.js";
 
 import { formatNaira } from "./wallet.js";
+import { resolveReferralCode, REFERRALS } from "./referrals.js";
+import { installmentAmount, isFullyPaid, mayShip } from "./installments.js";
+import { prepareLifetimeReferral } from "./referral-rewards.js";
 
 export const LISTINGS = "listings";
 export const ORDERS = "orders";
@@ -60,6 +65,7 @@ export const STATUS_LABEL = {
   paid: "Paid",
   shipped: "Shipped",
   completed: "Completed",
+  delivered_pending_balance: "Delivered · balance outstanding",
   cancelled: "Cancelled",
   refunded: "Refunded"
 };
@@ -232,15 +238,28 @@ export async function setListingStatus(id, status) {
  * Record an order and raise the pending debit that pays for it.
  * Nothing is charged here — an administrator settles the debit.
  */
-export async function placeOrder({ listing, quantity, address, settings }) {
+export async function placeOrder({ listing, quantity, address, settings, affiliateCode = "", paymentMode = "full" }) {
   const user = requireUser();
   const quote = quoteFor(listing, quantity, address.state, settings);
+  if (!["full", "installment"].includes(paymentMode)) throw new Error("Choose a valid payment option.");
+  if (paymentMode === "installment" && listing.installmentEnabled !== true) throw new Error("Instalments are not enabled for this item.");
+  const installmentDelivery = listing.installmentDelivery === "after_first" ? "after_first" : "after_full";
+  const dueNow = paymentMode === "installment" ? installmentAmount(quote.total, 1) : quote.total;
+  if (paymentMode === "installment") installmentAmount(quote.sellerPayout, 1); // also require a payable seller share
 
   if (Number(listing.stock ?? 1) < 1) throw new Error("This item is out of stock.");
   if (!listing.sellerEmail) throw new Error("That listing has no seller attached.");
+  if (listing.sellerUid === user.uid) throw new Error("You cannot buy your own listing.");
+  const buyer = await getDoc(doc(db, "users", user.uid));
+  if (!buyer.exists()) throw new Error("Finish setting up your profile on the dashboard before ordering.");
+  const affiliate = await resolveReferralCode(affiliateCode);
+  if (affiliate && !affiliate.affiliateActive) throw new Error("That affiliate is not active. Remove the code or use an active affiliate's code.");
+  if (affiliate && [user.uid, listing.sellerUid].includes(affiliate.uid)) {
+    throw new Error("An affiliate cannot earn commission on their own purchase or listing. Remove the code to continue.");
+  }
 
   const orderRef = doc(collection(db, ORDERS));
-  const txRef = doc(collection(db, TRANSACTIONS));
+  const txRef = paymentMode === "installment" ? doc(db, TRANSACTIONS, orderRef.id + "_month_1") : doc(collection(db, TRANSACTIONS));
 
   const batch = writeBatch(db);
 
@@ -252,6 +271,13 @@ export async function placeOrder({ listing, quantity, address, settings }) {
     buyerEmail: user.email || "",
     sellerUid: listing.sellerUid || "",
     sellerEmail: listing.sellerEmail || "",
+    referrerUid: buyer.data().referredBy || null,
+    affiliateUid: affiliate?.uid || null,
+    affiliateCode: affiliate?.code || "",
+    paymentTxId: txRef.id,
+    rewardsSettledAt: null,
+    paymentMode, installmentMonths: paymentMode === "installment" ? 12 : 0, installmentDelivery,
+    installmentsPaid: 0, totalPaid: 0, sellerPaid: 0, deliveredAt: null, fullyPaidAt: null,
     quantity: quote.quantity,
     itemPrice: quote.unitPrice,
     subtotal: quote.subtotal,
@@ -278,7 +304,8 @@ export async function placeOrder({ listing, quantity, address, settings }) {
     status: "pending",
     uid: user.uid,
     email: user.email || "",
-    amount: quote.total,
+    amount: dueNow,
+    installmentNumber: paymentMode === "installment" ? 1 : 0,
     orderId: orderRef.id,
     reference: listing.title || "Marketplace order",
     createdAt: serverTimestamp(),
@@ -354,18 +381,68 @@ const TRANSITIONS = {
 };
 
 /** Move an order along. The rules re-check who may make each transition. */
-export async function advanceOrder(order, status, actor) {
-  const allowed = TRANSITIONS[status] || [];
-  if (!allowed.includes(order.status)) {
-    throw new Error(`An order that is ${STATUS_LABEL[order.status] || order.status} cannot become ${STATUS_LABEL[status] || status}.`);
-  }
-  const patch = {
-    status,
-    updatedAt: serverTimestamp(),
-    timeline: arrayUnion(stamp(status, actor))
-  };
-  if (status === "completed") patch.completedAt = serverTimestamp();
-  await updateDoc(doc(db, ORDERS, order.id), patch);
+export async function advanceOrder(order, status, actor, cancellationReason = "") {
+  await runTransaction(db, async (t) => {
+    const orderRef = doc(db, ORDERS, order.id);
+    const fresh = await t.get(orderRef);
+    if (!fresh.exists()) throw new Error("That order no longer exists.");
+    const current = fresh.data();
+    const target = status === "completed" && current.paymentMode === "installment" && !isFullyPaid(current)
+      ? "delivered_pending_balance" : status;
+    const allowed = target === "delivered_pending_balance" ? ["shipped"] : (TRANSITIONS[target] || []);
+    if (!allowed.includes(current.status)) throw new Error("That order cannot make this status change.");
+    if (target === "shipped" && !mayShip(current)) throw new Error("This plan requires all 12 payments before delivery.");
+    if (target === "cancelled" && (current.paidAt || current.totalPaid > 0)) throw new Error("A paid order must be refunded by an administrator, not simply cancelled.");
+    let referralRef = null;
+    let recordFirstPurchase = false;
+    if (target === "completed" && current.referrerUid) {
+      referralRef = doc(db, REFERRALS, current.buyerUid);
+      const referral = await t.get(referralRef);
+      if (!referral.exists() || referral.data().referrerUid !== current.referrerUid) throw new Error("The buyer's referral record is inconsistent.");
+      recordFirstPurchase = !referral.data().firstCompletedOrderId;
+    }
+    const patch = { status: target, updatedAt: serverTimestamp(), timeline: arrayUnion(stamp(target, actor)) };
+    if (["completed", "delivered_pending_balance"].includes(target)) patch.deliveredAt = serverTimestamp();
+    if (target === "completed") patch.completedAt = serverTimestamp();
+    if (target === "cancelled" && cancellationReason.trim()) patch.cancellationReason = cancellationReason.trim().slice(0, 500);
+    t.update(orderRef, patch);
+    if (recordFirstPurchase) t.update(referralRef, {
+      firstCompletedOrderId: order.id, firstPurchaseCompletedAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+  });
+}
+
+/** Request only the next monthly debit; an administrator still settles it. */
+export async function requestInstallmentPayment(orderId) {
+  const user = requireUser();
+  return runTransaction(db, async (t) => {
+    const snap = await t.get(doc(db, ORDERS, orderId));
+    if (!snap.exists()) throw new Error("That order no longer exists.");
+    const order = snap.data();
+    if (order.buyerUid !== user.uid || order.paymentMode !== "installment" || ["cancelled", "refunded"].includes(order.status)) throw new Error("This is not your active instalment plan.");
+    const number = Number(order.installmentsPaid || 0) + 1;
+    if (number > 12) throw new Error("This plan has been paid in full.");
+    const ref = doc(db, TRANSACTIONS, orderId + "_month_" + number);
+    const previous = await t.get(ref);
+    const profile = await t.get(doc(db, "users", user.uid));
+    if (previous.exists()) {
+      if (previous.data().status === "pending") return { id: ref.id, pending: true };
+      throw new Error("This monthly request needs an administrator's review before it can be retried.");
+    }
+    const amount = installmentAmount(order.total, number);
+    if (!profile.exists() || profile.data().balance < amount) throw new Error("Top up your wallet for this month's payment first.");
+    t.set(ref, { type: "order_payment", direction: "debit", status: "pending", uid: user.uid,
+      email: user.email || "", amount, installmentNumber: number, orderId,
+      reference: `${order.listingTitle || "Goods"} — instalment ${number}/12`,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    return { id: ref.id, pending: true };
+  });
+}
+
+export async function saveInstallmentTerms(listingId, enabled, delivery) {
+  if (!["after_first", "after_full"].includes(delivery)) throw new Error("Choose the delivery rule.");
+  await updateDoc(doc(db, LISTINGS, listingId), { installmentEnabled: enabled === true,
+    installmentDelivery: delivery, updatedAt: serverTimestamp() });
 }
 
 /* ------------------------------------------------------------------ */
@@ -385,78 +462,76 @@ export async function advanceOrder(order, status, actor) {
  * but left the ledger untouched: the buyer's wallet history never mentioned
  * the purchase, and the pending payment row sat there forever.
  */
-export async function settleOrderPayment(order, adminUser) {
+export async function settleOrderPayment(order, adminUser, paymentId = "") {
+  let legacyPaymentRef = null;
+  if (!paymentId && !order.paymentTxId) {
+    const matches = await getDocs(query(collection(db, TRANSACTIONS), where("orderId", "==", order.id), where("type", "==", "order_payment")));
+    if (matches.size !== 1) throw new Error("This order must have exactly one matching payment request.");
+    legacyPaymentRef = matches.docs[0].ref;
+  }
   await runTransaction(db, async (t) => {
-    const orderSnap = await t.get(doc(db, ORDERS, order.id));
+    const orderRef = doc(db, ORDERS, order.id);
+    const orderSnap = await t.get(orderRef);
     if (!orderSnap.exists()) throw new Error("That order no longer exists.");
     const data = orderSnap.data();
-    if (data.status !== "pending_payment") {
-      throw new Error(`This order is already ${STATUS_LABEL[data.status] || data.status}.`);
+    const plan = data.paymentMode === "installment";
+    if (["cancelled", "refunded", "completed"].includes(data.status) || (!plan && data.status !== "pending_payment") || (plan && data.installmentsPaid >= 12)) {
+      throw new Error(`This order is already ${STATUS_LABEL[data.status] || data.status} or fully paid.`);
     }
-
+    if (data.buyerUid === data.sellerUid) throw new Error("A buyer cannot pay themselves.");
+    const number = plan ? Number(data.installmentsPaid || 0) + 1 : 0;
+    const selectedId = paymentId || (plan && number > 1 ? order.id + "_month_" + number : data.paymentTxId);
+    const paymentRef = selectedId ? doc(db, TRANSACTIONS, selectedId) : legacyPaymentRef;
+    if (!paymentRef) throw new Error("The payment request is missing.");
     const buyerRef = doc(db, "users", data.buyerUid);
     const sellerRef = doc(db, "users", data.sellerUid);
-    const buyerSnap = await t.get(buyerRef);
-    const sellerSnap = await t.get(sellerRef);
-    if (!buyerSnap.exists()) throw new Error("The buyer account is missing.");
-    if (!sellerSnap.exists()) throw new Error("The seller account is missing.");
-
-    const buyerBalance = Number(buyerSnap.data().balance || 0);
-    const total = Number(data.total || 0);
-    if (buyerBalance < total) {
-      throw new Error(`The buyer has ${formatNaira(buyerBalance)} but this order costs ${formatNaira(total)}.`);
+    const buyer = await t.get(buyerRef);
+    const seller = await t.get(sellerRef);
+    const paymentSnap = await t.get(paymentRef);
+    if (!buyer.exists() || !seller.exists()) throw new Error("The buyer or seller account is missing.");
+    const payment = paymentSnap.exists() ? paymentSnap.data() : null;
+    const due = plan ? installmentAmount(data.total, number) : Number(data.total);
+    const payout = plan ? installmentAmount(data.sellerPayout, number) : Number(data.sellerPayout);
+    if (!payment || payment.type !== "order_payment" || payment.status !== "pending" || payment.uid !== data.buyerUid ||
+        payment.orderId !== order.id || payment.amount !== due || (plan && payment.installmentNumber !== number)) throw new Error("The payment request does not match the next unpaid amount.");
+    if (![due, payout, buyer.data().balance, seller.data().balance].every(Number.isFinite) || due <= 0 || payout <= 0) throw new Error("The order contains an invalid money amount.");
+    if (buyer.data().balance < due) throw new Error(`The buyer needs ${formatNaira(due)} for this payment.`);
+    const nextBuyer = round2(buyer.data().balance - due);
+    const nextSeller = round2(seller.data().balance + payout);
+    const reviewer = adminUser?.email || adminUser?.uid;
+    if (!reviewer) throw new Error("Administrator identity is missing.");
+    const payoutId = "order_payout_" + order.id + (plan ? "_" + number : "");
+    const buyerLifetime = await prepareLifetimeReferral(t, { uid: data.buyerUid, profile: buyer.data(), sourceId: paymentRef.id,
+      type: "order_payment", amount: due, adminUser });
+    const sellerLifetime = await prepareLifetimeReferral(t, { uid: data.sellerUid, profile: seller.data(), sourceId: payoutId,
+      type: "order_payout", amount: payout, adminUser });
+    const finalPayment = !plan || number === 12;
+    const finishDeliveredPlan = finalPayment && !!data.deliveredAt;
+    let referralRef = null;
+    let markFirst = false;
+    if (finishDeliveredPlan && data.referrerUid) {
+      referralRef = doc(db, REFERRALS, data.buyerUid);
+      const referral = await t.get(referralRef);
+      if (!referral.exists()) throw new Error("The referral record is missing.");
+      markFirst = !referral.data().firstCompletedOrderId;
     }
-
-    const payout = Number(data.sellerPayout || 0);
-    const nextBuyer = round2(buyerBalance - total);
-    const nextSeller = round2(Number(sellerSnap.data().balance || 0) + payout);
-    const reviewer = adminUser?.email || adminUser?.uid || "";
-
     t.update(buyerRef, { balance: nextBuyer, updatedAt: serverTimestamp() });
     t.update(sellerRef, { balance: nextSeller, updatedAt: serverTimestamp() });
-
-    // Complete the pending payment row the order was placed with, so the
-    // buyer's history shows the purchase and the row stops waiting.
-    const pendingSnap = await t.get(
-      query(
-        collection(db, TRANSACTIONS),
-        where("orderId", "==", order.id),
-        where("status", "==", "pending"),
-        where("type", "==", "order_payment")
-      )
-    );
-    if (!pendingSnap.empty) {
-      t.update(doc(db, TRANSACTIONS, pendingSnap.docs[0].id), {
-        status: "completed",
-        balanceAfter: nextBuyer,
-        reviewedBy: reviewer,
-        reviewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-    }
-
-    // And the seller's side of the same money, as its own ledger row.
-    t.set(doc(collection(db, TRANSACTIONS)), {
-      type: "order_payout",
-      direction: "credit",
-      status: "completed",
-      uid: data.sellerUid,
-      email: data.sellerEmail || "",
-      amount: payout,
-      reference: data.listingTitle || "Marketplace order",
-      balanceAfter: nextSeller,
-      reviewedBy: reviewer,
-      reviewedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    t.update(doc(db, ORDERS, order.id), {
-      status: "paid",
-      paidAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      timeline: arrayUnion(stamp("paid", adminUser.email))
-    });
+    t.update(paymentRef, { status: "completed", balanceAfter: nextBuyer, reviewedBy: reviewer,
+      reviewedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    t.set(doc(db, TRANSACTIONS, payoutId), { type: "order_payout", direction: "credit", status: "completed",
+      uid: data.sellerUid, email: data.sellerEmail || "", orderId: order.id, installmentNumber: number,
+      amount: payout, reference: data.listingTitle || "Marketplace order", balanceAfter: nextSeller,
+      reviewedBy: reviewer, reviewedAt: serverTimestamp(), createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    const status = finishDeliveredPlan ? "completed" : (data.status === "pending_payment" ? "paid" : data.status);
+    const patch = { status, totalPaid: round2(Number(data.totalPaid || 0) + due), sellerPaid: round2(Number(data.sellerPaid || 0) + payout),
+      installmentsPaid: plan ? number : 0, updatedAt: serverTimestamp(), timeline: arrayUnion(stamp(plan ? `instalment_${number}_paid` : "paid", reviewer)) };
+    if (!data.paidAt) patch.paidAt = serverTimestamp();
+    if (finalPayment) patch.fullyPaidAt = serverTimestamp();
+    if (finishDeliveredPlan) patch.completedAt = serverTimestamp();
+    t.update(orderRef, patch);
+    if (markFirst) t.update(referralRef, { firstCompletedOrderId: order.id, firstPurchaseCompletedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    buyerLifetime(); sellerLifetime();
   });
 }
 
@@ -466,26 +541,32 @@ export async function refundOrder(order, adminUser) {
     const snap = await t.get(doc(db, ORDERS, order.id));
     if (!snap.exists()) throw new Error("That order no longer exists.");
     const data = snap.data();
-    if (!["paid", "shipped"].includes(data.status)) {
+    if (!["paid", "shipped", "delivered_pending_balance"].includes(data.status)) {
       throw new Error(`An order that is ${STATUS_LABEL[data.status] || data.status} cannot be refunded.`);
     }
 
+    const refundRef = doc(db, TRANSACTIONS, "order_refund_" + order.id);
+    const previous = await t.get(refundRef);
+    if (previous.exists()) throw new Error("This refund has already been recorded.");
     const buyerRef = doc(db, "users", data.buyerUid);
     const buyerSnap = await t.get(buyerRef);
     if (!buyerSnap.exists()) throw new Error("The buyer account is missing.");
 
-    const refunded = round2(Number(buyerSnap.data().balance || 0) + Number(data.total || 0));
+    const refundAmount = data.paymentMode === "installment" ? Number(data.totalPaid || 0) : Number(data.total || 0);
+    if (!Number.isFinite(refundAmount) || refundAmount <= 0) throw new Error("There is no paid amount to refund.");
+    const refunded = round2(Number(buyerSnap.data().balance || 0) + refundAmount);
     t.update(buyerRef, { balance: refunded, updatedAt: serverTimestamp() });
 
     // The refund is its own ledger row, not an edit of history: the purchase
     // stays on the buyer's record and the refund sits next to it.
-    t.set(doc(collection(db, TRANSACTIONS)), {
+    t.set(refundRef, {
       type: "order_refund",
+      orderId: order.id,
       direction: "credit",
       status: "completed",
       uid: data.buyerUid,
       email: data.buyerEmail || "",
-      amount: Number(data.total || 0),
+      amount: refundAmount,
       reference: data.listingTitle || "Marketplace order",
       balanceAfter: refunded,
       reviewedBy: adminUser?.email || adminUser?.uid || "",

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referral Admin | MailMart</title>
+<meta name="theme-color" content="#020812">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/referrals.css">
+</head>
+<body>
+<div id="loadingScreen"><div class="spinner"></div><p>Checking administrator access…</p></div>
+<main class="wrap" id="app" hidden>
+    <header class="topbar">
+        <div class="brand"><span class="dot">M</span> Referral Admin</div>
+        <nav class="actions" aria-label="Administration">
+            <a class="back-link" href="admin.html">Sales review</a>
+            <a class="back-link" href="admin-marketplace.html">Marketplace Admin</a>
+            <a class="back-link" href="admin-services.html">Service Admin</a>
+            <a class="back-link" href="admin-wallet.html">Wallet Admin</a>
+            <a class="back-link" href="referrals.html">My referrals</a>
+        </nav>
+    </header>
+    <section class="reward-hero">
+        <div class="eyebrow">Growth / Administration</div>
+        <h1>Referral rewards,<br>with a clear record.</h1>
+        <p>Verify invitations, review abuse risks, set 4–5% lifetime rates, and release earned rewards. Private fraud-review notes stay separate from member-visible decisions.</p>
+    </section>
+    <div class="notice info">Email referral: ₦200 once at the first approved email payout; held if referral approval is still pending. First goods purchase: ₦500 to the referrer and ₦200 to the buyer, once per invitee. Affiliate: 15% of discounted goods, excluding delivery and service fees. Rewards are funded by the platform; seller payouts are not reduced.</div>
+    <div id="actionMsg" role="status" aria-live="polite"></div>
+    <section class="reward-metrics" aria-label="Review queue totals">
+        <div class="metric"><span>Pending / unverified referrals</span><strong id="reviewCount">—</strong></div>
+        <div class="metric"><span>Flagged referrals</span><strong id="flaggedCount">—</strong></div>
+        <div class="metric"><span>Approved referrals</span><strong id="approvedCount">—</strong></div>
+        <div class="metric"><span>Held rewards</span><strong id="heldAmount">—</strong></div>
+    </section>
+    <section class="card"><h3>Referral verification & abuse review</h3>
+        <p class="hint">Email verification is required before approval. Review spam, bot, duplicate/self-referral and reward-looting risks. The 4–5% rate is platform-funded and applies to future eligible activity; recorded claims keep their original rate. Flagged or rejected referrals do not accrue new rewards while blocked; existing claims cannot be paid until approved.</p>
+        <div class="review-tools field"><select id="reviewFilter" aria-label="Filter referrals by review status"><option value="">All review statuses</option><option value="unverified">Unverified</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="flagged">Flagged</option><option value="rejected">Rejected</option></select><input id="reviewSearch" placeholder="Find invitee name or UID" aria-label="Find a referral"></div>
+        <div id="referralReviewList" class="reward-list"><p class="hint">Loading referrals…</p></div>
+    </section>
+    <section class="card"><h3>Held reward claims</h3><p class="hint">Release only after referral approval and source validation. Goods-based lifetime claims also require full payment and confirmed delivery. The ₦500 + ₦200 first-purchase bonuses release or reject together.</p><div id="heldClaims" class="reward-list"><p class="hint">Loading claims…</p></div></section>
+    <details class="card"><summary>Private referral audit history</summary><p class="hint">Admin-only, append-only decisions and private investigation notes. These are not visible to invitees or referrers.</p><div id="referralAuditList" class="reward-list"></div></details>
+    <div class="reward-layout">
+        <section class="card">
+            <h3>Delivered orders awaiting reward review <span class="count" id="orderCount">—</span></h3>
+            <p class="hint">Only paid, completed orders qualify. The system skips purchase bonuses already paid or reserved for an earlier completed order. Cancelled, unpaid and refunded orders cannot be released.</p>
+            <div id="rewardOrders" class="reward-list"><p class="hint">Loading orders…</p></div>
+        </section>
+        <div>
+            <section class="card">
+                <h3>Affiliate applications <span class="count" id="applicationCount">—</span></h3>
+                <p class="hint">Applicants must verify their sign-in email and accept the terms. Approval activates their sales code; an invitation code alone is not affiliate access.</p>
+                <div id="pendingApplications" class="reward-list"><p class="hint">Loading applications…</p></div>
+            </section>
+            <section class="card">
+                <h3>Approved & suspended affiliates</h3>
+                <p class="hint">Suspending a code stops new order attribution. Valid sales attributed before suspension retain their commission eligibility.</p>
+                <div id="affiliateRoster" class="reward-list"><p class="hint">Loading affiliates…</p></div>
+            </section>
+        </div>
+    </div>
+</main>
+<script type="module" src="js/admin-referrals-page.js"></script>
+</body>
+</html>

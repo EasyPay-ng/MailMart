@@ -134,6 +134,254 @@ with admin privileges, so the `mail` rules only constrain the browser: they
 let a buyer queue exactly one notice per order, addressed to that order's
 real seller — which stops someone using your project to send arbitrary mail.
 
+## Referrals and affiliates
+
+Open **Dashboard → Referrals & Affiliates** (`referrals.html`). The program has
+four reward tracks, all in naira. Referrals must be email-verified and approved
+by an administrator before their rewards can be released:
+
+| Program | Qualification | Recipient and amount | Frequency |
+| --- | --- | --- | --- |
+| Email referral | The invitee’s approved email sale is paid into their wallet | Referrer: **₦200** | Once per invitee, with the first payout |
+| Goods referral | The invitee’s first paid goods order is delivered and they confirm receipt | Referrer: **₦500**; invited buyer: **₦200** | Once per invitee, not every order |
+| Affiliate sales | A sale attributed at checkout to an approved affiliate is paid and completed | Affiliate: **15% of the discounted goods subtotal** | Per qualifying order |
+| Lifetime direct-referral activity | Eligible earnings/spending actually settle; purchases are fulfilled | Referrer: **4–5%**, chosen by admin for that referral | Every eligible event, no expiry or downline |
+
+**Registration alone earns nothing.** Email verification is available at sign-up
+and on the referral page, and is required before applying to be an affiliate.
+Delivery and service fees never enter the **15% affiliate** calculation. For example,
+₦10,000 of goods plus ₦1,000 delivery and ₦500 service fee earns **₦1,500**
+commission, not ₦1,725.
+
+### Links and attribution
+
+- Invitation links point to `register.html?ref=MM-<uid>`. The entire,
+  case-sensitive Firebase UID is used, avoiding truncated-code collisions.
+  A code may also be entered on the registration form. Existing users get a
+  code when they open Referrals; they cannot retroactively add an inviter.
+- Profile, code and invitation record are created atomically. If profile
+  creation fails, the pending invitation is bound to that specific new UID in
+  session storage, so the dashboard/wallet repair in the same browser tab can
+  retry it without assigning it to another account. Browsers that disable
+  session storage support this only in the current document.
+- Only exact public `referralCodes/{code}` lookups are available before login.
+  They contain a UID, affiliate availability and timestamps, **not** private
+  user profiles. Invitation history uses minimal `referrals` records instead
+  of granting referrers permission to read their invitees’ accounts or sales.
+- Affiliate links point to `marketplace.html?aff=MM-<uid>`; an optional `item`
+  parameter opens a specific product. Signed-out buyers return to that product
+  after signing in/registering. The code persists in that tab, can be replaced
+  by another link, and is visible/editable at checkout. An inactive or invalid
+  code must be corrected or removed; it is never silently credited elsewhere.
+- Affiliate approval is checked by the rules when the order is placed. The
+  stored affiliate and referrer cannot change afterwards. Suspending an
+  affiliate prevents new attributions but does not revoke already attributed
+  legitimate sales. An affiliate cannot earn on their own purchase or listing.
+  Referral rewards are direct/one-level only; there are no rewards on referrals
+  of referrals.
+
+### Administrator operations and money movement
+
+Use **Admin → Referrals & Affiliates** (`admin-referrals.html`) to approve,
+reject, suspend or reactivate affiliates. Applicants must accept the affiliate
+terms and describe how they will bring sales; rejected applications may be
+resubmitted without erasing the previous review metadata.
+
+The email reward is part of `payEmailSale()` itself. For approved referrals the
+seller payout and ₦200 referrer credit commit together. Otherwise the seller
+still receives their approved payout and the fixed reward is queued in
+`referralClaims`; it is not spendable until reviewed and released. The first-paid
+sale marker is set immediately so a second sale cannot consume another fixed
+bonus. A sale must be approved before **Pay into wallet** is available.
+
+For goods, confirmation of delivery records the first completed order on the
+invitation record but **does not move money**. This shared record serialises
+simultaneous deliveries, so an administrator cannot consume the first-purchase
+bonus by reviewing a later order first. After delivery, use **Release eligible
+rewards** in Referral Admin. It atomically applies every eligible credit, wallet
+balance, immutable ledger entry and review marker. Later orders skip fixed
+purchase bonuses but can still earn affiliate commission. Unpaid, cancelled,
+undelivered and refunded orders do not qualify. The existing refund flow is for
+paid/shipped orders and delivered-but-unpaid instalment plans, before full completion; it cannot refund an already completed
+rewarded order.
+
+The fixed bonuses and affiliate commission **can stack** if both independently
+qualify. A referrer who is also the attributed affiliate receives both credits;
+the balance is accumulated once, with separate ledger rows and running balances.
+All program rewards are **platform-funded**, with the quoted seller payout
+unchanged. There is no automatic budget/funding-pool debit; the operator must
+budget for these credits just as for manual admin credits.
+
+The wallet’s referral transaction types are `email_referral`, `purchase_referral`,
+`purchase_welcome`, `affiliate_commission` and `lifetime_commission`. Deterministic IDs and one-time
+milestone markers prevent retries/concurrent reviews from paying twice. Only
+administrators can write completed rewards, and the rules validate their source
+events, recipients and amounts. Ordinary users cannot raise pending rewards,
+change their inviter, or activate affiliate access. Wallet-balance arithmetic
+still has the existing trusted-administrator boundary described below.
+
+**Deployment:** publish the frontend **and** run `npm run deploy:rules` to deploy
+the new rules and indexes. A Pages deploy alone is insufficient. No Cloud
+Function, service-account file in the browser, or new paid extension is needed.
+New orders store their payment-ledger document ID; settlement of older orders
+resolves the existing payment outside the transaction, then revalidates it
+inside. This also fixes the Web SDK’s unsupported transaction-query/read-after-
+write path in the former marketplace settlement code.
+
+### Referral verification, lifetime commission and dashboard
+
+- New invitation records start `unverified`, or `pending` if the Firebase sign-in
+  email is already verified. Verification uses the actual Firebase ID token;
+  it **never automatically approves a referral** or clears a fraud flag.
+- **Referral Admin → Referral verification & abuse review** supports pending,
+  approved, flagged and rejected cases, public reasons, spam/bot/duplicate/
+  reward-looting risk categories, and a per-referral **4–5% rate**. The initial
+  rate is 4%; admin changes apply to future events. Claims keep the event's
+  original rate. Approval requires recorded sign-in email verification.
+- Public decisions are visible to the inviter/invitee. Investigation notes are
+  in separate, admin-only append-only `referralAudit` records, not on the shared
+  referral record. This is a **manual review queue**, not an automatic bot or
+  fraud detection system.
+- Real eligible ledger types are `email_payout`, `order_payment`, `order_payout`,
+  `social_sale`, `social_purchase` and `rental_payment`. Commission uses the
+  actual settled naira amount (including the fees in an actual goods debit;
+  unlike the separate 15% goods-only affiliate base). Deposits, withdrawals,
+  refunds, arbitrary admin credits and **all referral/affiliate rewards are
+  excluded**. No recursive rewards-on-rewards or downline commissions.
+- Every lifetime event queues `referralClaims/lifetime_<sourceTransactionId>`;
+  it does not immediately inflate available cash. Admin releases only after
+  referral approval, exact source/amount validation and business fulfilment.
+  Goods require confirmed delivery **and all twelve payments** where applicable.
+  Lifetime rewards are additional platform-funded credits, not deductions from
+  the invitee's quoted earnings and not extra purchase charges.
+- Fixed first-purchase bonuses held during referral review release or reject
+  **together**. An unrelated approved affiliate's valid commission can proceed
+  independently. Flagged/rejected referrals accrue no new rewards while blocked;
+  existing pending claims remain blocked until the referral is approved, or
+  until the claim itself is rejected with a reason. Paid rewards are immutable.
+- `referrals.html` uses real approved-referral counts, pending claim totals and
+  the current wallet balance in the screenshot-inspired 2×2 cards. Successful
+  means verified/admin-approved, not just registrations. **Shopping credits
+  are not enabled**: no issuance/redemption policy was provided, so that card
+  explicitly shows ₦0/not enabled. All current bonuses are cash. Screenshot
+  example balances are never seeded into user accounts.
+- Existing invitation records are not silently auto-approved or retroactively
+  attributed. An existing invitee can verify their email and enter review;
+  already paid fixed bonuses/ledger entries remain one-time. New lifetime claims
+  are created by future settlement events, not by scanning historical deposits.
+
+## Twelve-month goods instalments
+
+In **Marketplace Admin → All listings**, choose whether each listing supports
+instalments and whether delivery is allowed **after the first payment** or
+**after all twelve payments**. Only administrators can change those terms;
+existing orders retain their original delivery and payment snapshots.
+
+At checkout choose full payment or **12 monthly payments, 0% interest**. The
+entire quoted total, including delivery and service fees, is divided into twelve
+payments. Calculations use integer kobo: the first eleven payments are equal and
+the final payment absorbs any rounding remainder (at most eleven kobo). No
+interest, extra instalment fee or bulk-delivery threshold/discount was added.
+
+The first debit request is created at checkout; following requests are raised
+under **Orders → Request payment N/12**. Due dates advance by calendar months
+from the first confirmed payment, clamped for short months. Early payment is
+allowed. There is **no automatic debit, reminder service, late charge or debt
+collection process** in this static app; admin still confirms each payment in
+**Marketplace Admin → Awaiting payment**. The twelve-payment schedule is visible
+on the buyer/seller order card.
+
+Each payment atomically debits only that month's amount and credits only the
+seller's funded share. IDs `<orderId>_month_<N>` and `order_payout_<orderId>_<N>`
+prevent duplicate monthly charges. A partial payment never credits the full
+seller payout. A first-payment-delivery plan becomes
+`delivered_pending_balance` when receipt is confirmed, and completes only after
+payment twelve. First-purchase and affiliate rewards wait until **full payment
+and confirmed delivery**, not merely shipment/first payment.
+
+Buyer cancellation is limited to unpaid orders. Admin refunds return only
+**the amount actually paid**, never an unfunded full total. This preserves the
+existing **platform-funded refund** model: seller payouts are not automatically
+clawed back. Admin must separately resolve returned goods, seller recovery and
+platform funding before approving a refund. Fully completed/rewarded orders
+cannot be refunded through this flow. Default risk on early-delivery plans
+therefore remains an operator responsibility.
+
+## Reviewed social assets and manual Gmail code rentals
+
+User entry: **Dashboard → Services** (`services.html`). Administration:
+`admin-services.html`, linked from the other admin desks. Catalogs are empty
+until an administrator configures real prices and availability; no fictional
+stock, balances, Gmail accounts or rental codes are generated.
+
+### Social buy/sell
+
+Create Facebook, Instagram, X (formerly Twitter), or other **platform-permitted
+social asset** offers with fixed platform-buy/user-earn and platform-sell/
+user-pay prices. Set stock and availability; a zero price disables that side.
+Users accept ownership/authorized-transfer terms. Sellers provide a public
+HTTPS asset URL and an authorization explanation, **never passwords, session
+cookies or recovery secrets**. Only the requester and admins can read a request.
+
+A request snapshots the current admin price. A changed displayed quote requires
+review/renewed consent; later catalog edits do not reprice an accepted request.
+Admin manually checks ownership, platform permission, and the transfer, then
+records its completion reference. Completion atomically settles the quoted
+wallet amount, adjusts stock, writes one immutable ledger row and queues the
+eligible lifetime claim. Rejection/cancellation of an uncharged request moves
+no money. Personal-account trades forbidden by a provider's terms must not be
+listed or approved.
+
+**External transfer limitation:** this is a reviewed request/settlement flow,
+not a provider API or escrow service. No external social-platform transfer can
+be rolled back by a Firestore transaction. Buyer funds are rechecked at
+settlement, not reserved at request creation; operators must establish a safe
+handover/payment procedure and resolve external transfer disputes. Do not
+represent it as automatic account delivery or protected escrow.
+
+### Authorized Gmail code rentals
+
+1. Admin creates categories (for example card-sale-platform registration,
+   Instagram registration, other authorized tests), sets **at least ₦50/code**,
+   and enables availability only when an authorized inbox can be provided.
+2. A verified user chooses a category and explains their authorized purpose.
+   The full category price must be available at request time; ₦50 alone is not
+   sufficient for a higher-priced category. **One request = one code.**
+3. Admin reviews the use, supplies an existing inbox they control or are
+   authorized to provide, and confirms that authorization. Assignment atomically
+   **rechecks and reserves/debits the quoted code price**. Insufficient funds or
+   duplicate assignment leaves the request and wallet unchanged.
+4. The customer sees the assigned address, not a Gmail login. Admin manually
+   retrieves the requested code from that authorized inbox and delivers it.
+   Delivery finalizes the reserved ledger entry without charging twice. Only
+   then is a lifetime commission claim created.
+5. The code is in private `rentalCodes/{rentalId}`, **not** the permanent rental
+   record, financial ledger, referral record or public catalog. In-app access expires ten
+   minutes after delivery (provider expiry may be sooner); rules deny expired reads even to admin clients and
+   prohibit collection listing. If an unfulfilled funded rental is rejected,
+   refund exactly its reserved price once; no lifetime commission is earned.
+
+Gmail dot/plus/Googlemail aliases share one canonical lock. A mailbox is bound
+to one customer and cannot be recycled to another customer or used by two active
+rentals, avoiding cross-customer account-recovery exposure. Users acknowledge
+that a temporary code service does not grant permanent mailbox ownership.
+
+**No automatic Gmail-account generation, Gmail API integration, unauthorized
+inbox access, other people's sign-ins, financial/banking OTPs, spam, mass
+registration or restriction bypass.** Requests are manually reviewed, not a
+technical guarantee of an external provider's consent. Admin must reject
+unapproved purposes. The new flows do not change the sensitive legacy email-sale
+workflow described in Security notes below.
+
+**Production retention gate:** enable Firestore TTL on
+`rentalCodes.expiresAt` (Console → Firestore → TTL, or an appropriately authorized
+`gcloud firestore fields ttls update expiresAt --collection-group=rentalCodes
+--enable-ttl --project=mailmartz`). TTL deletion is asynchronous; expiry access
+control is enforced by rules even before deletion. Code payload indexing is
+excluded in `firestore.indexes.json`. Never use service-account keys or Gmail
+passwords in client code. Decide lawful retention/deletion for request metadata
+and investigation records separately before launch.
+
 ## Wallet
 
 The wallet is **naira-only**. Every amount stored in `users/{uid}.balance` and
@@ -154,6 +402,14 @@ acted — who acted. The types:
 | `order_payout` | credit | settlement, atomically | The seller's share of a confirmed order |
 | `email_payout` | credit | the sales screen, atomically | Payment for an approved email sale |
 | `order_refund` | credit | a refund, atomically | A refunded order returned to the buyer |
+| `email_referral` | credit | first email payout, atomically | ₦200 to the invitee’s referrer |
+| `purchase_referral` | credit | referral admin, after first delivery | ₦500 to the buyer’s referrer |
+| `purchase_welcome` | credit | referral admin, after first delivery | ₦200 to the invited buyer |
+| `affiliate_commission` | credit | referral admin, after delivery | 15% of attributed goods subtotal |
+| `lifetime_commission` | credit | referral admin, after source/review checks | 4–5% of an eligible direct invitee event |
+| `social_sale` / `social_purchase` | credit / debit | reviewed service settlement | Fixed quoted social transfer amount |
+| `rental_payment` | debit | admin assigns, then delivers | Reserved one-code price, finalized on delivery |
+| `rental_refund` | credit | admin rejects an unfulfilled funded rental | Return exactly the reserved code price |
 
 Money moves in two steps, so that no user can credit themselves:
 
@@ -263,6 +519,52 @@ python3 -m http.server 8000
 
 Then open `http://localhost:8000`.
 
+## Tests
+
+Use Node 22 for tests. The static site itself still has no build step.
+
+```sh
+npm ci
+npm test
+```
+
+The offline suite executes the real business modules behind a mocked Firebase
+boundary and checks amounts, case-sensitive links, signup recovery, first-sale
+and first-purchase milestones, concurrent payouts, overlapping recipients,
+transaction read ordering, rollback, checkout attribution and page syntax.
+It does **not** substitute for security-rule tests.
+
+For the actual Firestore rules and the full checkout-to-reward flow, install
+Java 21 and run:
+
+```sh
+npm run test:rules
+```
+
+This downloads/starts the official Firestore emulator and uses the disposable
+`demo-mailmart` project, never production. It needs no Firebase credentials.
+The emulator tests use authenticated contexts and the unmodified business
+modules, replacing only their Firebase connection. `.github/workflows/test.yml`
+is configured to run both suites with Node 22 and Java 21 on pull requests and
+`main`.
+
+**Local validation (2026-10-15):** 60 offline policy/transaction/source checks pass.
+Mocked Chromium smoke covers desktop/mobile referral results, private admin
+reviews, social requests/settlement, manual Gmail assignment/code delivery/
+reveal, instalment checkout/delivery and monthly admin confirmation, in addition
+to the earlier registration/affiliate flows. These use no production data and
+are not a substitute for rules tests.
+
+Java 21 was installed in the scratch environment, but `npm run test:rules`
+cannot download the official `cloud-firestore-emulator-v1.19.8.jar` from
+`storage.googleapis.com` because that host is blocked here. The expanded rules
+suite has **not executed** and the rules have **not been compiler-verified in
+this workspace**. Run the official emulator suite successfully in CI/an
+unrestricted environment, verify source/index rules against a disposable
+project, and configure rental-code TTL before production. The pull-request CI
+workflow is configured to run these checks; no deployment or production-data
+change has been performed.
+
 ## "Check your Firestore security rules…" — what that means
 
 Most pages used to show one sentence for every failure:
@@ -350,7 +652,15 @@ Google button on the register page no longer rewrites an existing profile
 | --- | --- |
 | `js/firebase.js` | Firebase app, Auth and Firestore clients, error diagnostics |
 | `js/admin.js` | Administrator list, access check, post-login redirect |
-| `js/account.js` | Auth error translation, profile creation/repair |
+| `js/account.js` | Auth error translation, atomic profile/referral creation/repair |
+| `referrals.html` | Invitation links, milestones, affiliate applications and sales links |
+| `admin-referrals.html` | Verification/fraud review, lifetime rates/claims, affiliate/reward review |
+| `js/referral-rewards.js` | Verified review, private audits, held and lifetime reward claims |
+| `services.html` / `admin-services.html` | User requests and admin prices/manual fulfilment |
+| `js/services.js` | Authorized social transfers, Gmail rental reserve/finalize/refund |
+| `js/installments.js` | Twelve-payment kobo arithmetic, delivery gates and calendar schedule |
+| `js/referrals.js` | Private attribution, applications and atomic reward settlement |
+| `js/referral-policy.js` | Agreed naira amounts and commission calculations |
 | `setup-check.html` | Reports Authentication config, rules/indexes/session |
 | `js/image.js` | Image → base64 helper (receipts, listings, KYC) |
 | `firestore.rules` | Server-side access control |
