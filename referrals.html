@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Referrals & Affiliates | MailMart</title>
+<meta name="theme-color" content="#020812">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/referrals.css">
+</head>
+<body>
+<div id="loadingScreen"><div class="spinner"></div><p>Loading your referral program…</p></div>
+<main class="wrap" id="app" hidden>
+    <header class="topbar">
+        <a class="brand" href="dashboard.html"><span class="dot">M</span> MailMart / Earn</a>
+        <nav class="actions" aria-label="Quick links">
+            <a class="back-link" href="marketplace.html">Marketplace</a>
+            <a class="back-link" href="wallet.html">Wallet</a>
+            <a class="back-link" href="dashboard.html">Dashboard</a>
+            <a class="back-link" href="admin-referrals.html" id="adminLink" hidden>Manage rewards</a>
+        </nav>
+    </header>
+    <section class="reward-hero">
+        <div class="eyebrow">The MailMart referral program</div>
+        <h1>Your connections.<br>Lasting rewards.</h1>
+        <p>A clear view of your referrals, rewards and available balance. Earn from your direct invitees’ eligible activity for the lifetime of their account, after verification and review.</p>
+    </section>
+    <section class="referral-overview" aria-labelledby="overviewTitle">
+        <h2 id="overviewTitle">Your referral dashboard</h2>
+        <div class="overview-grid">
+            <article class="overview-tile"><svg class="tile-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 4a3 3 0 0 1 0 6M21 21v-2a6 6 0 0 0-4-5"/></svg><h3>Successful referrals</h3><strong id="successfulCount">—</strong><p>Verified and approved by the team</p></article>
+            <article class="overview-tile"><svg class="tile-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l-4 3"/></svg><h3>Pending rewards</h3><strong id="pendingTotal">—</strong><p>Recorded claims, not spendable yet</p></article>
+            <article class="overview-tile"><svg class="tile-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8V5a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h16v12H5a3 3 0 0 1-3-3V6M21 12h-5v5h5"/></svg><h3>Available cash</h3><strong id="availableCash">—</strong><p><a href="wallet.html">Your current wallet balance →</a></p></article>
+            <article class="overview-tile"><svg class="tile-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h3l3 12h11l3-9H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="19" cy="20" r="1.5"/></svg><h3>Shopping credits</h3><strong>₦0.00</strong><p>Not enabled · all current rewards are cash</p></article>
+        </div>
+    </section>
+    <div id="ownReferralStatus" role="status" aria-live="polite"></div>
+    <section class="lifetime-banner"><div><span class="eyebrow">04 / LIFETIME COMMISSION</span><h2>They keep going. You keep earning.</h2><p>Earn the admin-set 4–5% on direct invitees’ approved earnings and settled spending. Platform-funded, with no extra cost to them. Deposits, withdrawals, refunds and referral rewards never generate another commission. Goods must be fully paid and delivered.</p></div><strong>4–5<span>%</span></strong></section>
+    <section class="reward-programs" aria-label="First-activity rewards and affiliate sales">
+        <article class="reward-program">
+            <div class="step">01 / EMAIL REFERRALS</div><strong class="amount">₦200</strong>
+            <h2>Their first paid email sale</h2>
+            <p>Invite someone with your referral link. You earn ₦200 once, when their first approved email sale is paid. Signing up alone does not earn a reward.</p>
+        </article>
+        <article class="reward-program">
+            <div class="step">02 / GOODS REFERRALS</div><strong class="amount">₦500 + ₦200</strong>
+            <h2>A first purchase that rewards both</h2>
+            <p>On your invitee’s first paid and delivered goods order, you earn ₦500 and they receive ₦200. These bonuses are once per invited buyer, not per order.</p>
+        </article>
+        <article class="reward-program affiliate">
+            <div class="step">03 / AFFILIATE SALES</div><strong class="amount">15%</strong>
+            <h2>Bring a sale. Earn a commission.</h2>
+            <p>Apply to become an affiliate and share your sales links. Earn 15% of each attributed order’s discounted goods subtotal, excluding delivery and service fees.</p>
+        </article>
+    </section>
+    <div id="pageMsg" role="status" aria-live="polite"></div>
+    <section class="reward-metrics" aria-label="Your results">
+        <div class="metric"><span>People invited</span><strong id="referralCount">—</strong></div>
+        <div class="metric"><span>Email milestones paid</span><strong id="emailCount">—</strong></div>
+        <div class="metric"><span>Purchase milestones paid</span><strong id="purchaseCount">—</strong></div>
+        <div class="metric"><span>Total program credits</span><strong id="rewardTotal">—</strong></div>
+    </section>
+    <div class="reward-layout">
+        <div>
+            <section class="card">
+                <h3>Your invitation link</h3>
+                <p class="hint">Ask your friend to register through this link. The referrer is fixed at registration; existing accounts cannot add or switch an inviter.</p>
+                <label class="field tip" for="invitationLink">Share this registration link</label>
+                <div class="link-row"><input id="invitationLink" readonly><button class="btn small" data-copy="invitationLink" type="button">Copy link</button></div>
+                <p class="hint">Your code: <strong class="reward-code" id="myCode">—</strong></p>
+                <div id="copyMsg" role="status" aria-live="polite"></div>
+            </section>
+            <section class="card">
+                <h3>Your invitations</h3>
+                <p class="hint">Only invitation names and milestone results are shown. Review status, public decision reasons and milestone results only. Private fraud-review notes and wallet balances are not shared.</p>
+                <div id="referralList" class="scroll"><p class="hint">Loading invitations…</p></div>
+            </section>
+        </div>
+        <section class="card" id="affiliateSection">
+            <h3>Become a MailMart affiliate</h3>
+            <p class="hint">Affiliate access is reviewed by an administrator. You can earn referral rewards without becoming an affiliate.</p>
+            <div id="affiliateStatus" role="status" aria-live="polite"></div>
+            <div id="verificationNotice" class="notice info" hidden>
+                <p>Verify your MailMart sign-in email before applying.</p>
+                <div class="row-end" style="margin-top:10px">
+                    <button class="btn small ghost" id="sendVerification" type="button">Send verification email</button>
+                    <button class="btn small ghost" id="refreshVerification" type="button">I’ve verified my email</button>
+                </div>
+            </div>
+            <form id="affiliateForm">
+                <div class="field">
+                    <label for="promotionPlan">How will you bring sales?</label>
+                    <textarea id="promotionPlan" minlength="10" maxlength="1000" required placeholder="Tell us about your audience and where you will share your links."></textarea>
+                </div>
+                <label class="reward-check"><input id="affiliateTerms" type="checkbox" required><span>I agree to share honestly and not refer my own purchases or listings. Commission is 15% of discounted goods only, after confirmed delivery and administrator review. Cancelled, unpaid and refunded orders do not qualify.</span></label>
+                <button class="btn block" id="applyBtn" type="submit">Apply to become an affiliate</button>
+            </form>
+            <div id="affiliateShare" hidden>
+                <div class="field"><label for="affiliateItem">Choose what to promote</label><select id="affiliateItem"><option value="">The whole marketplace</option></select></div>
+                <label class="field tip" for="affiliateLink">Your affiliate sales link</label>
+                <div class="link-row"><input id="affiliateLink" readonly><button class="btn small good" data-copy="affiliateLink" type="button">Copy link</button></div>
+                <p class="hint">The buyer sees your code at checkout. It stays in that browser tab until removed or replaced. Your affiliate link tracks sales; your invitation link tracks new registrations.</p>
+            </div>
+            <div id="affiliateMsg" role="status" aria-live="polite"></div>
+            <p class="reward-footnote">Purchase bonuses and commissions become payable only after delivery is confirmed, then an administrator releases them. The ₦200 email reward is credited with the first email payout for an approved referral; otherwise it is held for review. Rewards are funded by MailMart; the quoted seller payout is unchanged.</p>
+        </section>
+    </div>
+    <section class="card"><h3>Pending & reviewed rewards</h3><p class="hint">Recorded rewards waiting for referral approval, delivery or payout review. Rejected claims show a reason. These amounts are not included in available cash.</p><div class="scroll" id="pendingRewardHistory"><p class="hint">Loading claims…</p></div></section>
+    <section class="card">
+        <h3>Program credit history</h3>
+        <p class="hint">Completed wallet credits only — not estimates. Your full history and withdrawals are in <a href="wallet.html" style="color:#6fe0ff">Wallet →</a></p>
+        <div class="scroll" id="rewardHistory"><p class="hint">Loading credits…</p></div>
+    </section>
+    <p class="reward-footnote">Rewards are one level only: you earn from people you directly invite, not their referrals. No payment is made merely for account registration. Self-referrals and self-dealing are not eligible.</p>
+</main>
+<script type="module" src="js/referrals-page.js"></script>
+</body>
+</html>

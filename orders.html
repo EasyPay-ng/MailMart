@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/services.css">
 
 <style>
 .order{
@@ -63,6 +63,8 @@
         <div class="actions">
             <a class="back-link primary" href="marketplace.html">Marketplace</a>
             <a class="back-link" href="sell.html">Sell</a>
+            <a class="back-link" href="referrals.html">Referrals</a>
+            <a class="back-link" href="services.html">Digital services</a>
             <a class="back-link" href="dashboard.html">Dashboard</a>
         </div>
     </div>
@@ -83,7 +85,7 @@
     <div class="panel" id="panel-sales">
         <div class="card">
             <h3>My sales</h3>
-            <p class="hint">Orders buyers have placed with you. Ship once an order shows as Paid.</p>
+            <p class="hint">Orders buyers have placed with you. Only ship when the listing’s payment and delivery terms allow it. The shipping action stays unavailable for full-payment-before-delivery plans until all 12 payments are paid.</p>
             <div id="sellList"></div>
         </div>
     </div>
@@ -94,7 +96,9 @@
 
 import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { formatNaira, formatDate } from "./js/wallet.js";
-import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder } from "./js/marketplace.js";
+import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder, requestInstallmentPayment } from "./js/marketplace.js";
+
+import { installmentSchedule, mayShip, isFullyPaid } from "./js/installments.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -154,6 +158,9 @@ function renderList(el, rows, side) {
 
 function orderCard(o, side) {
     const status = o.status || "pending_payment";
+    const plan = o.paymentMode === "installment";
+    const schedule = plan ? installmentSchedule(o) : [];
+    const next = schedule.find((row) => !row.paid);
     const cancelled = ["cancelled", "refunded"].includes(status);
 
     const timeline = Array.isArray(o.timeline) ? o.timeline : [];
@@ -163,7 +170,7 @@ function orderCard(o, side) {
     const tracker = cancelled
         ? ""
         : `<div class="track">${FLOW.map((step, i) => {
-              const current = FLOW.indexOf(status);
+              const current = status === "delivered_pending_balance" ? 3 : FLOW.indexOf(status);
               const done = i < current;
               const now = step === status;
               const cls = now ? "now" : done ? "done" : "";
@@ -177,16 +184,18 @@ function orderCard(o, side) {
     const address = o.address || {};
 
     const actions = [];
-    if (side === "seller" && status === "paid") {
+    if (side === "seller" && mayShip(o)) {
         actions.push(`<button class="btn small good" data-act="shipped" data-id="${esc(o.id)}">Mark as shipped</button>`);
     }
     if (side === "buyer" && status === "shipped") {
         actions.push(`<button class="btn small good" data-act="completed" data-id="${esc(o.id)}">Confirm delivery</button>`);
     }
-    if (side === "buyer" && ["pending_payment", "paid"].includes(status)) {
+    if (side === "buyer" && status === "pending_payment" && !o.paidAt) {
         actions.push(`<button class="btn small bad" data-act="cancelled" data-id="${esc(o.id)}">Cancel order</button>`);
     }
 
+    if (side === "buyer" && plan && next && !cancelled) actions.push(`<button class="btn small" data-act="instalment" data-id="${esc(o.id)}">Request payment ${next.number}/12 · ${esc(formatNaira(next.amount))}</button>`);
+    const planHtml = plan ? `<div class="meta"><strong>12 months · 0% interest</strong> · ${esc(o.installmentsPaid || 0)}/12 paid · ${esc(formatNaira(o.totalPaid || 0))} of ${esc(formatNaira(o.total))}<br>Delivery after ${o.installmentDelivery === "after_first" ? "the first payment" : "all 12 payments"}.${status === "delivered_pending_balance" ? " Delivery confirmed; monthly balance remains due." : ""}${next ? `<br>Next: ${esc(formatNaira(next.amount))} · ${o.paidAt ? "due " + esc(formatDate(next.dueAt)) : "first payment on confirmation"}` : " · Paid in full"}</div><details class="meta"><summary>View monthly payment schedule</summary><div class="scroll"><table class="tbl"><thead><tr><th>Month</th><th>Due date</th><th>Amount</th><th>Status</th></tr></thead><tbody>${schedule.map((row) => `<tr><td>${row.number}/12</td><td>${esc(formatDate(row.dueAt))}${!o.paidAt ? " (estimated)" : ""}</td><td>${esc(formatNaira(row.amount))}</td><td>${row.paid ? "Paid" : "Unpaid"}</td></tr>`).join("")}</tbody></table></div></details>` : "";
     return `
         <div class="order">
             <img class="shot" src="${esc(o.listingImage || "")}" alt="">
@@ -206,6 +215,7 @@ function orderCard(o, side) {
                     Item ${esc(formatNaira(o.subtotal))} · Delivery ${esc(formatNaira(o.deliveryFee))} ·
                     Service ${esc(formatNaira(o.serviceFee))}
                 </div>
+                ${planHtml}
                 ${tracker}
                 ${actions.length ? `<div class="acts">${actions.join("")}</div>` : ""}
             </div>
@@ -219,14 +229,18 @@ async function onAction(target, act) {
     if (!row) return;
 
     if (act === "cancelled" && !confirm("Cancel this order?")) return;
-    if (act === "completed" && !confirm("Confirm that you received this order? This releases payment to the seller.")) return;
+    if (act === "completed" && !confirm("Confirm that you received this order? Eligible referral and affiliate rewards can then be reviewed.")) return;
 
     try {
-        await advanceOrder(row, act, currentUser.email);
+        target.disabled = true;
+        if (act === "instalment") {
+            const result = await requestInstallmentPayment(row.id);
+            alert(result.pending ? "Your next monthly payment is queued for administrator confirmation. Repeated taps do not create another charge." : "Payment requested.");
+        } else await advanceOrder(row, act, currentUser.email);
     } catch (err) {
         console.error(err);
-        alert(firestoreErrorSummary(err, "that order"));
-    }
+        alert(err.code ? firestoreErrorSummary(err, "that order") : err.message);
+    } finally { target.disabled = false; }
 }
 
 function findOrder(id) {

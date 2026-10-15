@@ -13,6 +13,8 @@
 // the pages can say so.
 
 import { db, doc, getDoc, firestoreErrorHtml } from "./firebase.js";
+import { takeMarketplaceReturn } from "./referrals.js";
+import { syncReferralVerification } from "./referral-rewards.js";
 
 export const ADMIN_EMAILS = [
   "baasituoppor01@gmail.com",
@@ -76,6 +78,8 @@ export function showAccessCheckFailure(error, what = "administrator access") {
 
 /** Send a freshly authenticated user to the admin console or the dashboard. */
 export async function redirectAfterAuth(user) {
-  const target = (await isAdminUser(user)) ? "admin.html" : "dashboard.html";
+  await syncReferralVerification(user).catch((error) => console.warn("Referral verification sync failed:", error));
+  const returnTo = takeMarketplaceReturn();
+  const target = (await isAdminUser(user)) ? "admin.html" : (returnTo || "dashboard.html");
   window.location.href = target;
 }

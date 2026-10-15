@@ -55,6 +55,8 @@
             <span class="balance-pill" id="balancePill">₦0.00</span>
             <a class="back-link primary" href="sell.html">Sell</a>
             <a class="back-link" href="orders.html">Orders</a>
+            <a class="back-link" href="referrals.html">Referrals</a>
+            <a class="back-link" href="services.html">Digital services</a>
             <a class="back-link" href="dashboard.html">Dashboard</a>
         </div>
     </div>
@@ -117,9 +119,16 @@
             <input type="text" id="mStreet" placeholder="House number and street">
         </div>
 
+        <div class="field"><label for="mPaymentMode">Payment option</label><select id="mPaymentMode"><option value="full">Pay in full</option><option value="installment" id="mInstallmentOption" disabled>12 monthly payments · 0% interest</option></select><div class="tip" id="mPlanTerms">Pay the complete order amount.</div></div>
         <div class="breakdown" id="mBreakdown"></div>
 
-        <div id="mMsg"></div>
+        <div class="field">
+            <label for="mAffiliateCode">Affiliate code (optional)</label>
+            <input type="text" id="mAffiliateCode" maxlength="131" autocomplete="off" spellcheck="false" placeholder="MM-… (case-sensitive)">
+            <div class="tip">A sales link fills this in for you. An approved affiliate earns 15% of goods only after delivery; your checkout price is unchanged. Clear the field to remove attribution.</div>
+        </div>
+
+        <div id="mMsg" role="status" aria-live="polite"></div>
 
         <button class="btn block" id="mBuy">Place order</button>
         <p class="field tip" style="text-align:center;margin-top:10px">
@@ -131,8 +140,10 @@
 <script type="module">
 
 import { auth, db, doc, onSnapshot, onAuthStateChanged, signOut, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
+import { installmentQuote } from "./js/installments.js";
 import { STATES, lgasFor } from "./js/data/nigeria.js";
 import { loadSettings, formatNaira } from "./js/wallet.js";
+import { captureAffiliateVisit, rememberAffiliateCode, rememberMarketplaceReturn } from "./js/referrals.js";
 import {
     CATEGORIES,
     watchActiveListings,
@@ -153,12 +164,16 @@ let balance = 0;
 let settings = null;
 let listings = [];
 let active = null;
+let affiliateCode = captureAffiliateVisit();
+const requestedItem = new URL(location.href).searchParams.get("item");
+let requestedItemHandled = false;
 
 /* ------------------------------------------------------------------ */
 /* guard                                                               */
 /* ------------------------------------------------------------------ */
 onAuthStateChanged(auth, (user) => {
     if (!user) {
+        rememberMarketplaceReturn();
         window.location.href = "login.html";
         return;
     }
@@ -184,6 +199,12 @@ async function start(user) {
     watchActiveListings((rows) => {
         listings = rows;
         render();
+        if (requestedItem && !requestedItemHandled) {
+            requestedItemHandled = true;
+            const linked = listings.find((l) => l.id === requestedItem);
+            if (linked) openListing(linked);
+            else $("setupNotice").insertAdjacentHTML("beforeend", '<div class="notice info">The linked item is no longer available. You can still browse other goods below.</div>');
+        }
     }, (err) => {
         console.error("Could not load listings:", err);
         $("grid").innerHTML = `<div class="empty">${firestoreErrorHtml(err, "the listings")}</div>`;
@@ -284,7 +305,10 @@ function openListing(listing) {
     $("mImage").src = listing.image || "";
     $("mDescription").textContent = listing.description || "";
 
+    $("mPaymentMode").value = "full";
+    $("mInstallmentOption").disabled = listing.installmentEnabled !== true;
     $("mQty").value = "1";
+    $("mAffiliateCode").value = affiliateCode;
     $("mMsg").innerHTML = "";
     if (currentUser) {
         $("mName").value = "";
@@ -314,13 +338,15 @@ $("mState").addEventListener("change", () => {
     updateQuote();
 });
 
-["mQty", "mState"].forEach((id) => $(id).addEventListener("input", updateQuote));
+["mQty", "mState", "mPaymentMode"].forEach((id) => $(id).addEventListener("input", updateQuote));
 
 function updateQuote() {
     if (!active) return;
     const qty = Math.max(1, Math.floor(Number($("mQty").value) || 1));
     const state = $("mState").value;
     const q = quoteFor(active, qty, state, settings);
+    const plan = $("mPaymentMode").value === "installment" ? installmentQuote(q.total) : null;
+    $("mPlanTerms").textContent = plan ? `12 monthly payments, 0% interest, total ${formatNaira(plan.total)}. First 11: ${formatNaira(plan.first)} each; final ${formatNaira(plan.final)} (rounding only). Delivery after ${active.installmentDelivery === "after_first" ? "first payment" : "all 12 payments"}. No automatic debit; request each month in Orders.` : (active.installmentEnabled ? "Pay the complete amount, or choose the 12-month option. No interest." : "Pay in full. Admin has not enabled instalments for this item.");
 
     $("mBreakdown").innerHTML = `
         <div class="brow">
@@ -336,9 +362,9 @@ function updateQuote() {
             <span>${esc(formatNaira(q.serviceFee))}</span>
         </div>
         <div class="brow total">
-            <span>Total</span>
+            <span>Total · ${plan ? "12 months, 0% interest" : "full payment"}</span>
             <span>${esc(formatNaira(q.total))}</span>
-        </div>`;
+        </div>${plan ? `<div class="brow"><span>First payment due now</span><strong>${esc(formatNaira(plan.first))}</strong></div>` : ""}`;
 }
 
 $("mBuy").addEventListener("click", async () => {
@@ -356,10 +382,12 @@ $("mBuy").addEventListener("click", async () => {
     if (!street) return fail("Enter the street address.");
     if (!phone) return fail("Enter a phone number for the delivery.");
 
+    if (!active) return;
     const quote = quoteFor(active, qty, state, settings);
-    if (quote.total > balance) {
+    const dueNow = $("mPaymentMode").value === "installment" ? installmentQuote(quote.total).first : quote.total;
+    if (dueNow > balance) {
         return fail(
-            `This order costs ${formatNaira(quote.total)} but your balance is ` +
+            `This payment is ${formatNaira(dueNow)} but your balance is ` +
             `${formatNaira(balance)}. Top up your wallet first.`
         );
     }
@@ -372,15 +400,19 @@ $("mBuy").addEventListener("click", async () => {
             listing: active,
             quantity: qty,
             address: { name, phone, state, lga, street },
-            settings
+            settings,
+            affiliateCode: $("mAffiliateCode").value.trim(),
+            paymentMode: $("mPaymentMode").value
         });
+        affiliateCode = $("mAffiliateCode").value.trim();
+        rememberAffiliateCode(affiliateCode);
         $("mMsg").innerHTML =
             '<div class="notice good">Order placed. The seller has been notified by ' +
             "email, and your payment is queued for confirmation.</div>";
         setTimeout(closeModal, 1400);
     } catch (err) {
         console.error(err);
-        fail(firestoreErrorSummary(err, "your order"));
+        fail(err.code ? firestoreErrorSummary(err, "your order") : err.message);
     } finally {
         btn.disabled = false;
         btn.textContent = "Place order";

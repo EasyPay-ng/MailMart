@@ -491,6 +491,12 @@ body::before{
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                 Marketplace
             </a>
+            <a class="nav-item" href="admin-services.html"><span class="ic">▣</span><span>Service Admin</span></a>
+            <a class="nav-item" href="admin-referrals.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6"/></svg>
+                Referrals & Affiliates
+            </a>
+
             <a class="nav-item" href="subadmin-desk.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
                 Mail Desk
@@ -751,7 +757,7 @@ function cardHtml(s){
         actions+='<button class="act reject" data-action="reject" data-id="'+s.id+'">Reject</button>';
     }
 
-    if(s.status==="pending"||s.status==="approved"){
+    if(s.status==="approved"){
         actions+=
             '<div class="pay">'+
                 '<input class="amt" id="amt-'+s.id+'" type="number" placeholder="Amount ₦" min="0" step="0.01">'+
@@ -857,7 +863,7 @@ listEl.addEventListener("click",async(e)=>{
             return;
         }
         if(!confirm("Pay "+formatNaira(amount)+" for "+(sale.email||"this email")+
-            "? This credits the seller's MailMart wallet immediately.")) return;
+            "? This credits the seller's wallet and any eligible one-time ₦200 email referral reward.")) return;
         /* One transaction: sale marked paid, seller's wallet credited, ledger
            row written. A failure anywhere leaves all three untouched. */
         await payEmailSale({ sale, amount, adminUser });

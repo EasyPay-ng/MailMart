@@ -1396,7 +1396,7 @@ body::before{
                 Orders
             </a>
 
-            <a class="nav-item" href="#services" data-page="Services">
+            <a class="nav-item" href="services.html" data-page="Services">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3.2"/></svg>
                 Services
             </a>
@@ -1409,6 +1409,11 @@ body::before{
             <a class="nav-item" href="sell.html">
                 <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
                 Sell
+            </a>
+
+            <a class="nav-item" href="referrals.html">
+                <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M19 8v6M16 11h6"/></svg>
+                Referrals & Affiliates
             </a>
 
             <a class="nav-item" href="wallet.html">
@@ -1676,6 +1681,7 @@ import {
     sendPasswordResetEmail, firestoreErrorHtml
 } from "./js/firebase.js";
 import { adminStatus } from "./js/admin.js";
+import { syncReferralVerification } from "./js/referral-rewards.js";
 import { ensureUserProfile } from "./js/account.js";
 import {
     formatNaira, formatDate, describeTransaction, watchMyTransactions
@@ -1700,6 +1706,7 @@ onAuthStateChanged(auth,(user)=>{
         return;
     }
 
+    user.reload().then(() => syncReferralVerification(user)).catch((error) => console.warn("Referral verification sync:", error));
     /* populate profile */
     const email=user.email||"";
     const name=(email.split("@")[0]||"Member")
@@ -1888,7 +1895,7 @@ function orderFeedError(err){
 }
 
 function renderOrderSummary(){
-    const openStatuses=new Set(["pending_payment","paid","shipped"]);
+    const openStatuses=new Set(["pending_payment","paid","shipped","delivered_pending_balance"]);
     const activePurchases=buyerOrders.filter((o)=>openStatuses.has(o.status));
     const activeSales=sellerOrders.filter((o)=>openStatuses.has(o.status));
 
