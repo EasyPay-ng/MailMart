@@ -63,6 +63,7 @@ test("all private service and claim queries have deployable indexes and service 
 test("rules keep all legacy/new collection boundaries and balanced delimiters (not a rules compiler)", async () => {
   const text = await fs.readFile(path.join(root, "firestore.rules"), "utf8");
   for (const collection of ["users", "sales", "presence", "settings", "transactions", "kyc", "listings", "orders", "mail", "referrals", "referralCodes", "affiliateApplications", "referralClaims", "referralAudit", "socialOffers", "socialRequests", "rentalCategories", "rentals", "rentalInboxes", "rentalCodes"]) assert.match(text, new RegExp("match /" + collection + "/"), collection);
+  assert.doesNotMatch(text, /[A-Za-z0-9_]\$\(/, "Build dynamic document IDs first, then interpolate them as a full Firestore path segment.");
   const stripped = text.replace(/'[^'\\]*(?:\\.[^'\\]*)*'|\"[^\"\\]*(?:\\.[^\"\\]*)*\"|\/\/[^\n]*/g, "");
   const stack = [], pair = { ")": "(", "]": "[", "}": "{" };
   for (const c of stripped) {

@@ -7,7 +7,7 @@ import { watchSocialOffers, watchRentalCategories, watchServiceRequests, request
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-let offers = [], categories = [], selectedOffer = null, selectedSide = "buy";
+let offers = [], categories = [], selectedOffer = null;
 let socialBusy = false, rentalBusy = false, rentalQuoteKey = "";
 function message(id, value, kind = "info") { $(id).innerHTML = `<div class="notice ${kind}">${esc(value)}</div>`; }
 function empty(value) { return `<div class="empty"><p>${esc(value)}</p></div>`; }
@@ -36,10 +36,15 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) { $("loadingScreen").innerHTML = `<div class="empty">${firestoreErrorHtml(error, "services")}</div>`; }
 });
 function renderOffers() {
-  $("socialCatalog").innerHTML = offers.length ? offers.map((o) => `<article class="service-offer"><span class="platform-chip">${esc(o.platform === "X" ? "X / formerly Twitter" : o.platform)}</span><h3>${esc(o.title)}</h3><p>${esc(o.description)}</p><div class="offer-prices"><div><span>You pay to buy</span><strong>${o.sellPrice > 0 ? esc(formatNaira(o.sellPrice)) : "Unavailable"}</strong></div><div><span>You receive to sell</span><strong>${o.buyPrice > 0 ? esc(formatNaira(o.buyPrice)) : "Unavailable"}</strong></div></div><p>${o.stock > 0 ? esc(o.stock) + " available · reviewed transfer" : "No stock to buy · selling may still be open"}</p><div class="row-end"><button class="btn small" data-offer="${esc(o.id)}" data-side="buy" ${o.stock < 1 || o.sellPrice <= 0 ? "disabled" : ""}>Buy asset</button><button class="btn small ghost" data-offer="${esc(o.id)}" data-side="sell" ${o.buyPrice <= 0 ? "disabled" : ""}>Sell an asset</button></div></article>`).join("") : empty("No authorized offers are available yet. Admin must set prices and stock before requests open.");
+  $("socialCatalog").innerHTML = offers.length ? offers.map((o) => `<article class="service-offer"><span class="platform-chip">${esc(o.platform === "X" ? "X / formerly Twitter" : o.platform)}</span><h3>${esc(o.title)}</h3><p>${esc(o.description)}</p><div class="offer-prices"><div><span>Customer price</span><strong>${o.sellPrice > 0 ? esc(formatNaira(o.sellPrice)) : "Unavailable"}</strong></div></div><p>${o.stock > 0 ? esc(o.stock) + " available · manually reviewed handoff" : "Currently out of stock"}</p><div class="row-end"><button class="btn small" data-offer="${esc(o.id)}" ${o.stock < 1 || o.sellPrice <= 0 ? "disabled" : ""}>Request to buy</button></div></article>`).join("") : empty("No social accounts are available for purchase yet. MailMart will post an offer when stock is ready.");
 }
 function socialRow(r) {
-  return `<article class="reward-row"><h4>${r.side === "sell" ? "Selling" : "Buying"} · ${esc(r.title)}</h4><p>${esc(formatNaira(r.amount))} · ${esc(formatDate(r.createdAt))}\n<span class="status ${esc(r.status)}">${esc(SERVICE_STATUS[r.status] || r.status)}</span>${r.rejectionReason ? "\n" + esc(r.rejectionReason) : ""}${r.transferReference ? "\nTransfer reference: " + esc(r.transferReference) : ""}</p>${r.status === "pending" ? `<button class="btn small ghost" data-cancel="socialRequests" data-id="${esc(r.id)}">Cancel pending request</button>` : ""}</article>`;
+  const legacyInbound = r.side !== "buy";
+  const label = legacyInbound ? "Legacy inbound request" : "Purchase request";
+  const notice = legacyInbound && r.status === "pending" ? '<div class="notice warn">MailMart no longer accepts social-account sales from users. Cancel this legacy request; no payment will be made.</div>' : "";
+  const reason = r.rejectionReason ? " · " + esc(r.rejectionReason) : "";
+  const reference = r.transferReference ? " · Transfer reference: " + esc(r.transferReference) : "";
+  return `<article class="reward-row"><h4>${label} · ${esc(r.title)}</h4><p>${esc(formatNaira(r.amount))} · ${esc(formatDate(r.createdAt))} · <span class="status ${esc(r.status)}">${esc(SERVICE_STATUS[r.status] || r.status)}</span>${reason}${reference}</p>${notice}${r.status === "pending" ? `<button class="btn small ghost" data-cancel="socialRequests" data-id="${esc(r.id)}">Cancel pending request</button>` : ""}</article>`;
 }
 function rentalRow(r) {
   return `<article class="reward-row"><h4>${esc(r.categoryName)} · one code</h4><p>${esc(formatNaira(r.amount))} · ${esc(formatDate(r.createdAt))}\n<span class="status ${esc(r.status)}">${esc(SERVICE_STATUS[r.status] || r.status)}</span>${r.inbox ? "\nAssigned inbox: " + esc(r.inbox) : "\nAwaiting manual review and inbox assignment"}${r.status === "awaiting_code" ? "\nPayment reserved; awaiting manual code delivery." : ""}${r.rejectionReason ? "\n" + esc(r.rejectionReason) : ""}${r.codeExpiresAt ? "\nCode available until " + esc(formatDate(r.codeExpiresAt)) : ""}</p><div class="request-actions">${r.status === "pending" ? `<button class="btn small ghost" data-cancel="rentals" data-id="${esc(r.id)}">Cancel pending request</button>` : ""}${r.status === "completed" ? `<button class="btn small good" data-reveal="${esc(r.id)}">Reveal private code</button>` : ""}</div><div data-code-slot class="service-code" role="status" aria-live="polite"></div></article>`;
@@ -48,12 +53,11 @@ document.querySelectorAll("[data-tab]").forEach((tab) => tab.addEventListener("c
 $("socialCatalog").addEventListener("click", (event) => {
   const button = event.target.closest("[data-offer]");
   if (!button) return;
-  selectedOffer = offers.find((o) => o.id === button.dataset.offer); selectedSide = button.dataset.side;
+  selectedOffer = offers.find((o) => o.id === button.dataset.offer);
   if (!selectedOffer) return;
   $("socialRequestForm").reset(); $("socialMsg").textContent = "";
-  $("socialRequestTitle").textContent = `${selectedSide === "sell" ? "Sell" : "Buy"} · ${selectedOffer.title}`;
-  $("socialRequestQuote").textContent = `${selectedSide === "sell" ? "You receive" : "You pay"} ${formatNaira(selectedSide === "sell" ? selectedOffer.buyPrice : selectedOffer.sellPrice)} after an approved transfer. Admin reviews this request before settlement.`;
-  $("ownershipFields").hidden = selectedSide !== "sell"; $("socialUrl").required = selectedSide === "sell"; $("ownershipNote").required = selectedSide === "sell";
+  $("socialRequestTitle").textContent = `Buy · ${selectedOffer.title}`;
+  $("socialRequestQuote").textContent = `You pay ${formatNaira(selectedOffer.sellPrice)} after an approved handoff. This request is not charged until MailMart completes its review.`;
   $("socialRequestCard").hidden = false; $("socialRequestCard").scrollIntoView({ block: "center", behavior: "smooth" });
 });
 $("socialClose").addEventListener("click", () => { $("socialRequestCard").hidden = true; });
@@ -61,7 +65,7 @@ $("socialRequestForm").addEventListener("submit", async (event) => {
   event.preventDefault(); if (!selectedOffer || socialBusy) return;
   socialBusy = true; $("socialSubmit").disabled = true;
   try {
-    await requestSocial({ offerId: selectedOffer.id, side: selectedSide, accountUrl: $("socialUrl").value, ownershipNote: $("ownershipNote").value, acceptedTerms: $("socialTerms").checked, expectedAmount: selectedSide === "sell" ? selectedOffer.buyPrice : selectedOffer.sellPrice });
+    await requestSocial({ offerId: selectedOffer.id, side: "buy", acceptedTerms: $("socialTerms").checked, expectedAmount: selectedOffer.sellPrice });
     $("socialRequestForm").reset(); message("socialMsg", "Request submitted at the current admin price. It is not charged/paid until admin completes the reviewed transfer. Track it in My requests.", "good");
   } catch (error) { message("socialMsg", error.message, "bad"); }
   finally { socialBusy = false; $("socialSubmit").disabled = false; }

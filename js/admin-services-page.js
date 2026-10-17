@@ -26,7 +26,7 @@ document.querySelectorAll("[data-tab]").forEach((tab) => tab.addEventListener("c
 }));
 function renderCatalog() {
   $("catalogCount").textContent = offers.filter((o) => o.active).length + " / " + categories.filter((c) => c.active).length;
-  $("socialOfferList").innerHTML = offers.length ? offers.map((o) => `<article class="reward-row catalog-admin-row"><div><h4>${esc(o.title)} <span class="status ${o.active ? "active" : "paused"}">${o.active ? "Open" : "Closed"}</span></h4><p>${esc(o.platform)} · ${esc(o.stock)} units\nPlatform buys ${esc(formatNaira(o.buyPrice))} / sells ${esc(formatNaira(o.sellPrice))}</p></div><button class="btn small ghost" data-edit-offer="${esc(o.id)}">Edit</button></article>`).join("") : empty("No social offers. Create the first authorized offer below.");
+  $("socialOfferList").innerHTML = offers.length ? offers.map((o) => `<article class="reward-row catalog-admin-row"><div><h4>${esc(o.title)} <span class="status ${o.active ? "active" : "paused"}">${o.active ? "Open" : "Closed"}</span></h4><p>${esc(o.platform)} · ${esc(o.stock)} units\nCustomer price ${esc(formatNaira(o.sellPrice))}</p></div><button class="btn small ghost" data-edit-offer="${esc(o.id)}">Edit</button></article>`).join("") : empty("No social accounts for sale yet. Create the first customer offer below.");
   $("rentalCategoryList").innerHTML = categories.length ? categories.map((c) => `<article class="reward-row catalog-admin-row"><div><h4>${esc(c.name)} <span class="status ${c.active ? "active" : "paused"}">${c.active ? "Available" : "Closed"}</span></h4><p>${esc(formatNaira(c.price))} / code · manual inbox</p></div><button class="btn small ghost" data-edit-category="${esc(c.id)}">Edit</button></article>`).join("") : empty("No rental categories. Set a price and availability below.");
 }
 function include(r) {
@@ -42,8 +42,14 @@ function renderRequests() {
   $("rentalReviewList").innerHTML = rentalRows.length ? rentalRows.slice(0, 60).map(rentalRow).join("") : empty("No matching rentals.");
 }
 function socialRow(r) {
-  return `<article class="reward-row"><h4>${r.side === "sell" ? "User sells to platform" : "User buys from platform"} · ${esc(r.title)}</h4><p>${esc(r.email || r.uid)} · ${esc(formatDate(r.createdAt))}\nQuoted amount ${esc(formatNaira(r.amount))} · <span class="status ${esc(r.status)}">${esc(SERVICE_STATUS[r.status] || r.status)}</span>${r.accountUrl ? "\nPublic asset URL: " + esc(r.accountUrl) : ""}${r.ownershipNote ? "\nOwnership explanation: " + esc(r.ownershipNote) : ""}${r.transferReference ? "\nTransfer reference: " + esc(r.transferReference) : ""}${r.rejectionReason ? "\nReason: " + esc(r.rejectionReason) : ""}</p>
-    ${r.status === "pending" ? `<form data-social-complete="${esc(r.id)}"><div class="field"><label>Permitted transfer completion reference<input name="reference" minlength="5" maxlength="800" required autocomplete="off" placeholder="Business transfer confirmation/reference. No credentials."></label></div><label class="reward-check"><input name="reviewed" type="checkbox" required><span>I reviewed ownership and platform permission, completed the authorized transfer, and verified the recipient. ${r.side === "sell" ? "This pays the quoted seller amount." : "This debits the buyer’s quoted amount; recheck balance before the external handover."}</span></label><div class="row-end"><button class="btn small good" type="submit" ${busy.has(r.id) ? "disabled" : ""}>Complete & ${r.side === "sell" ? "pay seller" : "charge buyer"}</button><button class="btn small ghost" type="button" data-reject-kind="socialRequests" data-id="${esc(r.id)}" ${busy.has(r.id) ? "disabled" : ""}>Reject</button></div></form>` : ""}</article>`;
+  const inboundLegacy = r.side !== "buy";
+  const requestLabel = inboundLegacy ? "Legacy inbound request (no longer offered)" : "Customer purchase";
+  const actions = r.status !== "pending" ? "" : inboundLegacy
+    ? `<div class="notice warn">MailMart no longer accepts social-account sales from users. Reject this legacy request; do not settle it.</div><button class="btn small ghost" type="button" data-reject-kind="socialRequests" data-id="${esc(r.id)}" ${busy.has(r.id) ? "disabled" : ""}>Reject legacy request</button>`
+    : `<form data-social-complete="${esc(r.id)}"><div class="field"><label>Platform-permitted handoff reference<input name="reference" minlength="5" maxlength="800" required autocomplete="off" placeholder="Transfer confirmation/reference. No credentials."></label></div><label class="reward-check"><input name="reviewed" type="checkbox" required><span>I verified MailMart’s entitlement, stock and platform permission, completed the authorized handoff, and verified the buyer. This debits the customer’s quoted amount; recheck balance before handover.</span></label><div class="row-end"><button class="btn small good" type="submit" ${busy.has(r.id) ? "disabled" : ""}>Complete & charge customer</button><button class="btn small ghost" type="button" data-reject-kind="socialRequests" data-id="${esc(r.id)}" ${busy.has(r.id) ? "disabled" : ""}>Reject</button></div></form>`;
+  const reference = r.transferReference ? ` · Transfer reference: ${esc(r.transferReference)}` : "";
+  const reason = r.rejectionReason ? ` · Reason: ${esc(r.rejectionReason)}` : "";
+  return `<article class="reward-row"><h4>${requestLabel} · ${esc(r.title)}</h4><p>${esc(r.email || r.uid)} · ${esc(formatDate(r.createdAt))} · Quoted amount ${esc(formatNaira(r.amount))} · <span class="status ${esc(r.status)}">${esc(SERVICE_STATUS[r.status] || r.status)}</span>${reference}${reason}</p>${actions}</article>`;
 }
 function rentalRow(r) {
   let actions = "";
@@ -56,7 +62,7 @@ $("offerForm").addEventListener("submit", async (event) => {
   event.preventDefault(); $("offerSave").disabled = true;
   try {
     await saveSocialOffer({ id: $("offerId").value, title: $("offerTitle").value, platform: $("offerPlatform").value,
-      description: $("offerDescription").value, buyPrice: $("offerBuyPrice").value, sellPrice: $("offerSellPrice").value,
+      description: $("offerDescription").value, buyPrice: 0, sellPrice: $("offerCustomerPrice").value,
       stock: $("offerStock").value, active: $("offerActive").checked }, adminUser);
     $("offerForm").reset(); $("offerId").value = ""; message("offerMsg", "Admin prices and availability saved. Existing requests retain their accepted price.", "good");
   } catch (error) { message("offerMsg", error.message, "bad"); }
@@ -80,7 +86,7 @@ document.addEventListener("click", async (event) => {
   if (offer) {
     const o = offers.find((row) => row.id === offer.dataset.editOffer); if (!o) return;
     $("offerId").value = o.id; $("offerTitle").value = o.title; $("offerPlatform").value = o.platform; $("offerDescription").value = o.description;
-    $("offerBuyPrice").value = o.buyPrice; $("offerSellPrice").value = o.sellPrice; $("offerStock").value = o.stock; $("offerActive").checked = o.active;
+    $("offerCustomerPrice").value = o.sellPrice; $("offerStock").value = o.stock; $("offerActive").checked = o.active;
     $("offerEditor").open = true; $("offerEditor").scrollIntoView({ block: "center" }); return;
   }
   if (category) {

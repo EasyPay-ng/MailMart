@@ -129,7 +129,8 @@ service cloud.firestore {
       function listingFeeBalanceChange() {
         let d = request.resource.data;
         let listingId = d.get('lastListingFeeId', '');
-        let txPath = /databases/$(database)/documents/transactions/listing_fee_$(listingId);
+        let txId = 'listing_fee_' + listingId;
+        let txPath = /databases/$(database)/documents/transactions/$(txId);
         let tx = getAfter(txPath).data;
         return userId == uid()
           && d.diff(resource.data).affectedKeys().hasOnly(['balance', 'updatedAt', 'lastListingFeeId'])
@@ -870,7 +871,8 @@ service cloud.firestore {
         let d = request.resource.data;
         let fee = configuredListingFee();
         let profilePath = /databases/$(database)/documents/users/$(uid());
-        let feePath = /databases/$(database)/documents/transactions/listing_fee_$(listingId);
+        let feeId = 'listing_fee_' + listingId;
+        let feePath = /databases/$(database)/documents/transactions/$(feeId);
         return isAdmin() || (d.get('listingFeePaid', 0) == fee
           && (fee == 0
               || (get(profilePath).data.balance >= fee
@@ -881,7 +883,7 @@ service cloud.firestore {
                   && getAfter(feePath).data.uid == uid()
                   && getAfter(feePath).data.listingId == listingId
                   && sameMoney(getAfter(feePath).data.amount, fee)
-                  && sameMoney(getAfter(feePath).data.balanceAfter, getAfter(profilePath).data.balance)));
+                  && sameMoney(getAfter(feePath).data.balanceAfter, getAfter(profilePath).data.balance))));
       }
       function listingShape() {
         return request.resource.data.keys().hasAll(
@@ -955,7 +957,8 @@ service cloud.firestore {
       }
       function promotionDecision() {
         let d = request.resource.data;
-        let tx = getAfter(/databases/$(database)/documents/transactions/promotion_$(requestId)).data;
+        let txId = 'promotion_' + requestId;
+        let tx = getAfter(/databases/$(database)/documents/transactions/$(txId)).data;
         let listing = getAfter(/databases/$(database)/documents/listings/$(resource.data.listingId)).data;
         let expiryMatches = resource.data.kind == 'featured'
           ? listing.featuredUntil == d.expiresAt : listing.hotDealUntil == d.expiresAt;
@@ -1000,7 +1003,8 @@ service cloud.firestore {
         let d = request.resource.data;
         let order = getAfter(/databases/$(database)/documents/orders/$(requestId)).data;
         let buyer = getAfter(/databases/$(database)/documents/users/$(resource.data.buyerUid)).data;
-        let txPath = /databases/$(database)/documents/transactions/order_refund_$(requestId);
+        let txId = 'order_refund_' + requestId;
+        let txPath = /databases/$(database)/documents/transactions/$(txId);
         let tx = getAfter(txPath).data;
         return isAdmin() && resource.data.status == 'pending'
           && d.diff(resource.data).affectedKeys().hasOnly(['status', 'requestedAmount', 'feeAmount', 'reviewedBy', 'reviewedAt', 'updatedAt', 'rejectionReason'])
@@ -1289,8 +1293,9 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() <= 120
         && ['Facebook', 'Instagram', 'X', 'Other'].hasAny([request.resource.data.platform])
         && request.resource.data.description is string && request.resource.data.description.size() <= 1000
-        && request.resource.data.buyPrice >= 0 && request.resource.data.sellPrice >= 0
-        && request.resource.data.buyPrice <= 100000000 && request.resource.data.sellPrice <= 100000000
+        && request.resource.data.buyPrice is number && request.resource.data.buyPrice == 0
+        && request.resource.data.sellPrice is number && request.resource.data.sellPrice >= 0
+        && request.resource.data.sellPrice <= 100000000
         && request.resource.data.stock is int && request.resource.data.stock >= 0
         && request.resource.data.active is bool && request.resource.data.authorizedTransfersOnly == true
         && request.resource.data.updatedAt == request.time && request.resource.data.updatedBy == adminActor();
@@ -1316,11 +1321,9 @@ service cloud.firestore {
           && d.uid == uid() && d.email == tokenEmail() && request.auth.token.email_verified == true
           && d.status == 'pending' && d.acceptedTerms == true && offer.active == true
           && d.title == offer.title && d.platform == offer.platform && d.amount > 0
-          && ((d.side == 'buy' && d.amount == offer.sellPrice && offer.stock > 0
-               && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount)
-              || (d.side == 'sell' && d.amount == offer.buyPrice && d.accountUrl is string
-                  && d.accountUrl.matches('https://.+') && d.accountUrl.size() <= 1000
-                  && d.ownershipNote is string && d.ownershipNote.size() >= 10 && d.ownershipNote.size() <= 1000))
+          && d.side == 'buy' && d.accountUrl == '' && d.ownershipNote == ''
+          && d.amount == offer.sellPrice && offer.stock > 0
+          && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount
           && d.createdAt == request.time && d.updatedAt == request.time;
       }
       function decision() {
@@ -1328,7 +1331,8 @@ service cloud.firestore {
         return isAdmin() && resource.data.status == 'pending'
           && d.diff(resource.data).affectedKeys().hasOnly(['status', 'ownershipReviewed', 'transferReference', 'rejectionReason', 'reviewedBy', 'reviewedAt', 'updatedAt'])
           && ['completed', 'rejected'].hasAny([d.status])
-          && (d.status != 'completed' || (d.ownershipReviewed == true && d.transferReference is string && d.transferReference.size() <= 800))
+          && (d.status != 'completed' || (resource.data.side == 'buy' && d.ownershipReviewed == true
+              && d.transferReference is string && d.transferReference.size() <= 800))
           && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time;
       }
       allow read: if signedIn() && (isAdmin() || resource.data.uid == uid());

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createApp, admin, profile, referral } from "./helpers/firebase-mock.mjs";
 const user = (uid = "buyer", emailVerified = true) => ({ uid, email: uid + "@example.com", emailVerified, reload: async () => {}, getIdToken: async () => "token" });
-const offer = { title: "Authorized business asset", platform: "Instagram", description: "Reviewed authorized business transfer only.", buyPrice: 300, sellPrice: 500, stock: 1, active: true, authorizedTransfersOnly: true, createdAt: 1 };
+const offer = { title: "MailMart social account", platform: "Instagram", description: "Reviewed platform-permitted customer transfer only.", buyPrice: 0, sellPrice: 500, stock: 1, active: true, authorizedTransfersOnly: true, createdAt: 1 };
 const category = { name: "Instagram registration", description: "Authorized tests/own registrations, manual availability.", price: 50, active: true, manualOnly: true, createdAt: 1 };
 function seed(extra = {}) { return { "users/buyer": profile("buyer", 5000, "referrer"), "users/referrer": profile("referrer", 100), "referrals/buyer": referral(), "socialOffers/offer": offer, "rentalCategories/category": category, ...extra }; }
 const request = (services, side = "buy") => services.requestSocial({ offerId: "offer", side, accountUrl: "https://www.instagram.com/owned-business/", ownershipNote: "I manage this business and can use its authorized transfer process.", acceptedTerms: true });
@@ -18,18 +18,19 @@ test("admin catalogs enforce fixed prices, stock bounds and the per-code ₦50 m
   await assert.rejects(services.saveSocialOffer({ ...offer, stock: 1.5 }, admin), /whole number/);
   await assert.rejects(services.saveSocialOffer({ ...offer, platform: "made up" }, admin), /platform/);
   const socialId = await services.saveSocialOffer(offer, admin);
-  assert.equal(app.data("socialOffers/" + socialId).buyPrice, 300); assert.equal(app.data("socialOffers/" + socialId).sellPrice, 500);
+  assert.equal(app.data("socialOffers/" + socialId).buyPrice, 0); assert.equal(app.data("socialOffers/" + socialId).sellPrice, 500);
 });
 
-test("social requests require verified email, authorization, terms and owned HTTPS asset details", async () => {
+test("social purchase requests require verified email and acceptance; user-to-MailMart sales are disabled", async () => {
   const app = await createApp(seed(), { user: user("buyer", false) }); const services = await app.load("js/services.js");
   await assert.rejects(request(services), /Verify/);
   app.auth.currentUser = user();
   await assert.rejects(services.requestSocial({ offerId: "offer", side: "buy", acceptedTerms: false }), /Confirm/);
-  await assert.rejects(services.requestSocial({ offerId: "offer", side: "sell", acceptedTerms: true, accountUrl: "javascript:alert(1)", ownershipNote: "My authorized asset" }), /HTTPS/);
-  await assert.rejects(services.requestSocial({ offerId: "offer", side: "sell", acceptedTerms: true, accountUrl: "https://instagram.com/owned", ownershipNote: "no" }), /explanation/);
-  await assert.rejects(services.requestSocial({ offerId: "offer", side: "sell", acceptedTerms: true, accountUrl: "https://username:secret@instagram.com/owned", ownershipNote: "My authorized business asset" }), /HTTPS/);
-  const before = app.all(); await assert.rejects(services.completeSocialRequest({ requestId: "missing", ownershipReviewed: false, transferReference: "ref", adminUser: admin }), /Confirm/); assert.deepEqual(app.all(), before);
+  const before = app.all();
+  await assert.rejects(services.requestSocial({ offerId: "offer", side: "sell", acceptedTerms: true }), /customer purchases only/);
+  assert.deepEqual(app.all(), before);
+  await assert.rejects(services.completeSocialRequest({ requestId: "missing", ownershipReviewed: false, transferReference: "ref", adminUser: admin }), /Confirm/);
+  assert.deepEqual(app.all(), before);
 });
 
 test("buying a social asset charges the accepted admin price only after review, once, with lifetime spending", async () => {
@@ -46,13 +47,13 @@ test("buying a social asset charges the accepted admin price only after review, 
   assert.equal(app.data("users/referrer").balance, 120);
 });
 
-test("selling a social asset pays the quoted earnings, not a user-supplied amount, and increases reviewed stock", async () => {
-  const app = await createApp(seed(), { user: user() }); const services = await app.load("js/services.js");
-  const r = await request(services, "sell"); await complete(services, r.id);
-  assert.equal(app.data("users/buyer").balance, 5300); assert.equal(app.data("socialOffers/offer").stock, 2);
-  const tx = app.data("transactions/social_sell_" + r.id); assert.equal(tx.type, "social_sale"); assert.equal(tx.amount, 300);
-  assert.equal(app.data("referralClaims/lifetime_social_sell_" + r.id).amount, 12);
-  for (const name of ["password", "sessionCookie", "cookie", "recoveryCode"]) assert.equal(Object.hasOwn(app.data("socialRequests/" + r.id), name), false);
+test("only MailMart customer purchases are accepted; legacy inbound social sales cannot be settled", async () => {
+  const legacy = { uid: "buyer", email: "buyer@example.com", offerId: "offer", platform: "Instagram", title: "Old inbound request", side: "sell", amount: 300, accountUrl: "https://instagram.com/owned-business", ownershipNote: "Authorized business asset transfer.", acceptedTerms: true, status: "pending", createdAt: 1, updatedAt: 1 };
+  const app = await createApp(seed({ "socialRequests/legacy": legacy }), { user: user() }); const services = await app.load("js/services.js");
+  const before = app.all();
+  await assert.rejects(request(services, "sell"), /customer purchases only/);
+  await assert.rejects(services.completeSocialRequest({ requestId: "legacy", ownershipReviewed: true, transferReference: "Legacy transfer reference", adminUser: admin }), /no longer accepts social-account sales/);
+  assert.deepEqual(app.all(), before);
 });
 
 test("competing social purchases cannot oversell the last unit, and failed settlements fully roll back", async () => {
