@@ -22,6 +22,26 @@
 .state-grid .mini{margin-bottom:0}
 .state-grid .mini label{font-size:10.5px;margin-bottom:5px}
 .state-grid .mini input{height:40px;padding:0 11px;font-size:12.5px}
+.image-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:9px;margin-top:11px}
+.image-tile{position:relative;aspect-ratio:1/1;border-radius:13px;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:#071423}
+.image-tile img{display:block;width:100%;height:100%;object-fit:cover}
+.image-tile .cover-label{position:absolute;left:6px;top:6px;padding:4px 6px;border-radius:99px;background:#087cff;color:#fff;font-size:9px;font-weight:800}
+.image-tile .remove-image{position:absolute;right:5px;top:5px;width:24px;height:24px;border:0;border-radius:50%;background:rgba(5,12,22,.78);color:#fff;font-size:14px;cursor:pointer}
+.variant-list{display:grid;gap:9px;margin:10px 0}
+.variant-row{display:grid;grid-template-columns:minmax(0,1fr) 42px;gap:7px;align-items:center}
+.variant-row input{width:100%;min-width:0}
+.variant-row button{height:40px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.04);color:#ff9aa9;cursor:pointer}
+.installment-box{padding:16px;border-radius:15px;background:rgba(0,213,255,.045);border:1px solid rgba(0,213,255,.18)}
+.installment-box .two{margin-top:12px}
+.inline-check{display:flex;gap:9px;align-items:flex-start;color:#dbe9f7;font-size:12px;line-height:1.55}
+.inline-check input{margin-top:2px;accent-color:#087cff}
+.installment-warning{margin-top:9px;padding:10px 12px;border-radius:10px;background:rgba(255,212,121,.08);border:1px solid rgba(255,212,121,.2);color:#ffd479;font-size:11px;line-height:1.55}
+.seller-earnings{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:14px 0 18px}
+.seller-earnings .earn{padding:13px;border:1px solid rgba(255,255,255,.09);border-radius:13px;background:rgba(8,124,255,.05)}
+.seller-earnings .earn small{display:block;color:#8ba3bd;font-size:10px;margin-bottom:6px}
+.seller-earnings .earn strong{font-size:16px;font-weight:900}
+@media(max-width:560px){.seller-earnings{grid-template-columns:1fr}}
+@media(max-width:560px){.image-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.variant-row{grid-template-columns:minmax(0,1fr) 38px}}
 </style>
 </head>
 
@@ -56,6 +76,7 @@
         <div class="card">
             <h3>My listings</h3>
             <p class="hint">Everything you have posted. Pause an item to hide it from the marketplace without deleting it.</p>
+            <div class="seller-earnings" id="sellerEarnings" aria-live="polite"></div>
             <div class="grid" id="myGrid"></div>
         </div>
     </div>
@@ -81,7 +102,13 @@
                 <div class="field">
                     <label for="fStock">Quantity available</label>
                     <input type="number" id="fStock" min="1" step="1" value="1" inputmode="numeric">
+                    <div class="tip">Customers see truthful low-stock reminders based on this quantity.</div>
                 </div>
+            </div>
+            <div class="field">
+                <label for="fLowStock">Show “Only X left” when stock reaches</label>
+                <input type="number" id="fLowStock" min="1" step="1" value="3" inputmode="numeric">
+                <div class="tip">The reminder is shown only when actual available stock is at or below this number.</div>
             </div>
 
             <div class="field">
@@ -90,14 +117,21 @@
             </div>
 
             <div class="field">
-                <label>Item photo</label>
-                <div class="drop" id="dropZone">
+                <label>Product photos <span class="count">· upload up to 4 clear images</span></label>
+                <div class="drop" id="dropZone" role="button" tabindex="0" aria-label="Choose product photos">
                     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00d5ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-                    <div class="big" id="dropLabel">Choose a photo</div>
-                    <p>Tap to pick an image. It is resized before upload.</p>
-                    <img id="preview" alt="Preview">
+                    <div class="big" id="dropLabel">Choose product photos</div>
+                    <p>Show the product from clear angles. The first photo is the cover; images are resized before saving.</p>
                 </div>
-                <input type="file" id="imageInput" accept="image/*" style="display:none">
+                <input type="file" id="imageInput" accept="image/*" multiple style="display:none">
+                <div class="image-gallery" id="imageGallery" aria-live="polite"></div>
+            </div>
+
+            <div class="field">
+                <label>Product variations <span class="count">· optional</span></label>
+                <p class="hint">If customers need to choose a colour, size, model or bundle, add each option here. For combined options, use a clear label such as “Black · 128GB”.</p>
+                <div class="variant-list" id="variantList"></div>
+                <button class="btn small ghost" id="addVariant" type="button">＋ Add a variation</button>
             </div>
 
             <div class="two">
@@ -134,6 +168,37 @@
 
             <div class="divider"></div>
 
+            <div class="two">
+                <div class="field">
+                    <label for="fFulfillment">Who handles delivery?</label>
+                    <select id="fFulfillment"><option value="seller">I will deliver</option><option value="mailmart">MailMart delivery team</option></select>
+                    <div class="tip">For MailMart delivery, an assigned agent can contact the buyer to confirm directions.</div>
+                </div>
+                <div class="field">
+                    <label for="fDeliveryEta">Estimated delivery (days)</label>
+                    <select id="fDeliveryEta"><option value="2">2 days</option><option value="3" selected>3 days</option><option value="4">4 days</option></select>
+                    <div class="tip">Buyers see the estimate before they place an order.</div>
+                </div>
+            </div>
+
+            <div class="installment-box">
+                <label class="inline-check"><input type="checkbox" id="fInstallments"><span><strong>Offer installment payments</strong><br>Buyers can pay over time. The item is delivered only after the full balance is paid.</span></label>
+                <div class="two" id="installmentFields" style="display:none">
+                    <div class="field">
+                        <label for="fInstallmentUnit">Payment period</label>
+                        <select id="fInstallmentUnit"><option value="week">Weekly · 1–35 weeks</option><option value="month">Monthly · 1–12 months</option></select>
+                    </div>
+                    <div class="field">
+                        <label for="fInstallmentCount">Number of payments</label>
+                        <input type="number" id="fInstallmentCount" min="1" max="35" step="1" value="3" inputmode="numeric">
+                    </div>
+                </div>
+                <div class="installment-warning" id="installmentWarning" hidden></div>
+                <label class="inline-check" id="warehouseConsentWrap" style="margin-top:10px" hidden><input type="checkbox" id="fWarehouseConsent"><span>I understand that this long-term plan requires me to bring the product to the MailMart office for verification and safekeeping before installment orders can be enabled.</span></label>
+            </div>
+
+            <div class="divider"></div>
+            <div class="tip" id="listingFeeHint">Listing fee: checking current platform settings…</div>
             <button class="btn block" id="postBtn">Post item</button>
         </div>
     </div>
@@ -153,7 +218,7 @@ import {
 } from "./js/firebase.js";
 import { STATES, lgasFor } from "./js/data/nigeria.js";
 import { fileToBase64 } from "./js/image.js";
-import { formatNaira } from "./js/wallet.js";
+import { formatNaira, loadSettings } from "./js/wallet.js";
 import {
     CATEGORIES,
     ID_TYPES,
@@ -163,6 +228,9 @@ import {
     updateListing,
     setListingStatus,
     watchMyListings,
+    watchSellerOrders,
+    watchMyPromotionRequests,
+    requestListingPromotion,
     hasDiscount,
     unitPriceOf,
     deliveryFeeFor
@@ -176,7 +244,10 @@ const esc = (v) =>
 let currentUser = null;
 let kyc = null;
 let myListings = [];
-let itemImage = "";
+let sellerOrders = [];
+let promotionRequests = [];
+let sellerSettings = null;
+let itemImages = [];
 let idImage = "";
 
 /* ------------------------------------------------------------------ */
@@ -213,6 +284,19 @@ function start() {
             `<div class="empty">${firestoreErrorHtml(err, "your listings")}</div>`;
     });
 
+    watchSellerOrders((rows) => { sellerOrders = rows; renderSellerEarnings(); }, (err) => {
+        $("sellerEarnings").innerHTML = `<div class="notice info">${firestoreErrorHtml(err, "seller earnings")}</div>`;
+    });
+    watchMyPromotionRequests((rows) => { promotionRequests = rows; renderMyListings(); }, (err) => console.warn("Promotion requests unavailable", err));
+    loadSettings().then((value) => {
+        sellerSettings = value;
+        $("listingFeeHint").textContent = `New listing fee: ${formatNaira(value?.listingFee || 0)} · deducted from your wallet when you post.`;
+        renderMyListings();
+    }).catch(() => {
+        sellerSettings = null;
+        $("listingFeeHint").textContent = "Could not load the current listing fee. Posting will verify the latest platform setting.";
+    });
+
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";
 }
@@ -229,6 +313,57 @@ function buildForms() {
                        min="0" step="1" placeholder="default" inputmode="numeric">
             </div>`)
         .join("");
+    bindListingOptions();
+}
+
+function bindListingOptions() {
+    $("dropZone").addEventListener("click", () => $("imageInput").click());
+    $("dropZone").addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); $("imageInput").click(); }
+    });
+    $("imageGallery").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-image]");
+        if (!button) return;
+        itemImages.splice(Number(button.dataset.removeImage), 1);
+        renderImageGallery();
+    });
+    $("addVariant").addEventListener("click", () => addVariantRow());
+    $("variantList").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-variant]");
+        if (button) button.closest(".variant-row")?.remove();
+    });
+    $("fInstallments").addEventListener("change", updateInstallmentFields);
+    $("fInstallmentUnit").addEventListener("change", updateInstallmentFields);
+    $("fInstallmentCount").addEventListener("input", updateInstallmentFields);
+    updateInstallmentFields();
+}
+
+function addVariantRow(value = "") {
+    if ($("variantList").querySelectorAll("[data-variant]").length >= 16) {
+        $("newMsg").innerHTML = '<div class="notice warn">You can add up to 16 product options.</div>';
+        return;
+    }
+    const row = document.createElement("div");
+    row.className = "variant-row";
+    row.innerHTML = `<input type="text" data-variant maxlength="80" value="${esc(value)}" placeholder="e.g. Black · 128GB" aria-label="Product variation"><button type="button" data-remove-variant aria-label="Remove variation">×</button>`;
+    $("variantList").append(row);
+}
+
+function updateInstallmentFields() {
+    const enabled = $("fInstallments").checked;
+    $("installmentFields").style.display = enabled ? "grid" : "none";
+    const unit = $("fInstallmentUnit").value;
+    const max = unit === "week" ? 35 : 12;
+    const countInput = $("fInstallmentCount");
+    countInput.max = String(max);
+    countInput.value = String(Math.min(max, Math.max(1, Number(countInput.value) || (unit === "week" ? 3 : 2))));
+    const count = Number(countInput.value);
+    const warehouseRequired = unit === "week" ? count > 3 : count > 2;
+    $("installmentWarning").hidden = !enabled || !warehouseRequired;
+    $("warehouseConsentWrap").hidden = !enabled || !warehouseRequired;
+    if (enabled && warehouseRequired) {
+        $("installmentWarning").textContent = `Plans longer than ${unit === "week" ? "3 weeks" : "2 months"} require the product to be brought to a MailMart location. MailMart must verify receipt before customers can choose this plan.`;
+    }
 }
 
 function isApproved() {
@@ -403,24 +538,39 @@ function kycFail(message) {
 /* ------------------------------------------------------------------ */
 /* posting                                                             */
 /* ------------------------------------------------------------------ */
-$("dropZone").addEventListener("click", () => $("imageInput").click());
 $("imageInput").addEventListener("change", async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-    $("dropLabel").textContent = "Processing image…";
-    try {
-        itemImage = await fileToBase64(file);
-        $("preview").src = itemImage;
-        $("preview").style.display = "block";
-        $("dropLabel").textContent = file.name;
-    } catch (err) {
-        itemImage = "";
-        $("preview").style.display = "none";
-        $("dropLabel").textContent = "Choose a photo";
-        $("newMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    const files = [...(e.target.files || [])];
+    if (!files.length) return;
+    if (itemImages.length + files.length > 4) {
+        $("newMsg").innerHTML = '<div class="notice warn">Upload up to 4 product photos. Remove one before adding more.</div>';
+        e.target.value = "";
+        return;
     }
-    e.target.value = "";
+    $("dropLabel").textContent = "Optimising product photos…";
+    $("imageInput").disabled = true;
+    try {
+        for (const file of files) {
+            const image = await fileToBase64(file, { maxEdge: 720, quality: 0.67, maxBase64Chars: 145000 });
+            itemImages.push(image);
+            renderImageGallery();
+        }
+        $("dropLabel").textContent = `${itemImages.length} of 4 photos selected`;
+        $("newMsg").innerHTML = "";
+    } catch (err) {
+        $("newMsg").innerHTML = `<div class="notice bad">${esc(err.message)}</div>`;
+    } finally {
+        $("imageInput").disabled = false;
+        e.target.value = "";
+    }
 });
+
+function renderImageGallery() {
+    $("imageGallery").innerHTML = itemImages.map((image, index) => `
+        <div class="image-tile"><img src="${esc(image)}" alt="Product photo ${index + 1}">
+        ${index === 0 ? '<span class="cover-label">Cover</span>' : ""}
+        <button class="remove-image" type="button" data-remove-image="${index}" aria-label="Remove product photo ${index + 1}">×</button></div>`).join("");
+    $("dropLabel").textContent = itemImages.length ? `${itemImages.length} of 4 photos selected · first is cover` : "Choose product photos";
+}
 
 $("fOverrides").addEventListener("change", () => {
     $("stateWrap").style.display = $("fOverrides").checked ? "block" : "none";
@@ -442,13 +592,21 @@ $("postBtn").addEventListener("click", async () => {
     const price = Number($("fPrice").value);
     const discountPrice = Number($("fDiscount").value) || 0;
     const deliveryDefault = Number($("fDelivery").value) || 0;
+    const lowStockThreshold = Math.max(1, Math.floor(Number($("fLowStock").value) || 3));
+    const installmentEnabled = $("fInstallments").checked;
+    const installmentUnit = $("fInstallmentUnit").value === "month" ? "month" : "week";
+    const installmentCount = Math.floor(Number($("fInstallmentCount").value) || 0);
+    const warehouseRequired = installmentEnabled && (installmentUnit === "week" ? installmentCount > 3 : installmentCount > 2);
+    const variants = [...document.querySelectorAll("#variantList [data-variant]")].map((input) => input.value.trim()).filter(Boolean);
 
     if (!title) return postFail("Give the item a name.");
     if (!Number.isFinite(price) || price <= 0) return postFail("Enter a price.");
     if (discountPrice > 0 && discountPrice >= price) {
         return postFail("The discounted price must be lower than the normal price, or left at 0.");
     }
-    if (!itemImage) return postFail("Add a photo of the item.");
+    if (!itemImages.length) return postFail("Add at least one clear product photo.");
+    if (installmentEnabled && (installmentUnit === "week" ? installmentCount < 1 || installmentCount > 35 : installmentCount < 1 || installmentCount > 12)) return postFail("Choose a valid installment period.");
+    if (warehouseRequired && !$("fWarehouseConsent").checked) return postFail("Confirm that you will bring the item to MailMart for long-term installment safekeeping.");
 
     /* per-state delivery overrides, only for states actually filled in */
     const deliveryByState = {};
@@ -461,6 +619,17 @@ $("postBtn").addEventListener("click", async () => {
         });
     }
 
+    let listingFee;
+    try {
+        sellerSettings = await loadSettings();
+        listingFee = Number(sellerSettings?.listingFee || 0);
+    } catch (err) {
+        return postFail(firestoreErrorSummary(err, "the listing fee"));
+    }
+    if (!Number.isFinite(listingFee) || listingFee < 0) return postFail("The listing fee setting is invalid. Contact MailMart support.");
+    $("listingFeeHint").textContent = `New listing fee: ${formatNaira(listingFee)} · deducted from your wallet when you post.`;
+    if (listingFee > 0 && !confirm(`Posting this listing will deduct ${formatNaira(listingFee)} from your wallet. Continue?`)) return;
+
     btn.disabled = true;
     btn.textContent = "Posting…";
     try {
@@ -468,12 +637,24 @@ $("postBtn").addEventListener("click", async () => {
             title,
             description,
             category,
-            image: itemImage,
+            image: itemImages[0],
+            gallery: itemImages.slice(1),
+            variants,
             price,
             discountPrice,
             stock,
+            lowStockThreshold,
             deliveryDefault,
-            deliveryByState
+            deliveryByState,
+            fulfillmentMode: $("fFulfillment").value === "mailmart" ? "mailmart" : "seller",
+            deliveryEtaDays: Number($("fDeliveryEta").value) || 3,
+            installmentEnabled,
+            installmentUnit,
+            installmentCount: installmentEnabled ? installmentCount : 0,
+            installmentMonths: installmentEnabled && installmentUnit === "month" ? installmentCount : 0,
+            installmentDelivery: "after_full",
+            warehouseRequired,
+            warehouseVerified: false
         });
         $("newMsg").innerHTML =
             '<div class="notice good">Posted. Your item is live on the marketplace.</div>';
@@ -496,10 +677,18 @@ function resetForm() {
     ["fTitle", "fDescription", "fPrice", "fDelivery"].forEach((id) => ($(id).value = ""));
     $("fDiscount").value = "0";
     $("fStock").value = "1";
-    itemImage = "";
-    $("preview").style.display = "none";
-    $("preview").src = "";
-    $("dropLabel").textContent = "Choose a photo";
+    $("fLowStock").value = "3";
+    itemImages = [];
+    $("imageGallery").innerHTML = "";
+    $("dropLabel").textContent = "Choose product photos";
+    $("variantList").innerHTML = "";
+    $("fInstallments").checked = false;
+    $("fInstallmentUnit").value = "week";
+    $("fInstallmentCount").value = "3";
+    $("fWarehouseConsent").checked = false;
+    $("fFulfillment").value = "seller";
+    $("fDeliveryEta").value = "3";
+    updateInstallmentFields();
     document.querySelectorAll("#stateGrid input[data-state]").forEach((i) => (i.value = ""));
     $("fOverrides").checked = false;
     $("stateWrap").style.display = "none";
@@ -508,6 +697,14 @@ function resetForm() {
 /* ------------------------------------------------------------------ */
 /* my listings                                                         */
 /* ------------------------------------------------------------------ */
+function renderSellerEarnings() {
+    const paid = sellerOrders.reduce((sum, order) => sum + Number(order.sellerPaid || 0), 0);
+    const activeOrders = sellerOrders.filter((order) => !["completed", "cancelled", "refunded"].includes(order.status));
+    const due = activeOrders.reduce((sum, order) => sum + Math.max(0, Number(order.sellerPayout || 0) - Number(order.sellerPaid || 0)), 0);
+    const openOrders = activeOrders.length;
+    $("sellerEarnings").innerHTML = `<div class="earn"><small>Paid to your wallet</small><strong>${esc(formatNaira(paid))}</strong></div><div class="earn"><small>Seller payout outstanding</small><strong>${esc(formatNaira(due))}</strong></div><div class="earn"><small>Open orders</small><strong>${esc(openOrders)}</strong></div>`;
+}
+
 function renderMyListings() {
     $("myCount").textContent = String(myListings.length);
 
@@ -542,6 +739,14 @@ function renderMyListings() {
                         ${priceBlock}
                         <div class="field tip" style="margin:0">
                             Delivery from ${esc(formatNaira(deliveryFeeFor(l, "")))} · ${esc(l.stock ?? 1)} in stock
+                            ${Array.isArray(l.gallery) && l.gallery.length ? ` · ${l.gallery.length + 1} photos` : ""}
+                            ${Array.isArray(l.variants) && l.variants.length ? ` · ${l.variants.length} options` : ""}
+                        </div>
+                        ${l.installmentEnabled ? `<div class="field tip" style="margin:0">Installments: ${esc(l.installmentCount || l.installmentMonths || 0)} ${esc(l.installmentUnit || "month")}${Number(l.installmentCount || l.installmentMonths || 0) === 1 ? "" : "s"}${l.warehouseRequired ? ` · MailMart hold ${l.warehouseVerified ? "verified" : "pending"}` : ""}</div>` : ""}
+                        ${promotionRequests.some((request) => request.listingId === l.id && request.status === "pending") ? '<div class="field tip" style="margin:0">Promotion request awaiting admin review</div>' : ""}
+                        <div class="row-end" style="margin-top:8px;justify-content:flex-start">
+                            <button class="btn small ghost" data-act="promote" data-kind="hotDeal" data-id="${esc(l.id)}" ${!sellerSettings?.hotDealFee || l.status !== "active" ? "disabled" : ""}>Hot Deal · ${esc(formatNaira(sellerSettings?.hotDealFee || 0))} / 24h</button>
+                            <button class="btn small ghost" data-act="promote" data-kind="featured" data-id="${esc(l.id)}" ${!sellerSettings?.featuredFee || l.status !== "active" ? "disabled" : ""}>Featured · ${esc(formatNaira(sellerSettings?.featuredFee || 0))} / 24h</button>
                         </div>
                         <div class="row-end" style="margin-top:4px">
                             ${toggle}
@@ -559,6 +764,18 @@ $("myGrid").addEventListener("click", async (e) => {
     const id = btn.dataset.id;
 
     try {
+        if (btn.dataset.act === "promote") {
+            const listing = myListings.find((item) => item.id === id);
+            const kind = btn.dataset.kind;
+            sellerSettings = await loadSettings();
+            renderMyListings();
+            const fee = Number(kind === "featured" ? sellerSettings?.featuredFee : sellerSettings?.hotDealFee);
+            if (!listing || !fee) throw new Error("MailMart has not set a price for this placement yet.");
+            if (!confirm(`Request ${kind === "featured" ? "Featured" : "Hot Deal"} placement for ${formatNaira(fee)}? Your wallet will be charged only if an administrator approves it; each placement lasts 24 hours.`)) return;
+            await requestListingPromotion(listing, kind, sellerSettings);
+            alert("Promotion request submitted. MailMart will review it and charge your wallet only if approved.");
+            return;
+        }
         if (btn.dataset.act === "pause") await setListingStatus(id, "paused");
         if (btn.dataset.act === "activate") await setListingStatus(id, "active");
         if (btn.dataset.act === "delete") {

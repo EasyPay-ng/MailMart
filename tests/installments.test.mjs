@@ -8,7 +8,8 @@ function seed(delivery = "after_full", extra = {}) {
     "users/referrer": profile("referrer", 100), "users/affiliate": profile("affiliate", 0), "referrals/buyer": referral(),
     "orders/plan": order("plan", { status: "pending_payment", paidAt: null, completedAt: null, deliveredAt: null,
       fullyPaidAt: null, paymentMode: "installment", installmentMonths: 12, installmentDelivery: delivery,
-      installmentsPaid: 0, totalPaid: 0, sellerPaid: 0, paymentTxId: "plan_month_1" }),
+      installmentsPaid: 0, totalPaid: 0, sellerPaid: 0, fulfillmentMode: "seller", paymentTxId: "plan_month_1" }),
+    "orders/plan/deliveryProof/proof": { uid: "seller", email: "seller@example.com", fulfillmentMode: "seller", photo: "p".repeat(300), signature: "s".repeat(150), recipientName: "Buyer Name", note: "", createdAt: 1 },
     "transactions/plan_month_1": { type: "order_payment", direction: "debit", status: "pending", uid: "buyer", amount: 112.5, orderId: "plan", installmentNumber: 1 }, ...extra };
 }
 async function month(app, market, n) {
@@ -16,17 +17,21 @@ async function month(app, market, n) {
   await market.settleOrderPayment({ id: "plan", paymentTxId: "plan_month_1" }, admin, "plan_month_" + n);
 }
 
-test("checkout offers twelve months only for an admin-enabled listing and snapshots its delivery terms", async () => {
+test("checkout snapshots seller-configured weekly terms, blocks unverified warehouse stock, and saves the selected variation", async () => {
   const app = await createApp(seed(), { user: buyer }); const market = await app.load("js/marketplace.js");
-  const input = { listing: { id: "item", title: "Goods", price: 1000, stock: 2, sellerUid: "seller", sellerEmail: "seller@example.com", deliveryDefault: 300 },
-    quantity: 1, address: { state: "Delta" }, settings: { serviceFee: 50 }, paymentMode: "installment" };
-  await assert.rejects(market.placeOrder(input), /not enabled/);
-  await assert.rejects(market.placeOrder({ ...input, listing: { ...input.listing, price: 0.01, deliveryDefault: 0, installmentEnabled: true } }), /too small/);
-  const id = await market.placeOrder({ ...input, listing: { ...input.listing, installmentEnabled: true, installmentDelivery: "after_first" } });
+  const input = { listing: { id: "item", title: "Goods", price: 1000, stock: 2, variants: ["Blue", "Black"], sellerUid: "seller", sellerEmail: "seller@example.com", deliveryDefault: 300,
+      installmentEnabled: true, installmentUnit: "week", installmentCount: 4, installmentMonths: 0, installmentDelivery: "after_full", warehouseRequired: true, warehouseVerified: false },
+    quantity: 1, address: { state: "Delta" }, settings: { serviceFee: 50 }, paymentMode: "installment", selectedVariant: "Black" };
+  await assert.rejects(market.placeOrder({ ...input, listing: { ...input.listing, installmentEnabled: false } }), /not enabled/);
+  await assert.rejects(market.placeOrder(input), /warehouse yet/);
+  await assert.rejects(market.placeOrder({ ...input, selectedVariant: "Green", listing: { ...input.listing, warehouseVerified: true } }), /valid product variation/);
+  await assert.rejects(market.placeOrder({ ...input, listing: { ...input.listing, price: 0.01, deliveryDefault: 0, warehouseVerified: true }, settings: { serviceFee: 0 } }), /too small/);
+  const id = await market.placeOrder({ ...input, listing: { ...input.listing, warehouseVerified: true } });
   const placed = app.data("orders/" + id);
-  assert.equal(placed.installmentDelivery, "after_first"); assert.equal(placed.installmentMonths, 12);
+  assert.equal(placed.installmentDelivery, "after_full"); assert.equal(placed.installmentCount, 4); assert.equal(placed.installmentUnit, "week");
+  assert.equal(placed.installmentMonths, 0); assert.equal(placed.selectedVariant, "Black");
   assert.equal(placed.total, 1350); assert.equal(placed.totalPaid, 0);
-  assert.equal(app.data("transactions/" + placed.paymentTxId).amount, 112.5);
+  assert.equal(app.data("transactions/" + placed.paymentTxId).amount, 337.5);
   assert.equal(app.data("users/buyer").balance, 5000);
 });
 
@@ -60,7 +65,7 @@ test("twelve monthly payments total exactly the order price and seller payout, w
 test("after-full delivery cannot ship early; fully paid delivery unlocks the first-purchase milestone", async () => {
   const app = await createApp(seed(), { user: buyer }); const market = await app.load("js/marketplace.js");
   await month(app, market, 1);
-  await assert.rejects(market.advanceOrder({ id: "plan" }, "shipped", "seller"), /all 12 payments/);
+  await assert.rejects(market.advanceOrder({ id: "plan" }, "shipped", "seller"), /fully paid/);
   for (let n = 2; n <= 12; n++) await month(app, market, n);
   assert.equal(app.data("orders/plan").status, "paid");
   await market.advanceOrder({ id: "plan" }, "shipped", "seller");
@@ -69,17 +74,18 @@ test("after-full delivery cannot ship early; fully paid delivery unlocks the fir
   assert.equal(app.data("referrals/buyer").firstCompletedOrderId, "plan");
 });
 
-test("after-first delivery is separate from full payment; final month completes the order and only then unlocks rewards", async () => {
+test("legacy after-first terms cannot bypass full-payment delivery; rewards unlock only after completed delivery", async () => {
   const app = await createApp(seed("after_first"), { user: buyer });
   const market = await app.load("js/marketplace.js"), refs = await app.load("js/referrals.js"), rewards = await app.load("js/referral-rewards.js");
   await month(app, market, 1);
-  await market.advanceOrder({ id: "plan" }, "shipped", "seller");
-  await market.advanceOrder({ id: "plan" }, "completed", "buyer");
-  assert.equal(app.data("orders/plan").status, "delivered_pending_balance");
+  await assert.rejects(market.advanceOrder({ id: "plan" }, "shipped", "seller"), /fully paid/);
+  assert.equal(app.data("orders/plan").status, "paid");
   assert.equal(app.data("referrals/buyer").firstCompletedOrderId, null);
   await assert.rejects(refs.settleOrderRewards("plan", admin), /paid, delivered/);
   await assert.rejects(rewards.releaseReferralClaim("lifetime_plan_month_1", admin), /fulfilment/);
   for (let n = 2; n <= 12; n++) await month(app, market, n);
+  await market.advanceOrder({ id: "plan" }, "shipped", "seller");
+  await market.advanceOrder({ id: "plan" }, "completed", "buyer");
   assert.equal(app.data("orders/plan").status, "completed");
   assert.equal(app.data("referrals/buyer").firstCompletedOrderId, "plan");
   await rewards.releaseReferralClaim("lifetime_plan_month_1", admin);

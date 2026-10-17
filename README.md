@@ -97,42 +97,59 @@ committed.
 ## Marketplace
 
 Sellers apply under **Sell → Verification**. An administrator approves them,
-which sets `isSeller` on their user document — that flag is what the rules
-check before allowing anyone to list goods, so verification is enforced
-server-side rather than by hiding a button.
+which sets `isSeller` on their user document — the Firestore rules check that
+flag before allowing listings.
 
-Verified sellers (and administrators) post items with a photo, a price and an
-optional discounted price. Where a discount exists the marketplace strikes
-out the original and shows the discounted figure with the saving alongside.
+Verified sellers can publish products with up to four photos, variations,
+stock/low-stock indicators, delivery estimates, state-specific delivery fees,
+and optional seller-set weekly or monthly payment plans. MailMart's separate
+email buying/renting service is promoted as a banner; it is not a category for
+user-created email listings.
 
-Delivery is priced per state: the seller sets a default fee and may override
-it for individual states. On top of that the platform charges a flat service
-fee, configured by an administrator under **Marketplace Admin → Fees**.
+The admin sets three separate marketplace charges under **Marketplace Admin
+→ Fees**: buyer purchase fee (flat per order), seller listing/upload fee
+(charged once when a new listing is posted), and seller sale commission
+(percentage of the goods subtotal, excluding delivery). Paid Hot Deals and
+Featured placements have independent admin-set prices, run for 24 hours, and
+can be renewed for another 24 hours. A promotion request is charged to the
+seller's wallet only after admin approval; the product listing itself remains
+live when its promotion expires. Fee settings default to zero until MailMart
+sets the agreed amounts. Affiliate commission is separate and funded by
+MailMart, not deducted from the seller payout.
 
-Buying an item records an order and raises a pending debit. Nothing is charged
-at that point — an administrator confirms the payment, and that single step
-charges the buyer and pays the seller. The service fee is simply not paid out,
-so it stays with the platform. Buyers track orders through
-`pending_payment → paid → shipped → completed`.
+Buying an item records an order and raises a pending debit. An administrator
+confirms payment; that atomically charges the buyer and pays the seller's
+installment share with the configured seller commission deducted. Delivery can
+be handled by the seller or MailMart. Ordinary orders are not paid out without
+buyer confirmation; a delivery proof includes a picture and recipient
+signature. The order-linked chat is visible only to its buyer, seller and
+MailMart administrators. Admin/support can manually resolve a delivery dispute.
 
-The total the browser quotes is **recomputed server-side** in
-`firestore.rules` against the live listing and the configured service fee, so
-a tampered page cannot buy something for less than the seller is asking.
+Voluntary cancellation of a paid, not-yet-dispatched order is reviewed by
+MailMart. The buyer can request either full paid-amount wallet credit with no
+fee, or a wallet refund after a fee of 20% of the full order price, capped at
+the amount already paid. If MailMart or the seller cannot fulfill, an admin can
+issue a full wallet refund of the amount actually paid. Seller payouts already
+made are not automatically reversed; recovery/returns are a separate operator
+decision. The browser's order quote is recomputed in `firestore.rules` against
+the live listing and configured buyer/seller charges. Support/social URLs for
+WhatsApp, Telegram, YouTube and X are admin-managed HTTPS settings and appear
+only after official account URLs are configured; no unverified profile links
+are seeded.
 
 ### Seller email notifications
 
-Sellers are emailed when they receive an order, using the **Trigger Email**
-extension. The app writes a document to `mail`; the extension sends it and
-stamps the result back onto the document. Install it with:
+Sellers are emailed when they receive an order, and buyers receive a status/refund notice after an administrator reviews a paid-order cancellation or issues a fulfillment-failure refund. These use the **Trigger Email** extension, which watches documents in `mail`. Install it with:
 
 ```sh
 firebase ext:install firebase/firestore-send-email --project mailmartz
 ```
 
 It needs SMTP credentials, and it requires the Blaze plan. The extension runs
-with admin privileges, so the `mail` rules only constrain the browser: they
-let a buyer queue exactly one notice per order, addressed to that order's
-real seller — which stops someone using your project to send arbitrary mail.
+with admin privileges, so the `mail` rules constrain browser writes: buyers
+can notify only the real seller for an order, while admins can notify only the
+buyer for an approved cancellation or fulfillment refund. This prevents
+arbitrary client-generated mail.
 
 ## Referrals and affiliates
 
@@ -144,14 +161,15 @@ by an administrator before their rewards can be released:
 | --- | --- | --- | --- |
 | Email referral | The invitee’s approved email sale is paid into their wallet | Referrer: **₦200** | Once per invitee, with the first payout |
 | Goods referral | The invitee’s first paid goods order is delivered and they confirm receipt | Referrer: **₦500**; invited buyer: **₦200** | Once per invitee, not every order |
-| Affiliate sales | A sale attributed at checkout to an approved affiliate is paid and completed | Affiliate: **15% of the discounted goods subtotal** | Per qualifying order |
+| Affiliate sales | A sale attributed at checkout to an approved affiliate is fully paid, delivered and confirmed | Affiliate: admin-set category/product rate (fallback **5%**) of the discounted goods subtotal; paid by MailMart | Per qualifying order |
 | Lifetime direct-referral activity | Eligible earnings/spending actually settle; purchases are fulfilled | Referrer: **4–5%**, chosen by admin for that referral | Every eligible event, no expiry or downline |
 
 **Registration alone earns nothing.** Email verification is available at sign-up
 and on the referral page, and is required before applying to be an affiliate.
-Delivery and service fees never enter the **15% affiliate** calculation. For example,
-₦10,000 of goods plus ₦1,000 delivery and ₦500 service fee earns **₦1,500**
-commission, not ₦1,725.
+Delivery and buyer purchase fees never enter the affiliate calculation. Admin can
+set category defaults and per-product overrides (fallback 5%); for example, a 5% rate on ₦10,000
+of goods pays **₦500** from MailMart funds, regardless of the delivery/service
+fees. The seller payout is not reduced by affiliate commission.
 
 ### Links and attribution
 
@@ -201,9 +219,9 @@ bonus by reviewing a later order first. After delivery, use **Release eligible
 rewards** in Referral Admin. It atomically applies every eligible credit, wallet
 balance, immutable ledger entry and review marker. Later orders skip fixed
 purchase bonuses but can still earn affiliate commission. Unpaid, cancelled,
-undelivered and refunded orders do not qualify. The existing refund flow is for
-paid/shipped orders and delivered-but-unpaid instalment plans, before full completion; it cannot refund an already completed
-rewarded order.
+undelivered and refunded orders do not qualify. Refunds/cancellations are only
+available before reward completion; a completed, rewarded order cannot be
+refunded through this workflow.
 
 The fixed bonuses and affiliate commission **can stack** if both independently
 qualify. A referrer who is also the attributed affiliate receives both credits;
@@ -245,13 +263,13 @@ write path in the former marketplace settlement code.
 - Real eligible ledger types are `email_payout`, `order_payment`, `order_payout`,
   `social_sale`, `social_purchase` and `rental_payment`. Commission uses the
   actual settled naira amount (including the fees in an actual goods debit;
-  unlike the separate 15% goods-only affiliate base). Deposits, withdrawals,
+  unlike the separate product-specific, goods-only affiliate base). Deposits, withdrawals,
   refunds, arbitrary admin credits and **all referral/affiliate rewards are
   excluded**. No recursive rewards-on-rewards or downline commissions.
 - Every lifetime event queues `referralClaims/lifetime_<sourceTransactionId>`;
   it does not immediately inflate available cash. Admin releases only after
   referral approval, exact source/amount validation and business fulfilment.
-  Goods require confirmed delivery **and all twelve payments** where applicable.
+  Goods require confirmed delivery **and full payment** where applicable.
   Lifetime rewards are additional platform-funded credits, not deductions from
   the invitee's quoted earnings and not extra purchase charges.
 - Fixed first-purchase bonuses held during referral review release or reject
@@ -270,42 +288,40 @@ write path in the former marketplace settlement code.
   already paid fixed bonuses/ledger entries remain one-time. New lifetime claims
   are created by future settlement events, not by scanning historical deposits.
 
-## Twelve-month goods instalments
+## Seller-set goods instalments
 
-In **Marketplace Admin → All listings**, choose whether each listing supports
-instalments and whether delivery is allowed **after the first payment** or
-**after all twelve payments**. Only administrators can change those terms;
-existing orders retain their original delivery and payment snapshots.
+Sellers choose whether a product allows weekly (1–35 payments) or monthly
+(1–12 payments) instalments. Plans are zero-interest; the entire order total is
+split in integer kobo and the final payment absorbs rounding. Buyers may also
+choose full “cash-and-carry” payment, which must be paid in full before dispatch.
+All instalment plans require full payment before the product is delivered.
 
-At checkout choose full payment or **12 monthly payments, 0% interest**. The
-entire quoted total, including delivery and service fees, is divided into twelve
-payments. Calculations use integer kobo: the first eleven payments are equal and
-the final payment absorbs any rounding remainder (at most eleven kobo). No
-interest, extra instalment fee or bulk-delivery threshold/discount was added.
+For plans longer than three weeks or two months, the seller must bring the
+product to MailMart's office for receipt/verification before the plan is
+available. Each order snapshots its payment schedule and fulfillment terms.
+Due dates advance by weeks or calendar months from the first confirmed payment.
+The buyer can request the next installment from **Orders**; each payment is
+confirmed by an administrator under **Marketplace Admin → Awaiting payment**.
+Payment and the seller's share settle atomically, so the seller is paid only the
+current installment share and the configured sale commission is deducted.
+There is no automatic wallet debit or reminder service.
 
-The first debit request is created at checkout; following requests are raised
-under **Orders → Request payment N/12**. Due dates advance by calendar months
-from the first confirmed payment, clamped for short months. Early payment is
-allowed. There is **no automatic debit, reminder service, late charge or debt
-collection process** in this static app; admin still confirms each payment in
-**Marketplace Admin → Awaiting payment**. The twelve-payment schedule is visible
-on the buyer/seller order card.
+The missed-payment policy still needs a secure scheduled backend before it can
+be automated. In particular, the requested first-missed-payment carry-over and
+second-miss cancellation/no-refund rule conflicts with paying the seller as
+each installment arrives (and the instruction that defaulted funds go to
+MailMart). The app does **not** currently auto-cancel/default an order or divert
+already-settled installment money; that accounting must be clarified before
+launching long-duration plans.
 
-Each payment atomically debits only that month's amount and credits only the
-seller's funded share. IDs `<orderId>_month_<N>` and `order_payout_<orderId>_<N>`
-prevent duplicate monthly charges. A partial payment never credits the full
-seller payout. A first-payment-delivery plan becomes
-`delivered_pending_balance` when receipt is confirmed, and completes only after
-payment twelve. First-purchase and affiliate rewards wait until **full payment
-and confirmed delivery**, not merely shipment/first payment.
-
-Buyer cancellation is limited to unpaid orders. Admin refunds return only
-**the amount actually paid**, never an unfunded full total. This preserves the
-existing **platform-funded refund** model: seller payouts are not automatically
-clawed back. Admin must separately resolve returned goods, seller recovery and
-platform funding before approving a refund. Fully completed/rewarded orders
-cannot be refunded through this flow. Default risk on early-delivery plans
-therefore remains an operator responsibility.
+For a paid, not-yet-dispatched order, a buyer can request cancellation for
+review: either the full amount paid as no-fee wallet credit, or a wallet refund
+after a fee equal to 20% of the full order price, capped at the amount already
+paid. If MailMart or the seller cannot fulfill, an administrator can issue a
+full refund of the amount actually paid. Already-issued seller payouts are not
+automatically reclaimed; returned goods and seller/platform recovery remain an
+admin decision. Canceled/refunded orders are excluded from completed-order
+rewards.
 
 ## Reviewed social assets and manual Gmail code rentals
 
@@ -402,10 +418,12 @@ acted — who acted. The types:
 | `order_payout` | credit | settlement, atomically | The seller's share of a confirmed order |
 | `email_payout` | credit | the sales screen, atomically | Payment for an approved email sale |
 | `order_refund` | credit | a refund, atomically | A refunded order returned to the buyer |
+| `listing_fee` | debit | seller listing creation, atomically | Admin-configured one-time fee for a new listing |
+| `listing_promotion` | debit | admin approves a promotion, atomically | Paid 24-hour Hot Deal or Featured placement |
 | `email_referral` | credit | first email payout, atomically | ₦200 to the invitee’s referrer |
 | `purchase_referral` | credit | referral admin, after first delivery | ₦500 to the buyer’s referrer |
 | `purchase_welcome` | credit | referral admin, after first delivery | ₦200 to the invited buyer |
-| `affiliate_commission` | credit | referral admin, after delivery | 15% of attributed goods subtotal |
+| `affiliate_commission` | credit | referral admin, after paid delivery | Admin-set product rate of goods subtotal; MailMart-funded |
 | `lifetime_commission` | credit | referral admin, after source/review checks | 4–5% of an eligible direct invitee event |
 | `social_sale` / `social_purchase` | credit / debit | reviewed service settlement | Fixed quoted social transfer amount |
 | `rental_payment` | debit | admin assigns, then delivers | Reserved one-code price, finalized on delivery |
@@ -658,7 +676,7 @@ Google button on the register page no longer rewrites an existing profile
 | `js/referral-rewards.js` | Verified review, private audits, held and lifetime reward claims |
 | `services.html` / `admin-services.html` | User requests and admin prices/manual fulfilment |
 | `js/services.js` | Authorized social transfers, Gmail rental reserve/finalize/refund |
-| `js/installments.js` | Twelve-payment kobo arithmetic, delivery gates and calendar schedule |
+| `js/installments.js` | Weekly/monthly kobo arithmetic, delivery gates and due-date schedule |
 | `js/referrals.js` | Private attribution, applications and atomic reward settlement |
 | `js/referral-policy.js` | Agreed naira amounts and commission calculations |
 | `setup-check.html` | Reports Authentication config, rules/indexes/session |
@@ -669,8 +687,10 @@ Google button on the register page no longer rewrites an existing profile
 | `admin-wallet.html` | Administrator settlement desk |
 | `js/wallet.js` | Ledger, deposits, withdrawals, email sale payouts, settlement |
 | `js/data/nigeria.js` | 37 states, 774 LGAs, 48 banks with NIP codes |
-| `marketplace.html` | Browse and buy goods |
-| `sell.html` | Seller verification and listings |
+| `marketplace.html` | Responsive storefront discovery, search, offers and product details |
+| `js/marketplace-page.js` | Storefront filtering, product gallery, wishlist, cart and checkout |
+| `css/marketplace.css` | Marketplace theme and responsive storefront styles |
+| `sell.html` | Seller verification, paid listings, promotions and sales dashboard |
 | `orders.html` | Order tracking for buyers and sellers |
 | `admin-marketplace.html` | Verification queue, listings, fees, settlement |
 | `js/marketplace.js` | KYC, listings, orders, pricing |

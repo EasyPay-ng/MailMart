@@ -137,9 +137,11 @@ async function sourceIsEligible(t, claim, referral) {
   }
   if (claim.sourceKind === "order") {
     const source = await t.get(doc(db, "orders", claim.sourceId));
-    if (!source.exists() || source.data().status !== "completed" || !source.data().paidAt ||
-        source.data().buyerUid !== claim.refereeUid || referral.firstCompletedOrderId !== claim.sourceId ||
-        (source.data().paymentMode === "installment" && (source.data().installmentsPaid !== 12 || roundMoney(source.data().totalPaid) !== roundMoney(source.data().total)))) {
+    const sourceOrder = source.exists() ? source.data() : {};
+    const sourceInstallmentCount = Number(sourceOrder.installmentCount || sourceOrder.installmentMonths || 12);
+    if (!source.exists() || sourceOrder.status !== "completed" || !sourceOrder.paidAt ||
+        sourceOrder.buyerUid !== claim.refereeUid || referral.firstCompletedOrderId !== claim.sourceId ||
+        (sourceOrder.paymentMode === "installment" && (sourceOrder.installmentsPaid !== sourceInstallmentCount || roundMoney(sourceOrder.totalPaid) !== roundMoney(sourceOrder.total)))) {
       throw new Error("This purchase is not paid, completed and eligible.");
     }
     if (referral.purchaseOrderId) throw new Error("The first-purchase bonus has already been paid.");
@@ -158,7 +160,7 @@ async function sourceIsEligible(t, claim, referral) {
     if (!tx[field]) continue;
     const business = await t.get(doc(db, name, tx[field]));
     if (!business.exists() || business.data().status !== "completed") throw new Error("This activity is still awaiting fulfilment or has been cancelled/refunded.");
-    if (name === "orders" && business.data().paymentMode === "installment" && business.data().installmentsPaid !== 12) throw new Error("All 12 instalments must be paid before commission release.");
+    if (name === "orders" && business.data().paymentMode === "installment" && business.data().installmentsPaid !== Number(business.data().installmentCount || business.data().installmentMonths || 12)) throw new Error("All instalments must be paid before commission release.");
   }
   if (tx.type === "email_payout") {
     if (!tx.saleId) throw new Error("The paid email sale reference is missing.");

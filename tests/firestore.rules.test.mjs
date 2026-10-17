@@ -139,16 +139,32 @@ test("full checkout -> payment -> shipping -> completion -> reward release obeys
   const a = await client(admin.uid); const adminMarket = await a.load("js/marketplace.js");
   await assertSucceeds(adminMarket.settleOrderPayment({ ...placed, id }, admin));
   const seller = await client("seller"); const sellerMarket = await seller.load("js/marketplace.js");
+  await assertSucceeds(sellerMarket.saveOrderDeliveryProof(id, { photo: "data:image/jpeg;base64," + "p".repeat(300), signature: "data:image/jpeg;base64," + "s".repeat(150), recipientName: "Buyer Name", note: "Handed over" }));
   await assertSucceeds(sellerMarket.advanceOrder({ id }, "shipped", "seller@example.com"));
   await assertSucceeds(buyerMarket.advanceOrder({ id }, "completed", "buyer@example.com"));
   const adminRefs = await a.load("js/referrals.js");
   await assertSucceeds(adminRefs.settleOrderRewards(id, admin));
   assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "users/buyer"))).data().balance, 3850);
   assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/referrer"))).data().balance, 600);
-  assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/affiliate"))).data().balance, 200);
+  assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/affiliate"))).data().balance, 100);
   assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/seller"))).data().balance, 1500);
   await assert.rejects(adminRefs.settleOrderRewards(id, admin), /already been reviewed/);
   await assertFails(sdk.updateDoc(sdk.doc(a.db, "transactions", "affiliate_" + id), { amount: 999 }));
+});
+
+test("order chat is private to buyer, seller and admins, and messages are sender-bound and immutable", async () => {
+  const buyer = await client("buyer"); const market = await buyer.load("js/marketplace.js");
+  const id = await assertSucceeds(market.placeOrder(checkout));
+  await assertSucceeds(market.sendOrderMessage(id, "Can you confirm the colour before dispatch?"));
+  const seller = await client("seller"); const sellerMarket = await seller.load("js/marketplace.js");
+  await assertSucceeds(sellerMarket.sendOrderMessage(id, "Yes, the item is black as listed."));
+  await assertSucceeds(sdk.getDocs(sdk.collection(seller.db, "orders", id, "messages")));
+  const outsider = database("outsider");
+  await assertFails(sdk.getDocs(sdk.collection(outsider, "orders", id, "messages")));
+  await assertFails(sdk.setDoc(sdk.doc(buyer.db, "orders", id, "messages/fake"), {
+    uid: "seller", email: "seller@example.com", text: "Impersonation", createdAt: now()
+  }));
+  await assertFails(sdk.updateDoc(sdk.doc(buyer.db, "orders", id, "messages", "fake"), { text: "Edited" }));
 });
 
 test("attribution and quote cannot be changed after checkout; buyer cannot approve or release rewards", async () => {
@@ -238,42 +254,42 @@ test("deposits/reward credits cannot be forged into lifetime claims, even by a h
   await assertFails(sdk.setDoc(sdk.doc(database("buyer"), "referralClaims/fake"), { uid: "buyer", amount: 50, status: "pending" }));
 });
 
-for (const delivery of ["after_first", "after_full"]) test(`real twelve-month ${delivery} plan enforces monthly quotes, delivery and no early rewards`, async () => {
-  const planListing = { ...listing, installmentEnabled: true, installmentDelivery: delivery };
+test("real four-week plans enforce warehouse verification, dynamic amounts, stock reservation and full-payment delivery", async () => {
+  const planListing = { ...listing, variants: ["Black", "Silver"], installmentEnabled: true, installmentDelivery: "after_full",
+    installmentUnit: "week", installmentCount: 4, installmentMonths: 0, warehouseRequired: true, warehouseVerified: true };
   await seed({ "listings/goods": planListing });
   const buyer = await client("buyer"), seller = await client("seller"), a = await client(admin.uid);
   const market = await buyer.load("js/marketplace.js"), sellerMarket = await seller.load("js/marketplace.js"), adminMarket = await a.load("js/marketplace.js");
-  const id = await assertSucceeds(market.placeOrder({ ...checkout, listing: planListing, paymentMode: "installment" }));
+  const id = await assertSucceeds(market.placeOrder({ ...checkout, listing: planListing, selectedVariant: "Black", paymentMode: "installment" }));
   const placed = (await sdk.getDoc(sdk.doc(buyer.db, "orders", id))).data();
-  await assertFails(sdk.updateDoc(sdk.doc(seller.db, "listings/goods"), { installmentDelivery: "after_first", installmentEnabled: !planListing.installmentEnabled, updatedAt: now() }));
-  await assertFails(sdk.updateDoc(sdk.doc(buyer.db, "orders", id), { totalPaid: 1350, installmentsPaid: 12, updatedAt: now() }));
+  assert.equal(placed.installmentCount, 4); assert.equal(placed.installmentUnit, "week"); assert.equal(placed.selectedVariant, "Black");
+  assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "transactions", placed.paymentTxId))).data().amount, 337.5);
+  await assertFails(sdk.updateDoc(sdk.doc(seller.db, "listings/goods"), { warehouseVerified: false, updatedAt: now() }));
+  await assertFails(sdk.updateDoc(sdk.doc(buyer.db, "orders", id), { totalPaid: 1350, installmentsPaid: 4, updatedAt: now() }));
   await assertSucceeds(adminMarket.settleOrderPayment({ ...placed, id }, admin, placed.paymentTxId));
-  assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/seller"))).data().balance, 308.33);
+  assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/seller"))).data().balance, 525);
+  await assertFails(sellerMarket.advanceOrder({ id }, "shipped", "seller@example.com"));
+  await assert.rejects(sellerMarket.saveOrderDeliveryProof(id, { photo: "x".repeat(300), signature: "y".repeat(150), recipientName: "Buyer" }), /full payment/);
+  await assertFails(market.advanceOrder({ id }, "completed", "buyer@example.com"));
   await assertFails(sdk.setDoc(sdk.doc(buyer.db, "transactions", id + "_month_2"), {
     type: "order_payment", direction: "debit", status: "pending", uid: "buyer", email: "buyer@example.com",
-    amount: 1, installmentNumber: 2, orderId: id, reference: "Tampered monthly price", createdAt: now(), updatedAt: now()
+    amount: 1, installmentNumber: 2, orderId: id, reference: "Tampered installment price", createdAt: now(), updatedAt: now()
   }));
-  if (delivery === "after_first") {
-    await assertSucceeds(sellerMarket.advanceOrder({ id }, "shipped", "seller@example.com"));
-    await assertSucceeds(market.advanceOrder({ id }, "completed", "buyer@example.com"));
-    assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "orders", id))).data().status, "delivered_pending_balance");
-    assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "referrals/buyer"))).data().firstCompletedOrderId, null);
-  } else {
-    await assertFails(sdk.updateDoc(sdk.doc(seller.db, "orders", id), { status: "shipped", updatedAt: now() }));
-  }
   const adminRewards = await a.load("js/referral-rewards.js");
   await assert.rejects(adminRewards.releaseReferralClaim("lifetime_" + placed.paymentTxId, admin));
-  for (let number = 2; number <= 12; number++) {
+  for (let number = 2; number <= 4; number++) {
     const request = await assertSucceeds(market.requestInstallmentPayment(id));
+    assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "transactions", request.id))).data().amount, 337.5);
     await assertSucceeds(adminMarket.settleOrderPayment({ ...placed, id }, admin, request.id));
   }
-  if (delivery === "after_full") {
-    await assertSucceeds(sellerMarket.advanceOrder({ id }, "shipped", "seller@example.com"));
-    await assertSucceeds(market.advanceOrder({ id }, "completed", "buyer@example.com"));
-  }
+  await assertSucceeds(sellerMarket.saveOrderDeliveryProof(id, { photo: "data:image/jpeg;base64," + "p".repeat(300), signature: "data:image/jpeg;base64," + "s".repeat(150), recipientName: "Buyer Name", note: "Handed over" }));
+  await assertSucceeds(sellerMarket.advanceOrder({ id }, "shipped", "seller@example.com"));
+  await assertSucceeds(market.advanceOrder({ id }, "completed", "buyer@example.com"));
   const final = (await sdk.getDoc(sdk.doc(buyer.db, "orders", id))).data();
   assert.equal(final.status, "completed"); assert.equal(final.totalPaid, 1350); assert.equal(final.sellerPaid, 1300);
   assert.equal((await sdk.getDoc(sdk.doc(a.db, "users/seller"))).data().balance, 1500);
+  const remainingStock = (await sdk.getDoc(sdk.doc(a.db, "listings/goods"))).data().stock;
+  assert.equal(remainingStock, 9); // reserved once on first settlement, not once per week
   await assertSucceeds(adminRewards.releaseReferralClaim("lifetime_" + placed.paymentTxId, admin));
   await assertSucceeds((await a.load("js/referrals.js")).settleOrderRewards(id, admin));
   assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "users/buyer"))).data().balance, 3850);

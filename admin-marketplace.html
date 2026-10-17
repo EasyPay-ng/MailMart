@@ -48,6 +48,7 @@
 .ord .acts{display:flex;gap:8px;margin-top:11px;flex-wrap:wrap}
 
 .mini-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.table-actions{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:120px}
 </style>
 </head>
 
@@ -85,7 +86,7 @@
             <div class="v cyan" id="statListings">0</div>
         </div>
         <div class="stat">
-            <div class="k">Service fee earned</div>
+            <div class="k">Marketplace fees retained</div>
             <div class="v green" id="statFees">₦0.00</div>
         </div>
     </div>
@@ -102,10 +103,15 @@
     <div class="panel active" id="panel-orders">
         <div class="card">
             <h3>Orders awaiting payment</h3>
-            <p class="hint">Confirming an order charges the buyer and pays the seller in one step. The service fee stays with the platform.</p>
+            <p class="hint">Confirming a payment charges the buyer and pays the seller in one step. The configured seller-sale commission is deducted from the goods subtotal; the buyer purchase fee stays with MailMart.</p>
             <div id="awaiting"></div>
         </div>
 
+        <div class="card">
+            <h3>Paid-order cancellation requests</h3>
+            <p class="hint">Review before dispatch. Wallet credit returns the full amount paid with no fee; a wallet refund applies 20% of the full order price, capped at the amount paid. If MailMart or the seller cannot fulfill an order, use the full-refund action in the order row instead.</p>
+            <div id="cancellationQueue"></div>
+        </div>
         <div class="card">
             <h3>All orders</h3>
             <p class="hint">Every order placed on the marketplace.</p>
@@ -124,6 +130,11 @@
 
     <!-- ---------------- LISTINGS ---------------- -->
     <div class="panel" id="panel-listings">
+        <div class="card">
+            <h3>Paid promotion requests</h3>
+            <p class="hint">Approving charges the seller’s wallet and starts or extends the selected 24-hour placement. Rejecting does not charge.</p>
+            <div id="promotionQueue"></div>
+        </div>
         <div class="card">
             <h3>All listings</h3>
             <p class="hint">Everything sellers have posted. You can remove anything that breaks the rules.</p>
@@ -195,30 +206,74 @@
     <!-- ---------------- FEES ---------------- -->
     <div class="panel" id="panel-settings">
         <div class="card">
-            <h3>Platform service fee</h3>
+            <h3>Buyer purchase fee</h3>
             <p class="hint">Charged to the buyer on every order and kept by the platform. Sellers set their own delivery fees, so those are not configured here.</p>
 
             <div class="field">
-                <label for="sFee">Service fee per order (₦)</label>
+                <label for="sFee">Buyer purchase fee per order (₦)</label>
                 <input type="number" id="sFee" min="0" step="1" placeholder="e.g. 500">
                 <div class="tip">A flat amount per order. Set 0 to run the marketplace free of charge.</div>
             </div>
 
+            <div class="field">
+                <label for="sListingFee">Seller listing / upload fee (₦)</label>
+                <input type="number" id="sListingFee" min="0" step="1" value="0">
+                <div class="tip">Charged from the seller’s wallet once when a new listing is posted. Set the agreed amount here; 0 means free listing.</div>
+            </div>
+            <div class="field">
+                <label for="sSellerFee">Seller sale commission (%)</label>
+                <input type="number" id="sSellerFee" min="0" max="99" step="0.25" value="0">
+                <div class="tip">Applied to the goods subtotal; delivery is excluded. Default 0% until the agreed rate is set. Affiliate commission is separately funded by MailMart and never reduces this payout.</div>
+            </div>
+            <div class="two">
+                <div class="field"><label for="sHotDealFee">Hot Deals placement · 24 hours (₦)</label><input type="number" id="sHotDealFee" min="0" step="1" value="0"></div>
+                <div class="field"><label for="sFeaturedFee">Featured placement · 24 hours (₦)</label><input type="number" id="sFeaturedFee" min="0" step="1" value="0"></div>
+            </div>
+            <div class="tip">Promotion requests are charged to a seller’s wallet only when an administrator approves them. Renewing a placement costs the same configured fee.</div>
+            <hr class="divider">
+            <h3>Affiliate commission by category</h3>
+            <p class="hint">MailMart funds affiliate credits. These rates apply to listings without a product-specific override; administrators can set individual product rates under Listings.</p>
+            <div class="two" id="categoryAffiliateRates"></div>
+            <div id="affiliateRatesMsg"></div>
+            <button class="btn ghost" id="saveAffiliateRatesBtn">Save category rates</button>
             <div id="feeMsg"></div>
-            <button class="btn" id="saveFeeBtn">Save fee</button>
+            <button class="btn" id="saveFeeBtn">Save marketplace fees</button>
+            <hr class="divider">
+            <h3>Support & social links</h3>
+            <p class="hint">Only saved links are shown publicly. Use official MailMart accounts, beginning with https://.</p>
+            <div class="two">
+                <div class="field"><label for="sWhatsApp">WhatsApp URL</label><input type="url" id="sWhatsApp" placeholder="https://wa.me/…"></div>
+                <div class="field"><label for="sTelegram">Telegram URL</label><input type="url" id="sTelegram" placeholder="https://t.me/…"></div>
+                <div class="field"><label for="sYouTube">YouTube URL</label><input type="url" id="sYouTube" placeholder="https://youtube.com/@…"></div>
+                <div class="field"><label for="sX">X URL</label><input type="url" id="sX" placeholder="https://x.com/…"></div>
+            </div>
+            <div id="linksMsg"></div><button class="btn ghost" id="saveLinksBtn">Save support links</button>
         </div>
     </div>
 
 </div>
 
 <div class="modal" id="modal"><img id="modalImg" alt="" style="max-width:100%;max-height:88vh;border-radius:12px"></div>
+<div class="modal" id="deliveryModal" aria-hidden="true">
+  <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="adminDeliveryTitle">
+    <div class="modal-head"><div><h2 id="adminDeliveryTitle">MailMart delivery proof</h2><p class="hint">Capture the delivery photo and recipient signature before dispatch.</p></div><button class="modal-close" id="adminDeliveryClose" type="button" aria-label="Close">×</button></div>
+    <form id="adminDeliveryForm">
+      <div class="field"><label for="adminProofPhoto">Delivery photo</label><input type="file" id="adminProofPhoto" accept="image/*" capture="environment" required></div>
+      <div class="field"><label for="adminRecipientName">Recipient full name</label><input id="adminRecipientName" maxlength="120" required></div>
+      <div class="field"><label>Recipient signature</label><canvas id="adminSignatureCanvas" width="640" height="220" style="width:100%;height:150px;background:white;border:1px dashed #63788f;border-radius:12px;touch-action:none"></canvas><button class="btn small ghost" id="adminClearSignature" type="button">Clear signature</button></div>
+      <div class="field"><label for="adminProofNote">Delivery note (optional)</label><textarea id="adminProofNote" maxlength="500" rows="2"></textarea></div>
+      <div id="adminDeliveryMsg" role="status" aria-live="polite"></div>
+      <div class="row-end"><button class="btn ghost" id="adminDeliveryCancel" type="button">Cancel</button><button class="btn good" id="adminDeliverySubmit" type="submit">Save proof + mark shipped</button></div>
+    </form>
+  </section>
+</div>
 
 <script type="module">
 
 import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { adminStatus, showAccessCheckFailure } from "./js/admin.js";
 import { fileToBase64 } from "./js/image.js";
-import { loadSettings, saveSettings, formatNaira, formatDate, watchAllTransactions } from "./js/wallet.js";
+import { loadSettings, saveSettings, savePublicSocialLinks, formatNaira, formatDate, watchAllTransactions } from "./js/wallet.js";
 import {
     CATEGORIES,
     STATUS_LABEL,
@@ -228,9 +283,15 @@ import {
     reviewKyc,
     settleOrderPayment,
     refundOrder,
+    watchAllCancellationRequests,
+    reviewOrderCancellation,
     createListing,
     setListingStatus,
-    saveInstallmentTerms,
+    setWarehouseVerified,
+    setListingAffiliateRate,
+    watchAllPromotionRequests,
+    reviewListingPromotion,
+    saveOrderDeliveryProof,
     advanceOrder,
     hasDiscount,
     unitPriceOf
@@ -246,10 +307,17 @@ const esc = (v) =>
 let adminUser = null;
 let orders = [];
 let paymentRequests = [];
+let marketplaceListingFees = 0;
+let marketplacePromotionFees = 0;
+let cancellationRequests = [];
+let promotionRequests = [];
 let listings = [];
 let kycRows = [];
 let settings = null;
 let adminImage = "";
+let activeDeliveryOrder = null;
+let adminSignatureDrawn = false;
+let adminSignatureDrawing = false;
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -273,7 +341,18 @@ async function start() {
         CATEGORIES.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
 
     settings = await loadSettings().catch(() => null);
-    if (settings) $("sFee").value = settings.serviceFee ?? 0;
+    if (settings) {
+        $("sFee").value = settings.serviceFee ?? 0;
+        $("sListingFee").value = settings.listingFee ?? 0;
+        $("sSellerFee").value = settings.sellerSaleFeePercent ?? 0;
+        $("sHotDealFee").value = settings.hotDealFee ?? 0;
+        $("sFeaturedFee").value = settings.featuredFee ?? 0;
+        $("sWhatsApp").value = settings.whatsAppUrl || "";
+        $("sTelegram").value = settings.telegramUrl || "";
+        $("sYouTube").value = settings.youTubeUrl || "";
+        $("sX").value = settings.xUrl || "";
+    }
+    renderCategoryAffiliateRates();
 
     watchAllOrders((rows) => {
         orders = rows;
@@ -286,6 +365,8 @@ async function start() {
 
     watchAllTransactions((rows) => {
         paymentRequests = rows.filter((tx) => tx.type === "order_payment" && tx.status === "pending");
+        marketplaceListingFees = rows.filter((tx) => tx.type === "listing_fee" && tx.status === "completed").reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
+        marketplacePromotionFees = rows.filter((tx) => tx.type === "listing_promotion" && tx.status === "completed").reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
         renderOrders();
     }, (err) => { $("awaiting").innerHTML = firestoreErrorHtml(err, "monthly payment requests"); });
 
@@ -297,6 +378,12 @@ async function start() {
         $("adminListings").innerHTML =
             `<div class="empty">${firestoreErrorHtml(err, "the listings")}</div>`;
     });
+    watchAllPromotionRequests((rows) => { promotionRequests = rows; renderPromotionQueue(); }, (err) => {
+        $("promotionQueue").innerHTML = firestoreErrorHtml(err, "promotion requests");
+    });
+    watchAllCancellationRequests((rows) => { cancellationRequests = rows; renderCancellationQueue(); }, (err) => {
+        $("cancellationQueue").innerHTML = firestoreErrorHtml(err, "cancellation requests");
+    });
 
     watchKycQueue((rows) => {
         kycRows = rows;
@@ -307,8 +394,74 @@ async function start() {
             `<div class="empty">${firestoreErrorHtml(err, "the verification queue")}</div>`;
     });
 
+    bindDeliveryModal();
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";
+}
+
+/* ------------------------------------------------------------------ */
+/* delivery proof for MailMart-handled orders                          */
+/* ------------------------------------------------------------------ */
+function bindDeliveryModal() {
+    $("adminDeliveryClose").addEventListener("click", closeAdminDelivery);
+    $("adminDeliveryCancel").addEventListener("click", closeAdminDelivery);
+    $("deliveryModal").addEventListener("click", (event) => { if (event.target === $("deliveryModal")) closeAdminDelivery(); });
+    $("adminClearSignature").addEventListener("click", clearAdminSignature);
+    $("adminDeliveryForm").addEventListener("submit", submitAdminDeliveryProof);
+    const canvas = $("adminSignatureCanvas");
+    canvas.addEventListener("pointerdown", (event) => {
+        event.preventDefault(); canvas.setPointerCapture(event.pointerId);
+        const point = adminSignaturePoint(event); const ctx = canvas.getContext("2d");
+        ctx.beginPath(); ctx.moveTo(point.x, point.y); adminSignatureDrawing = true;
+    });
+    canvas.addEventListener("pointermove", (event) => {
+        if (!adminSignatureDrawing) return;
+        event.preventDefault(); const point = adminSignaturePoint(event); const ctx = canvas.getContext("2d");
+        ctx.lineTo(point.x, point.y); ctx.stroke(); adminSignatureDrawn = true;
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((name) => canvas.addEventListener(name, () => { adminSignatureDrawing = false; }));
+    clearAdminSignature();
+}
+function adminSignaturePoint(event) {
+    const canvas = $("adminSignatureCanvas"); const rect = canvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * canvas.width / rect.width, y: (event.clientY - rect.top) * canvas.height / rect.height };
+}
+function clearAdminSignature() {
+    const canvas = $("adminSignatureCanvas"); const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#10243d"; ctx.lineWidth = 3; ctx.lineCap = "round"; adminSignatureDrawn = false;
+}
+function openAdminDelivery(order) {
+    activeDeliveryOrder = order; adminSignatureDrawn = false;
+    $("adminDeliveryForm").reset();
+    $("adminRecipientName").value = order.address?.name || "";
+    $("adminDeliveryMsg").textContent = ""; clearAdminSignature();
+    $("deliveryModal").classList.add("open"); $("deliveryModal").setAttribute("aria-hidden", "false");
+}
+function closeAdminDelivery() {
+    activeDeliveryOrder = null; adminSignatureDrawing = false; adminSignatureDrawn = false;
+    $("deliveryModal").classList.remove("open"); $("deliveryModal").setAttribute("aria-hidden", "true");
+    $("adminDeliveryForm").reset(); clearAdminSignature();
+}
+async function submitAdminDeliveryProof(event) {
+    event.preventDefault();
+    if (!activeDeliveryOrder) return;
+    const file = $("adminProofPhoto").files?.[0];
+    if (!file || !adminSignatureDrawn) {
+        $("adminDeliveryMsg").innerHTML = '<div class="notice bad">Choose a photo and capture the recipient signature.</div>';
+        return;
+    }
+    const button = $("adminDeliverySubmit"); button.disabled = true; button.textContent = "Saving proof…";
+    try {
+        const photo = await fileToBase64(file, { maxEdge: 1000, quality: 0.72, maxBase64Chars: 480000 });
+        const signature = $("adminSignatureCanvas").toDataURL("image/jpeg", 0.75);
+        await saveOrderDeliveryProof(activeDeliveryOrder.id, { photo, signature,
+            recipientName: $("adminRecipientName").value, note: $("adminProofNote").value });
+        await advanceOrder(activeDeliveryOrder, "shipped", adminUser.email);
+        closeAdminDelivery();
+    } catch (error) {
+        $("adminDeliveryMsg").innerHTML = `<div class="notice bad">${esc(error.code ? firestoreErrorSummary(error, "the delivery proof") : error.message)}</div>`;
+    } finally { button.disabled = false; button.textContent = "Save proof + mark shipped"; }
 }
 
 /* ------------------------------------------------------------------ */
@@ -325,9 +478,12 @@ function renderOrders() {
     $("statAwaiting").textContent = String(awaiting.length);
     $("statListings").textContent = String(listings.filter((l) => l.status === "active").length);
     $("statKyc").textContent = String(kycRows.length);
-    $("statFees").textContent = formatNaira(
-        orders.filter((o) => ["paid", "shipped", "delivered_pending_balance", "completed"].includes(o.status))
-              .reduce((n, o) => n + (o.paymentMode === "installment" ? Number(o.totalPaid || 0) - Number(o.sellerPaid || 0) : Number(o.serviceFee || 0)), 0));
+    $("statFees").textContent = formatNaira(marketplaceListingFees + marketplacePromotionFees + orders.reduce((n, o) => {
+        const collected = o.paymentMode === "installment"
+            ? Number(o.totalPaid || 0) - Number(o.sellerPaid || 0)
+            : Number(o.serviceFee || 0) + Number(o.sellerSaleFee || 0);
+        return n + collected - Number(o.refundAmount || 0);
+    }, 0));
     $("ordCount").textContent = String(awaiting.length);
 
     $("awaiting").innerHTML = awaiting.length
@@ -348,32 +504,34 @@ function renderOrders() {
     $("orderTable").innerHTML = head + "<tbody>" + orders.map((o) => `
         <tr>
             <td class="small">${esc(formatDate(o.createdAt))}</td>
-            <td>${esc(o.listingTitle || "—")} × ${esc(o.quantity || 1)}</td>
+            <td>${esc(o.listingTitle || "—")} × ${esc(o.quantity || 1)}${o.selectedVariant ? `<br><span class="small">${esc(o.selectedVariant)}</span>` : ""}<br><span class="small">${o.fulfillmentMode === "mailmart" ? "MailMart delivery" : "Seller delivery"} · ETA ${esc(o.deliveryEtaDays || 3)}d</span></td>
             <td class="small">${esc(o.buyerEmail || "—")}</td>
             <td class="small">${esc(o.sellerEmail || "—")}</td>
-            <td class="mono">${esc(formatNaira(o.total))}${o.paymentMode === "installment" ? `<br><span class="small">${esc(o.installmentsPaid || 0)}/12 · ${esc(formatNaira(o.totalPaid || 0))} paid</span>` : ""}</td>
+            <td class="mono">${esc(formatNaira(o.total))}${o.paymentMode === "installment" ? `<br><span class="small">${esc(o.installmentsPaid || 0)}/${esc(o.installmentCount || o.installmentMonths || 12)} · ${esc(formatNaira(o.totalPaid || 0))} paid</span>` : ""}</td>
             <td><span class="status ${esc(o.status)}">${esc(STATUS_LABEL[o.status] || o.status)}</span></td>
-            <td>${["paid", "shipped", "delivered_pending_balance"].includes(o.status) ? `<button class="btn small ghost" data-act="refund" data-id="${esc(o.id)}">Review refund</button>` : "—"}</td>
+            <td class="table-actions">${o.status === "paid" && o.fulfillmentMode === "mailmart" ? `<button class="btn small good" data-act="mailmart-ship" data-id="${esc(o.id)}">Record dispatch + proof</button>` : ""}${o.status === "shipped" ? `<button class="btn small good" data-act="resolve-delivery" data-id="${esc(o.id)}">Resolve delivered</button>` : ""}${["paid", "shipped", "delivered_pending_balance"].includes(o.status) ? `<button class="btn small ghost" data-act="refund" data-id="${esc(o.id)}">Review refund</button>` : ""}</td>
         </tr>`).join("") + "</tbody>";
 }
 
 function awaitingRow(o) {
     const a = o.address || {};
     const plan = o.paymentMode === "installment";
+    const count = plan ? Number(o.installmentCount || o.installmentMonths || 12) : 0;
     const number = o.paymentRequest?.installmentNumber || (plan ? Number(o.installmentsPaid || 0) + 1 : 0);
-    const due = o.paymentRequest?.amount || (plan ? installmentAmount(o.total, number) : o.total);
-    const payout = plan ? installmentAmount(o.sellerPayout, number) : o.sellerPayout;
+    const due = o.paymentRequest?.amount || (plan ? installmentAmount(o.total, number, count) : o.total);
+    const payout = plan ? installmentAmount(o.sellerPayout, number, count) : o.sellerPayout;
+    const planUnit = o.installmentUnit === "week" ? "week" : "month";
     return `
         <div class="ord">
             <img class="shot" src="${esc(o.listingImage || "")}" alt="">
             <div class="body">
-                <div class="ttl">${esc(o.listingTitle || "Item")} × ${esc(o.quantity || 1)}</div>
+                <div class="ttl">${esc(o.listingTitle || "Item")} × ${esc(o.quantity || 1)}${o.selectedVariant ? ` · ${esc(o.selectedVariant)}` : ""}</div>
                 <div class="mt">
                     Buyer ${esc(o.buyerEmail || "—")} · Seller ${esc(o.sellerEmail || "—")}<br>
-                    ${esc(formatDate(o.createdAt))}<br>
-                    Ship to ${esc(a.name || "—")}, ${esc(a.street || "")}, ${esc(a.lga || "")}, ${esc(a.state || "")}
+                    ${esc(formatDate(o.createdAt))} · ${o.fulfillmentMode === "mailmart" ? "MailMart delivery" : "Seller delivery"} · ETA ${esc(o.deliveryEtaDays || 3)} days<br>
+                    Ship to ${esc(a.name || "—")}, ${esc(a.street || "")}, ${esc(a.lga || "")}, ${esc(a.state || "")} · ${esc(a.phone || "")}
                 </div>
-                <div class="amt">${esc(formatNaira(due))}${plan ? ` · month ${number}/12` : ""}
+                <div class="amt">${esc(formatNaira(due))}${plan ? ` · ${planUnit} ${number}/${count}` : ""}
                     <span class="mt" style="display:inline;margin-left:8px">
                         seller receives ${esc(formatNaira(payout))} this payment
                     </span>
@@ -396,8 +554,9 @@ $("awaiting").addEventListener("click", async (e) => {
         if (btn.dataset.act === "settle") {
             const request = paymentRequests.find((tx) => tx.id === btn.dataset.payment);
             const number = request?.installmentNumber || 1;
-            const due = request?.amount || (order.paymentMode === "installment" ? installmentAmount(order.total, number) : order.total);
-            const payout = order.paymentMode === "installment" ? installmentAmount(order.sellerPayout, number) : order.sellerPayout;
+            const count = Number(order.installmentCount || order.installmentMonths || 12);
+            const due = request?.amount || (order.paymentMode === "installment" ? installmentAmount(order.total, number, count) : order.total);
+            const payout = order.paymentMode === "installment" ? installmentAmount(order.sellerPayout, number, count) : order.sellerPayout;
             if (!confirm(`Charge ${formatNaira(due)} to ${order.buyerEmail} and pay ${formatNaira(payout)} to ${order.sellerEmail} for this payment only?`)) return;
             btn.disabled = true;
             await settleOrderPayment(order, adminUser, btn.dataset.payment);
@@ -423,16 +582,19 @@ $("orderTable").addEventListener("click", async (e) => {
     if (!btn) return;
     const order = orders.find((o) => o.id === btn.dataset.id);
     if (!order) return;
-    if (!confirm(
+    if (btn.dataset.act === "mailmart-ship") { openAdminDelivery(order); return; }
+    if (btn.dataset.act === "resolve-delivery" && !confirm(`Manually resolve “${order.listingTitle || "this order"}” as delivered? Check buyer contact and delivery proof first.`)) return;
+    if (btn.dataset.act === "refund" && !confirm(
         `Refund ${formatNaira(order.paymentMode === "installment" ? order.totalPaid : order.total)} actually paid to ${order.buyerEmail} for ` +
-        `"${order.listingTitle || "this order"}"? This credits their wallet immediately. Existing seller payouts are not reclaimed; resolve returns and seller recovery separately.`
+        `“${order.listingTitle || "this order"}”? This credits their wallet immediately. Existing seller payouts are not reclaimed; resolve returns and seller recovery separately.`
     )) return;
-
     try {
-        await refundOrder(order, adminUser);
+        btn.disabled = true;
+        if (btn.dataset.act === "resolve-delivery") await advanceOrder(order, "completed", adminUser.email);
+        else if (btn.dataset.act === "refund") await refundOrder(order, adminUser);
     } catch (err) {
-        alert(firestoreErrorSummary(err, "that refund"));
-    }
+        alert(firestoreErrorSummary(err, btn.dataset.act === "refund" ? "that refund" : "that delivery"));
+    } finally { btn.disabled = false; }
 });
 
 /* ------------------------------------------------------------------ */
@@ -497,9 +659,66 @@ $("kycQueue").addEventListener("click", async (e) => {
 
 $("modal").addEventListener("click", () => $("modal").classList.remove("open"));
 
+function renderPromotionQueue() {
+    const pending = promotionRequests.filter((request) => request.status === "pending");
+    $("promotionQueue").innerHTML = pending.length ? pending.map((request) => `
+        <article class="app">
+            <div class="body"><div class="nm">${esc(request.kind === "featured" ? "Featured" : "Hot Deal")} · ${esc(request.listingTitle || "Listing")}</div>
+                <div class="mt">Seller ${esc(request.email || request.uid)} · ${esc(formatNaira(request.amount))} · requested ${esc(formatDate(request.createdAt))}<br>Promotion begins on approval and runs for 24 hours. Renewal adds another 24 hours.</div>
+                <div class="acts"><button class="btn small good" data-promo-review="approve" data-id="${esc(request.id)}">Approve & charge wallet</button><button class="btn small bad" data-promo-review="reject" data-id="${esc(request.id)}">Reject</button></div>
+            </div>
+        </article>`).join("") : '<div class="empty"><div class="big">No promotion requests</div><p>Paid Hot Deals and Featured placements appear here when sellers request them.</p></div>';
+}
+$("promotionQueue").addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-promo-review]");
+    if (!button) return;
+    const request = promotionRequests.find((row) => row.id === button.dataset.id);
+    if (!request) return;
+    const approve = button.dataset.promoReview === "approve";
+    if (approve && !confirm(`Charge ${formatNaira(request.amount)} from ${request.email || request.uid} and start/renew this 24-hour placement?`)) return;
+    const reason = approve ? "" : prompt("Reason for rejecting this promotion request?", "");
+    if (!approve && reason === null) return;
+    button.disabled = true;
+    try { await reviewListingPromotion(request.id, approve, adminUser, reason || ""); }
+    catch (error) { alert(error.code ? firestoreErrorSummary(error, "that promotion") : error.message); }
+    finally { button.disabled = false; }
+});
+
+function renderCancellationQueue() {
+    const pending = cancellationRequests.filter((request) => request.status === "pending");
+    $("cancellationQueue").innerHTML = pending.length ? pending.map((request) => `
+        <article class="app">
+            <div class="body"><div class="nm">${esc(request.choice === "wallet_credit" ? "Full wallet credit · no fee" : "Wallet refund · 20% fee")} · order ${esc(request.orderId)}</div>
+                <div class="mt">Buyer ${esc(request.buyerEmail || request.buyerUid)} · Seller ${esc(request.sellerEmail || request.sellerUid)}<br>Requested credit ${esc(formatNaira(request.requestedAmount))} · fee ${esc(formatNaira(request.feeAmount))} · submitted ${esc(formatDate(request.createdAt))}</div>
+                <div class="acts"><button class="btn small good" data-cancel-review="approve" data-id="${esc(request.id)}">Approve</button><button class="btn small bad" data-cancel-review="reject" data-id="${esc(request.id)}">Reject</button></div>
+            </div>
+        </article>`).join("") : '<div class="empty"><div class="big">No pending cancellation requests</div><p>Buyer requests for paid orders will appear here.</p></div>';
+}
+$("cancellationQueue").addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-cancel-review]");
+    if (!button) return;
+    const request = cancellationRequests.find((row) => row.id === button.dataset.id);
+    if (!request) return;
+    const approve = button.dataset.cancelReview === "approve";
+    if (approve && !confirm(`Approve this cancellation? Credit ${formatNaira(request.requestedAmount)} to the buyer wallet and apply a ${formatNaira(request.feeAmount)} fee.`)) return;
+    const reason = approve ? "" : prompt("Reason for rejecting this cancellation request?", "");
+    if (!approve && reason === null) return;
+    button.disabled = true;
+    try { await reviewOrderCancellation(request.orderId, approve, adminUser, reason || ""); }
+    catch (error) { alert(error.code ? firestoreErrorSummary(error, "that cancellation") : error.message); }
+    finally { button.disabled = false; }
+});
+
 /* ------------------------------------------------------------------ */
 /* listings                                                            */
 /* ------------------------------------------------------------------ */
+function renderCategoryAffiliateRates() {
+    const rates = settings?.affiliateRatesByCategory || {};
+    $("categoryAffiliateRates").innerHTML = CATEGORIES.map((category, index) => `
+        <div class="field"><label for="categoryAffiliateRate${index}">${esc(category)} (%)</label>
+        <input id="categoryAffiliateRate${index}" type="number" min="0" max="100" step="0.25" data-affiliate-category="${esc(category)}" value="${esc(rates[category] ?? 5)}"></div>`).join("");
+}
+
 function renderListings() {
     if (!listings.length) {
         $("adminListings").innerHTML =
@@ -515,6 +734,9 @@ function renderListings() {
                <span class="price-old">${esc(formatNaira(l.price))}</span>`
             : `<span class="price-plain">${esc(formatNaira(unit))}</span>`;
 
+        const count = Number(l.installmentCount || l.installmentMonths || 0);
+        const planUnit = l.installmentUnit === "week" ? "week" : "month";
+        const planLabel = l.installmentEnabled ? `${count} ${planUnit}${count === 1 ? "" : "s"} · after-full delivery` : "Full payment only";
         return `
             <div class="item" data-id="${esc(l.id)}">
                 <img class="shot" src="${esc(l.image || "")}" alt="">
@@ -522,8 +744,10 @@ function renderListings() {
                     <span class="chip">${esc(l.status || "active")}</span>
                     <div class="name">${esc(l.title || "")}</div>
                     <div class="prices">${price}</div>
-                    <div class="field tip" style="margin:0">${esc(l.sellerEmail || "—")}</div>
-                    <div class="field" style="margin-top:10px"><label>12-month instalments<select data-plan="${esc(l.id)}"><option value="off" ${!l.installmentEnabled ? "selected" : ""}>Disabled · full payment</option><option value="after_first" ${l.installmentEnabled && l.installmentDelivery === "after_first" ? "selected" : ""}>0% · deliver after first payment</option><option value="after_full" ${l.installmentEnabled && l.installmentDelivery !== "after_first" ? "selected" : ""}>0% · deliver after all 12 payments</option></select></label><div class="tip">Only changes future orders. Existing plans retain their terms.</div></div>
+                    <div class="field tip" style="margin:0">${esc(l.sellerEmail || "—")} · ${esc(l.stock ?? 0)} in stock</div>
+                    <div class="field tip" style="margin:0">${esc(l.gallery?.length ? l.gallery.length + 1 : 1)} photos · ${esc(l.variants?.length || 0)} variations · ${esc(planLabel)}</div>
+                    ${l.warehouseRequired ? `<div class="notice ${l.warehouseVerified ? "good" : "warn"}">${l.warehouseVerified ? "Product received and verified at MailMart" : "Long-term plan · awaiting warehouse receipt"}</div><button class="btn small ${l.warehouseVerified ? "ghost" : "good"}" data-act="warehouse" data-id="${esc(l.id)}" data-verified="${l.warehouseVerified ? "true" : "false"}">${l.warehouseVerified ? "Revoke warehouse verification" : "Confirm product received"}</button>` : ""}
+                    <div class="field" style="margin-top:10px"><label>Affiliate commission for this product (%)<input type="number" min="0" max="100" step="0.25" value="${esc(l.affiliateRatePercent ?? settings?.affiliateRatesByCategory?.[l.category] ?? 5)}" data-affiliate-rate="${esc(l.id)}"></label><div class="tip">MailMart-funded. This product rate overrides the ${esc(l.category || "category")} default (${esc(settings?.affiliateRatesByCategory?.[l.category] ?? 5)}%). Seller payout is unchanged.</div></div>
                     <div class="row-end" style="margin-top:4px">
                         <button class="btn small bad" data-act="remove" data-id="${esc(l.id)}">Remove</button>
                     </div>
@@ -533,20 +757,26 @@ function renderListings() {
 }
 
 $("adminListings").addEventListener("change", async (e) => {
-    const select = e.target.closest("[data-plan]");
-    if (!select) return;
-    select.disabled = true;
-    try { await saveInstallmentTerms(select.dataset.plan, select.value !== "off", select.value === "off" ? "after_full" : select.value); }
+    const input = e.target.closest("[data-affiliate-rate]");
+    if (!input) return;
+    input.disabled = true;
+    try { await setListingAffiliateRate(input.dataset.affiliateRate, input.value); }
     catch (err) { alert(err.message); renderListings(); }
-    finally { select.disabled = false; }
+    finally { input.disabled = false; }
 });
 
 $("adminListings").addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-act]");
     if (!btn) return;
     const listing = listings.find((l) => l.id === btn.dataset.id);
-    if (!confirm(`Remove "${listing ? listing.title : "this item"}" from the marketplace?`)) return;
     try {
+        if (btn.dataset.act === "warehouse") {
+            const received = btn.dataset.verified !== "true";
+            if (!confirm(received ? `Confirm that “${listing?.title || "this product"}” was physically received and checked at MailMart?` : `Revoke warehouse verification for “${listing?.title || "this product"}”?`)) return;
+            await setWarehouseVerified(btn.dataset.id, received);
+            return;
+        }
+        if (!confirm(`Remove "${listing ? listing.title : "this item"}" from the marketplace?`)) return;
         await setListingStatus(btn.dataset.id, "soldout");
     } catch (err) {
         alert(firestoreErrorSummary(err, "that listing"));
@@ -596,7 +826,7 @@ $("aPostBtn").addEventListener("click", async () => {
         await createListing({
             title, description, category, image: adminImage,
             price, discountPrice, stock, deliveryDefault, deliveryByState: {}
-        });
+        }, { skipFee: true });
         $("postMsg").innerHTML = '<div class="notice good">Posted to the marketplace.</div>';
         ["aTitle", "aDescription", "aPrice", "aDelivery"].forEach((id) => ($(id).value = ""));
         $("aDiscount").value = "0";
@@ -615,25 +845,66 @@ function postFail(message) {
     $("postMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
 }
 
+$("saveAffiliateRatesBtn").addEventListener("click", async () => {
+    const rates = {};
+    for (const input of document.querySelectorAll("[data-affiliate-category]")) {
+        const rate = Number(input.value);
+        if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+            $("affiliateRatesMsg").innerHTML = '<div class="notice bad">Each category rate must be between 0% and 100%.</div>';
+            return;
+        }
+        rates[input.dataset.affiliateCategory] = Math.round(rate * 100) / 100;
+    }
+    const button = $("saveAffiliateRatesBtn"); button.disabled = true;
+    try {
+        await saveSettings({ affiliateRatesByCategory: rates });
+        settings = { ...(settings || {}), affiliateRatesByCategory: rates };
+        renderCategoryAffiliateRates(); renderListings();
+        $("affiliateRatesMsg").innerHTML = '<div class="notice good">Category rates saved. Product-specific overrides remain unchanged.</div>';
+    } catch (error) {
+        $("affiliateRatesMsg").innerHTML = `<div class="notice bad">${esc(firestoreErrorSummary(error, "affiliate rates"))}</div>`;
+    } finally { button.disabled = false; }
+});
+
 $("saveFeeBtn").addEventListener("click", async () => {
-    const value = Number($("sFee").value) || 0;
+    const buyerFee = Number($("sFee").value) || 0;
+    const listingFee = Number($("sListingFee").value) || 0;
+    const sellerFee = Number($("sSellerFee").value) || 0;
+    const hotDealFee = Number($("sHotDealFee").value) || 0;
+    const featuredFee = Number($("sFeaturedFee").value) || 0;
+    const values = [buyerFee, listingFee, sellerFee, hotDealFee, featuredFee];
     const btn = $("saveFeeBtn");
-    if (value < 0) {
-        $("feeMsg").innerHTML = '<div class="notice bad">The fee cannot be negative.</div>';
+    if (values.some((value) => !Number.isFinite(value) || value < 0) || sellerFee > 99) {
+        $("feeMsg").innerHTML = '<div class="notice bad">Fees must be non-negative; seller commission must be below 100%.</div>';
         return;
     }
     btn.disabled = true;
     try {
-        await saveSettings({ serviceFee: value });
-        $("feeMsg").innerHTML =
-            `<div class="notice good">Saved. Buyers are now charged ${esc(formatNaira(value))} per order.</div>`;
+        await saveSettings({ serviceFee: buyerFee, listingFee, sellerSaleFeePercent: sellerFee, hotDealFee, featuredFee });
+        settings = { ...(settings || {}), serviceFee: buyerFee, listingFee, sellerSaleFeePercent: sellerFee, hotDealFee, featuredFee };
+        $("feeMsg").innerHTML = `<div class="notice good">Saved. Buyer fee: ${esc(formatNaira(buyerFee))} per order · new listing fee: ${esc(formatNaira(listingFee))} · seller commission: ${esc(sellerFee)}% of goods · Hot Deals: ${esc(formatNaira(hotDealFee))}/24h · Featured: ${esc(formatNaira(featuredFee))}/24h.</div>`;
     } catch (err) {
         console.error(err);
-        $("feeMsg").innerHTML =
-            `<div class="notice bad">${esc(firestoreErrorSummary(err, "the service fee"))}</div>`;
-    } finally {
-        btn.disabled = false;
+        $("feeMsg").innerHTML = `<div class="notice bad">${esc(firestoreErrorSummary(err, "marketplace fees"))}</div>`;
+    } finally { btn.disabled = false; }
+});
+
+$("saveLinksBtn").addEventListener("click", async () => {
+    const fields = { whatsAppUrl: $("sWhatsApp").value.trim(), telegramUrl: $("sTelegram").value.trim(), youTubeUrl: $("sYouTube").value.trim(), xUrl: $("sX").value.trim() };
+    for (const [label, value] of [["WhatsApp", fields.whatsAppUrl], ["Telegram", fields.telegramUrl], ["YouTube", fields.youTubeUrl], ["X", fields.xUrl]]) {
+        if (!value) continue;
+        try { const url = new URL(value); if (url.protocol !== "https:") throw new Error(); }
+        catch { $("linksMsg").innerHTML = `<div class="notice bad">Enter a valid HTTPS ${label} link or leave it blank.</div>`; return; }
     }
+    const button = $("saveLinksBtn"); button.disabled = true;
+    try {
+        await saveSettings(fields);
+        await savePublicSocialLinks(fields);
+        $("linksMsg").innerHTML = '<div class="notice good">Support links saved and published on the public homepage and marketplace.</div>';
+    } catch (error) {
+        $("linksMsg").innerHTML = `<div class="notice bad">${esc(error.code ? firestoreErrorSummary(error, "the support links") : error.message)}</div>`;
+    }
+    finally { button.disabled = false; }
 });
 
 /* ------------------------------------------------------------------ */
