@@ -84,10 +84,16 @@ service cloud.firestore {
       return /databases/$(database)/documents/referralCodes/$(code);
     }
 
-    function monthlyAmount(total, number) {
+    function installmentAmount(total, number, count) {
       let cents = math.round(total * 100.0);
-      let base = math.floor(cents / 12.0);
-      return (number == 12 ? cents - base * 11 : base) / 100.0;
+      let base = math.floor(cents / count);
+      return (number == count ? cents - base * (count - 1) : base) / 100.0;
+    }
+    function installmentCount(order) {
+      return order.get('installmentCount', order.get('installmentMonths', 12));
+    }
+    function installmentUnit(order) {
+      return order.get('installmentUnit', 'month');
     }
     function lifetimeTypes() {
       return ['email_payout', 'order_payment', 'order_payout', 'social_sale', 'social_purchase', 'rental_payment'];
@@ -96,7 +102,8 @@ service cloud.firestore {
       return (tx.get('orderId', null) == null
           || (get(/databases/$(database)/documents/orders/$(tx.orderId)).data.status == 'completed'
               && (get(/databases/$(database)/documents/orders/$(tx.orderId)).data.get('paymentMode', 'full') != 'installment'
-                  || get(/databases/$(database)/documents/orders/$(tx.orderId)).data.installmentsPaid == 12)))
+                  || get(/databases/$(database)/documents/orders/$(tx.orderId)).data.installmentsPaid
+                    == installmentCount(get(/databases/$(database)/documents/orders/$(tx.orderId)).data))))
         && (tx.get('socialRequestId', null) == null || get(/databases/$(database)/documents/socialRequests/$(tx.socialRequestId)).data.status == 'completed')
         && (tx.get('rentalId', null) == null || get(/databases/$(database)/documents/rentals/$(tx.rentalId)).data.status == 'completed')
         && (tx.type != 'email_payout' || (tx.saleId is string && get(/databases/$(database)/documents/sales/$(tx.saleId)).data.status == 'paid'
@@ -118,6 +125,19 @@ service cloud.firestore {
                && request.resource.data.isAdmin == resource.data.isAdmin
                && request.resource.data.updatedAt == request.time
                && request.resource.data.photoURL.size() < 800000;
+      }
+      function listingFeeBalanceChange() {
+        let d = request.resource.data;
+        let listingId = d.get('lastListingFeeId', '');
+        let txPath = /databases/$(database)/documents/transactions/listing_fee_$(listingId);
+        let tx = getAfter(txPath).data;
+        return userId == uid()
+          && d.diff(resource.data).affectedKeys().hasOnly(['balance', 'updatedAt', 'lastListingFeeId'])
+          && d.updatedAt == request.time && listingId is string && listingId.size() > 0
+          && tx.type == 'listing_fee' && tx.uid == userId && tx.listingId == listingId
+          && tx.direction == 'debit' && tx.status == 'completed' && tx.createdAt == request.time
+          && d.balance == tx.balanceAfter
+          && sameMoney(d.balance, resource.data.balance - tx.amount);
       }
 
       allow read: if signedIn() && (userId == uid() || isAdmin());
@@ -156,7 +176,7 @@ service cloud.firestore {
       // administrator can leave isAdmin as it was, or set it to exactly what
       // the email list says, and nothing else.
       allow update: if signedIn() && (
-        (userId == uid() && ownProfileEdit())
+        (userId == uid() && (ownProfileEdit() || listingFeeBalanceChange()))
         || (isAdmin()
             && request.resource.data.uid == resource.data.uid
             && request.resource.data.get('referredBy', null) == resource.data.get('referredBy', null)
@@ -468,6 +488,29 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- public, admin-managed social URLs -------------------------
+    match /publicSettings/{docId} {
+      function publicSocialShape() {
+        let d = request.resource.data;
+        return docId == 'social'
+          && d.keys().hasOnly(['whatsAppUrl', 'telegramUrl', 'youTubeUrl', 'xUrl', 'updatedAt'])
+          && d.keys().hasAll(['whatsAppUrl', 'telegramUrl', 'youTubeUrl', 'xUrl', 'updatedAt'])
+          && d.whatsAppUrl is string && d.whatsAppUrl.size() <= 1000
+          && (d.whatsAppUrl == '' || d.whatsAppUrl.matches('https://.+'))
+          && d.telegramUrl is string && d.telegramUrl.size() <= 1000
+          && (d.telegramUrl == '' || d.telegramUrl.matches('https://.+'))
+          && d.youTubeUrl is string && d.youTubeUrl.size() <= 1000
+          && (d.youTubeUrl == '' || d.youTubeUrl.matches('https://.+'))
+          && d.xUrl is string && d.xUrl.size() <= 1000
+          && (d.xUrl == '' || d.xUrl.matches('https://.+'))
+          && d.updatedAt == request.time;
+      }
+      allow get: if docId == 'social';
+      allow list: if false;
+      allow create, update: if isAdmin() && publicSocialShape();
+      allow delete: if false;
+    }
+
     // ---------- platform settings ---------------------------------------
     // Administrator writes, every signed-in user reads: the deposit account
     // has to be visible on the deposit screen.
@@ -500,16 +543,22 @@ service cloud.firestore {
         return minimum is number ? minimum : 0;
       }
 
+      function cancellationOpen(orderId) {
+        let path = /databases/$(database)/documents/cancellationRequests/$(orderId);
+        return !exists(path) || !['pending', 'approved'].hasAny([get(path).data.status]);
+      }
+
       function validOrderDebit() {
         let d = request.resource.data;
         let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
         let n = d.get('installmentNumber', 0);
         return d.direction == 'debit' && o.buyerUid == uid()
+          && cancellationOpen(d.orderId)
           && !['cancelled', 'refunded', 'completed'].hasAny([o.status])
           && (o.get('paymentMode', 'full') == 'installment'
-              ? (n == o.installmentsPaid + 1 && n >= 1 && n <= 12
+              ? (n == o.installmentsPaid + 1 && n >= 1 && n <= installmentCount(o)
                  && txId == d.orderId + '_month_' + string(n)
-                 && sameMoney(d.amount, monthlyAmount(o.total, n))
+                 && sameMoney(d.amount, installmentAmount(o.total, n, installmentCount(o)))
                  && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount)
               : (o.status == 'pending_payment' && o.paymentTxId == txId && n == 0 && sameMoney(d.amount, o.total)));
       }
@@ -567,6 +616,8 @@ service cloud.firestore {
               : ((resource.data.status == 'pending' && ['approved', 'rejected'].hasAny([request.resource.data.status]))
                   || (resource.data.status == 'pending' && request.resource.data.status == 'completed' && resource.data.type == 'order_payment')
                   || (resource.data.status == 'approved' && request.resource.data.status == 'completed')))
+          && (resource.data.type != 'order_payment' || request.resource.data.status != 'completed'
+              || cancellationOpen(resource.data.orderId))
           && request.resource.data.reviewedBy == adminActor();
       }
 
@@ -617,7 +668,8 @@ service cloud.firestore {
         let r = getAfter(/databases/$(database)/documents/referrals/$(d.sourceUid)).data;
         let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
         return o.status == 'completed' && o.paidAt != null && o.rewardsSettledAt == request.time
-          && (o.get('paymentMode', 'full') != 'installment' || (o.installmentsPaid == 12 && sameMoney(o.totalPaid, o.total)))
+          && (o.get('paymentMode', 'full') != 'installment'
+              || (o.installmentsPaid == installmentCount(o) && sameMoney(o.totalPaid, o.total)))
           && r.status == 'approved' && r.verifiedAt != null
           && o.buyerUid == d.sourceUid && o.referrerUid == r.referrerUid
           && r.purchaseOrderId == d.orderId && r.firstCompletedOrderId == d.orderId
@@ -630,12 +682,15 @@ service cloud.firestore {
       function affiliateRewardMatches() {
         let d = request.resource.data;
         let o = getAfter(/databases/$(database)/documents/orders/$(d.orderId)).data;
+        let rate = o.get('affiliateRatePercent', 5);
         return txId == 'affiliate_' + d.orderId && o.status == 'completed'
           && o.paidAt != null && o.rewardsSettledAt == request.time
-          && (o.get('paymentMode', 'full') != 'installment' || (o.installmentsPaid == 12 && sameMoney(o.totalPaid, o.total)))
+          && (o.get('paymentMode', 'full') != 'installment'
+              || (o.installmentsPaid == installmentCount(o) && sameMoney(o.totalPaid, o.total)))
           && o.buyerUid == d.sourceUid && o.affiliateUid == d.uid
           && d.uid != o.buyerUid && d.uid != o.sellerUid
-          && sameMoney(d.amount, math.round(o.subtotal * 15.0) / 100.0);
+          && rate >= 0 && rate <= 100
+          && sameMoney(d.amount, math.round(o.subtotal * rate) / 100.0);
       }
       function heldClaimMatches() {
         let d = request.resource.data;
@@ -654,6 +709,42 @@ service cloud.firestore {
           && d.baseAmount == tx.amount && d.ratePercent >= 4 && d.ratePercent <= 5
           && sameMoney(d.amount, math.round(d.baseAmount * d.ratePercent) / 100.0)
           && lifetimeBusinessReady(tx);
+      }
+      function sellerListingFeeDebit() {
+        let d = request.resource.data;
+        let listing = getAfter(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        let previousProfile = get(/databases/$(database)/documents/users/$(uid())).data;
+        let nextProfile = getAfter(/databases/$(database)/documents/users/$(uid())).data;
+        let settingsPath = /databases/$(database)/documents/settings/platform;
+        let fee = exists(settingsPath) ? get(settingsPath).data.get('listingFee', 0) : 0;
+        return !isAdmin() && txId == 'listing_fee_' + d.listingId
+          && d.keys().hasAll(['type', 'direction', 'status', 'uid', 'email', 'amount', 'listingId', 'balanceAfter', 'reference', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['type', 'direction', 'status', 'uid', 'email', 'amount', 'listingId', 'balanceAfter', 'reference', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt'])
+          && d.type == 'listing_fee' && d.direction == 'debit' && d.status == 'completed'
+          && d.uid == uid() && d.email == tokenEmail() && d.listingId is string
+          && d.amount is number && fee is number && fee > 0 && sameMoney(d.amount, fee)
+          && listing.sellerUid == uid() && listing.listingFeePaid == d.amount && listing.createdAt == request.time
+          && previousProfile.balance >= d.amount && sameMoney(nextProfile.balance, d.balanceAfter)
+          && nextProfile.lastListingFeeId == d.listingId
+          && sameMoney(d.balanceAfter, previousProfile.balance - d.amount)
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time
+          && d.createdAt == request.time && d.updatedAt == request.time;
+      }
+      function adminPromotionDebit() {
+        let d = request.resource.data;
+        let promo = getAfter(/databases/$(database)/documents/promotionRequests/$(d.promotionRequestId)).data;
+        let previousProfile = get(/databases/$(database)/documents/users/$(d.uid)).data;
+        let nextProfile = getAfter(/databases/$(database)/documents/users/$(d.uid)).data;
+        return isAdmin() && txId == 'promotion_' + d.promotionRequestId
+          && d.keys().hasAll(['type', 'direction', 'status', 'uid', 'email', 'amount', 'listingId', 'promotionRequestId', 'promotionKind', 'balanceAfter', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt'])
+          && d.keys().hasOnly(['type', 'direction', 'status', 'uid', 'email', 'amount', 'listingId', 'promotionRequestId', 'promotionKind', 'reference', 'balanceAfter', 'reviewedBy', 'reviewedAt', 'createdAt', 'updatedAt'])
+          && d.type == 'listing_promotion' && d.direction == 'debit' && d.status == 'completed'
+          && promo.status == 'approved' && promo.uid == d.uid && promo.amount == d.amount
+          && promo.listingId == d.listingId && promo.kind == d.promotionKind
+          && d.amount > 0 && previousProfile.balance >= d.amount && nextProfile.balance == d.balanceAfter
+          && d.balanceAfter == previousProfile.balance - d.amount
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time
+          && d.createdAt == request.time && d.updatedAt == request.time;
       }
       function adminServiceEntry() {
         let d = request.resource.data;
@@ -707,7 +798,7 @@ service cloud.firestore {
       allow read: if signedIn()
         && (isAdmin() || resource.data.uid == uid());
 
-      allow create: if signedIn() && (ownPendingRequest() || adminLedgerEntry() || adminRewardEntry() || adminServiceEntry());
+      allow create: if signedIn() && (ownPendingRequest() || adminLedgerEntry() || adminRewardEntry() || adminServiceEntry() || adminPromotionDebit() || sellerListingFeeDebit());
       allow update: if signedIn() && adminSettlement();
       allow delete: if false;
     }
@@ -749,6 +840,49 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSeller == true;
       }
 
+      function galleryShape() {
+        let gallery = request.resource.data.get('gallery', []);
+        return gallery is list && gallery.size() <= 3;
+      }
+      function variantsShape() {
+        let variants = request.resource.data.get('variants', []);
+        return variants is list && variants.size() <= 16;
+      }
+      function installmentListingShape() {
+        let d = request.resource.data;
+        let enabled = d.get('installmentEnabled', false);
+        let unit = d.get('installmentUnit', 'month');
+        let count = d.get('installmentCount', d.get('installmentMonths', 12));
+        let validCount = (unit == 'week' && count >= 1 && count <= 35)
+          || (unit == 'month' && count >= 1 && count <= 12);
+        let requiresWarehouse = (unit == 'week' && count > 3) || (unit == 'month' && count > 2);
+        return enabled is bool && (!enabled || (validCount
+          && d.get('installmentDelivery', 'after_full') == 'after_full'
+          && d.get('warehouseRequired', false) == requiresWarehouse
+          && d.get('warehouseVerified', false) is bool));
+      }
+      function configuredListingFee() {
+        let path = /databases/$(database)/documents/settings/platform;
+        let fee = exists(path) ? get(path).data.get('listingFee', 0) : 0;
+        return fee is number && fee >= 0 ? fee : 0;
+      }
+      function listingFeeMatches() {
+        let d = request.resource.data;
+        let fee = configuredListingFee();
+        let profilePath = /databases/$(database)/documents/users/$(uid());
+        let feePath = /databases/$(database)/documents/transactions/listing_fee_$(listingId);
+        return isAdmin() || (d.get('listingFeePaid', 0) == fee
+          && (fee == 0
+              || (get(profilePath).data.balance >= fee
+                  && sameMoney(getAfter(profilePath).data.balance, get(profilePath).data.balance - fee)
+                  && getAfter(feePath).data.type == 'listing_fee'
+                  && getAfter(feePath).data.status == 'completed'
+                  && getAfter(feePath).data.direction == 'debit'
+                  && getAfter(feePath).data.uid == uid()
+                  && getAfter(feePath).data.listingId == listingId
+                  && sameMoney(getAfter(feePath).data.amount, fee)
+                  && sameMoney(getAfter(feePath).data.balanceAfter, getAfter(profilePath).data.balance)));
+      }
       function listingShape() {
         return request.resource.data.keys().hasAll(
                  ['title', 'description', 'category', 'image', 'price',
@@ -759,6 +893,12 @@ service cloud.firestore {
                && request.resource.data.image.size() < 800000
                && request.resource.data.title.size() <= 120
                && request.resource.data.description.size() <= 2000
+               && (!request.resource.data.keys().hasAny(['stock']) || (request.resource.data.stock is int && request.resource.data.stock >= 0))
+               && (!request.resource.data.keys().hasAny(['lowStockThreshold']) || (request.resource.data.lowStockThreshold is int && request.resource.data.lowStockThreshold >= 1 && request.resource.data.lowStockThreshold <= 99))
+               && (!request.resource.data.keys().hasAny(['fulfillmentMode']) || ['seller', 'mailmart'].hasAny([request.resource.data.fulfillmentMode]))
+               && (!request.resource.data.keys().hasAny(['deliveryEtaDays']) || (request.resource.data.deliveryEtaDays is int && request.resource.data.deliveryEtaDays >= 1 && request.resource.data.deliveryEtaDays <= 90))
+               && (!request.resource.data.keys().hasAny(['affiliateRatePercent']) || (request.resource.data.affiliateRatePercent is number && request.resource.data.affiliateRatePercent >= 0 && request.resource.data.affiliateRatePercent <= 100))
+               && galleryShape() && variantsShape() && installmentListingShape()
                && ['active', 'paused', 'soldout'].hasAny([request.resource.data.status]);
       }
 
@@ -767,21 +907,126 @@ service cloud.firestore {
       // Only a KYC-approved seller (or an administrator) may list goods.
       allow create: if (isVerifiedSeller() || isAdmin())
         && request.resource.data.sellerUid == request.auth.uid
-        && listingShape()
-        && (isAdmin() || request.resource.data.get('installmentEnabled', false) == false)
+        && listingShape() && listingFeeMatches()
+        && (!request.resource.data.keys().hasAny(['affiliateRatePercent']) || isAdmin())
+        && (isAdmin() || !request.resource.data.keys().hasAny(['featuredUntil', 'featuredExpiresAt', 'hotDealUntil', 'hotDealsUntil', 'hotDealExpiresAt', 'promotions']))
+        && request.resource.data.get('warehouseVerified', false) == false
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      // A listing cannot be handed to another seller.
+      // A listing cannot be handed to another seller. Affiliate rates and
+      // warehouse receipt are controlled by MailMart administrators.
       allow update: if signedIn()
         && (resource.data.sellerUid == request.auth.uid || isAdmin())
         && request.resource.data.sellerUid == resource.data.sellerUid
-        && (isAdmin() || (request.resource.data.get('installmentEnabled', false) == resource.data.get('installmentEnabled', false)
-            && request.resource.data.get('installmentDelivery', 'after_full') == resource.data.get('installmentDelivery', 'after_full')))
+        && request.resource.data.get('listingFeePaid', resource.data.get('listingFeePaid', 0)) == resource.data.get('listingFeePaid', 0)
+        && (isAdmin() || (request.resource.data.get('affiliateRatePercent', resource.data.get('affiliateRatePercent', 5)) == resource.data.get('affiliateRatePercent', 5)
+            && request.resource.data.get('warehouseVerified', false) == resource.data.get('warehouseVerified', false)
+            && request.resource.data.get('featuredUntil', resource.data.get('featuredUntil', null)) == resource.data.get('featuredUntil', null)
+            && request.resource.data.get('featuredExpiresAt', resource.data.get('featuredExpiresAt', null)) == resource.data.get('featuredExpiresAt', null)
+            && request.resource.data.get('hotDealUntil', resource.data.get('hotDealUntil', null)) == resource.data.get('hotDealUntil', null)
+            && request.resource.data.get('hotDealsUntil', resource.data.get('hotDealsUntil', null)) == resource.data.get('hotDealsUntil', null)
+            && request.resource.data.get('hotDealExpiresAt', resource.data.get('hotDealExpiresAt', null)) == resource.data.get('hotDealExpiresAt', null)
+            && request.resource.data.get('promotions', resource.data.get('promotions', {})) == resource.data.get('promotions', {})))
         && listingShape();
 
       allow delete: if signedIn()
         && (resource.data.sellerUid == request.auth.uid || isAdmin());
+    }
+
+    // ---------- paid marketplace placements ------------------------------
+    match /promotionRequests/{requestId} {
+      function configuredPromotionFee(kind) {
+        let path = /databases/$(database)/documents/settings/platform;
+        let settings = exists(path) ? get(path).data : {};
+        return kind == 'featured' ? settings.get('featuredFee', 0) : settings.get('hotDealFee', 0);
+      }
+      function newPromotionRequest() {
+        let d = request.resource.data;
+        let listing = get(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        return d.keys().hasOnly(['uid', 'email', 'listingId', 'listingTitle', 'kind', 'amount', 'acceptedTerms', 'status', 'createdAt', 'updatedAt'])
+          && d.uid == uid() && d.email == tokenEmail() && d.acceptedTerms == true
+          && ['featured', 'hotDeal'].hasAny([d.kind]) && d.amount is number && d.amount > 0
+          && d.amount == configuredPromotionFee(d.kind)
+          && listing.sellerUid == uid() && listing.status == 'active'
+          && d.listingTitle == listing.title && d.status == 'pending'
+          && get(/databases/$(database)/documents/users/$(uid())).data.balance >= d.amount
+          && d.createdAt == request.time && d.updatedAt == request.time;
+      }
+      function promotionDecision() {
+        let d = request.resource.data;
+        let tx = getAfter(/databases/$(database)/documents/transactions/promotion_$(requestId)).data;
+        let listing = getAfter(/databases/$(database)/documents/listings/$(resource.data.listingId)).data;
+        let expiryMatches = resource.data.kind == 'featured'
+          ? listing.featuredUntil == d.expiresAt : listing.hotDealUntil == d.expiresAt;
+        return isAdmin() && resource.data.status == 'pending'
+          && d.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedBy', 'reviewedAt', 'updatedAt', 'rejectionReason', 'expiresAt'])
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time
+          && ((d.status == 'rejected' && d.rejectionReason is string)
+              || (d.status == 'approved' && d.expiresAt is timestamp && d.expiresAt > request.time
+                  && expiryMatches && tx.status == 'completed' && tx.type == 'listing_promotion'
+                  && tx.promotionRequestId == requestId && tx.uid == resource.data.uid
+                  && tx.amount == resource.data.amount && tx.listingId == resource.data.listingId));
+      }
+      allow read: if signedIn() && (isAdmin() || resource.data.uid == uid());
+      allow create: if signedIn() && newPromotionRequest();
+      allow update: if signedIn() && promotionDecision();
+      allow delete: if false;
+    }
+
+    // ---------- paid-order cancellations ---------------------------------
+    match /cancellationRequests/{requestId} {
+      function validCancellationRequest() {
+        let d = request.resource.data;
+        let orderPath = /databases/$(database)/documents/orders/$(requestId);
+        let order = get(orderPath).data;
+        let recordedPaid = order.get('totalPaid', 0);
+        let paid = recordedPaid > 0 ? recordedPaid : (order.get('paymentMode', 'full') == 'installment' ? 0 : order.get('total', 0));
+        return d.keys().hasOnly(['orderId', 'buyerUid', 'buyerEmail', 'sellerUid', 'sellerEmail', 'choice', 'requestedAmount', 'feeAmount', 'status', 'createdAt', 'updatedAt'])
+          && d.orderId == requestId && d.buyerUid == uid() && d.buyerEmail == tokenEmail()
+          && d.sellerUid == order.sellerUid && d.sellerEmail == order.sellerEmail
+          && order.buyerUid == uid() && order.status == 'paid' && order.get('deliveredAt', null) == null
+          && paid is number && paid > 0
+          && ['wallet_credit', 'wallet_refund'].hasAny([d.choice])
+          && d.requestedAmount is number && d.requestedAmount > 0 && d.requestedAmount <= paid
+          && d.feeAmount is number && d.feeAmount >= 0 && d.feeAmount <= paid
+          && (d.choice == 'wallet_credit'
+              ? (d.feeAmount == 0 && sameMoney(d.requestedAmount, paid))
+              : (d.feeAmount <= order.total * 0.2 + 0.01
+                  && sameMoney(d.requestedAmount + d.feeAmount, paid)))
+          && d.status == 'pending' && d.createdAt == request.time && d.updatedAt == request.time;
+      }
+      function cancellationDecision() {
+        let d = request.resource.data;
+        let order = getAfter(/databases/$(database)/documents/orders/$(requestId)).data;
+        let buyer = getAfter(/databases/$(database)/documents/users/$(resource.data.buyerUid)).data;
+        let txPath = /databases/$(database)/documents/transactions/order_refund_$(requestId);
+        let tx = getAfter(txPath).data;
+        return isAdmin() && resource.data.status == 'pending'
+          && d.diff(resource.data).affectedKeys().hasOnly(['status', 'requestedAmount', 'feeAmount', 'reviewedBy', 'reviewedAt', 'updatedAt', 'rejectionReason'])
+          && d.reviewedBy == adminActor() && d.reviewedAt == request.time && d.updatedAt == request.time
+          && ((d.status == 'rejected' && d.rejectionReason is string && order.status == 'paid')
+              || (d.status == 'approved'
+                  && order.status == (resource.data.choice == 'wallet_credit' ? 'cancelled' : 'refunded')
+                  && order.cancellationChoice == resource.data.choice
+                  && order.refundAmount == d.requestedAmount && order.refundFee == d.feeAmount
+                  && tx.type == 'order_refund' && tx.status == 'completed' && tx.uid == resource.data.buyerUid
+                  && tx.orderId == requestId && tx.cancellationRequestId == requestId
+                  && tx.amount == d.requestedAmount && tx.feeAmount == d.feeAmount
+                  && buyer.balance == get(/databases/$(database)/documents/users/$(resource.data.buyerUid)).data.balance + d.requestedAmount)
+              || (d.status == 'superseded' && d.rejectionReason is string
+                  && order.status == 'refunded'
+                  && order.cancellationReason == 'MailMart or seller could not fulfill the order'
+                  && tx.type == 'order_refund' && tx.status == 'completed'
+                  && tx.uid == resource.data.buyerUid && tx.orderId == requestId
+                  && tx.amount == order.refundAmount && order.refundFee == 0
+                  && buyer.balance == get(/databases/$(database)/documents/users/$(resource.data.buyerUid)).data.balance + tx.amount));
+      }
+      allow read: if signedIn() && (isAdmin() || resource.data.buyerUid == uid() || resource.data.sellerUid == uid());
+      allow create: if signedIn() && validCancellationRequest();
+      allow update: if signedIn() && (cancellationDecision()
+        || (resource.data.status == 'rejected' && validCancellationRequest()));
+      allow delete: if false;
     }
 
     // ---------- orders ----------------------------------------------------
@@ -813,6 +1058,11 @@ service cloud.firestore {
           ? sameMoney(request.resource.data.serviceFee, storedServiceFee())
           : request.resource.data.serviceFee == 0;
       }
+      function storedSellerSaleFeePercent() {
+        let path = /databases/$(database)/documents/settings/platform;
+        let fee = exists(path) ? get(path).data.get('sellerSaleFeePercent', 0) : 0;
+        return fee is number ? fee : 0;
+      }
 
       // The quote the browser produced is recomputed here, so a tampered page
       // cannot buy something for less than the seller is asking.
@@ -820,6 +1070,7 @@ service cloud.firestore {
         let listing = get(/databases/$(database)/documents/listings/$(request.resource.data.listingId)).data;
         let unit = unitPriceOf(listing);
         return listing.status == 'active'
+          && listing.get('stock', 1) >= request.resource.data.quantity
           && request.resource.data.quantity >= 1
           && sameMoney(request.resource.data.itemPrice, unit)
           && sameMoney(request.resource.data.subtotal,
@@ -831,17 +1082,32 @@ service cloud.firestore {
                        request.resource.data.subtotal
                          + request.resource.data.deliveryFee
                          + request.resource.data.serviceFee)
+          && request.resource.data.sellerSaleFeePercent == storedSellerSaleFeePercent()
+          && sameMoney(request.resource.data.sellerSaleFee,
+                       math.round(request.resource.data.subtotal * storedSellerSaleFeePercent()) / 100.0)
           && sameMoney(request.resource.data.sellerPayout,
-                       request.resource.data.subtotal + request.resource.data.deliveryFee)
+                       request.resource.data.subtotal - request.resource.data.sellerSaleFee
+                         + request.resource.data.deliveryFee)
           && request.resource.data.sellerUid == listing.sellerUid
-          && request.resource.data.sellerEmail == listing.sellerEmail;
+          && request.resource.data.sellerEmail == listing.sellerEmail
+          && request.resource.data.fulfillmentMode == listing.get('fulfillmentMode', 'seller')
+          && request.resource.data.deliveryEtaDays == listing.get('deliveryEtaDays', 3);
       }
 
       function affiliateAttribution() {
         let d = request.resource.data;
-        return d.affiliateUid == null ? d.affiliateCode == ''
+        let l = get(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        let settingsPath = /databases/$(database)/documents/settings/platform;
+        let settings = exists(settingsPath) ? get(settingsPath).data : {};
+        let categoryRates = settings.get('affiliateRatesByCategory', {});
+        let categoryRate = categoryRates.get(l.category, 5);
+        let productRate = l.get('affiliateRatePercent', null);
+        let expectedRate = productRate is number ? productRate : categoryRate;
+        return d.affiliateUid == null ? (d.affiliateCode == '' && d.affiliateRatePercent == 0)
           : (d.affiliateUid is string && d.affiliateUid != uid() && d.affiliateUid != d.sellerUid
              && d.affiliateCode == 'MM-' + d.affiliateUid
+             && expectedRate is number && expectedRate >= 0 && expectedRate <= 100
+             && d.affiliateRatePercent == expectedRate
              && get(/databases/$(database)/documents/referralCodes/$(d.affiliateCode)).data.affiliateActive == true);
       }
       function matchingPayment() {
@@ -849,7 +1115,8 @@ service cloud.firestore {
         let p = getAfter(/databases/$(database)/documents/transactions/$(d.paymentTxId)).data;
         return p.uid == uid() && p.type == 'order_payment' && p.orderId == orderId
           && p.status == 'pending' && p.direction == 'debit'
-          && sameMoney(p.amount, d.get('paymentMode', 'full') == 'installment' ? monthlyAmount(d.total, 1) : d.total);
+          && sameMoney(p.amount, d.get('paymentMode', 'full') == 'installment'
+              ? installmentAmount(d.total, 1, installmentCount(d)) : d.total);
       }
       function completionRecordsReferral() {
         let referrer = resource.data.get('referrerUid', null);
@@ -858,35 +1125,68 @@ service cloud.firestore {
           && (get(r).data.firstCompletedOrderId != null || getAfter(r).data.firstCompletedOrderId == orderId));
       }
 
+      function variationMatches() {
+        let d = request.resource.data;
+        let l = get(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        let selected = d.get('selectedVariant', '');
+        let options = l.get('variants', []);
+        return selected == '' || (options is list && options.hasAny([selected]));
+      }
       function planTerms() {
         let d = request.resource.data;
         let l = get(/databases/$(database)/documents/listings/$(d.listingId)).data;
+        let count = installmentCount(d);
+        let unit = installmentUnit(d);
+        let validCount = (unit == 'week' && count >= 1 && count <= 35)
+          || (unit == 'month' && count >= 1 && count <= 12);
         return ['full', 'installment'].hasAny([d.get('paymentMode', 'full')])
           && d.get('installmentsPaid', 0) == 0 && d.get('totalPaid', 0) == 0 && d.get('sellerPaid', 0) == 0
           && d.get('paidAt', null) == null && d.get('completedAt', null) == null
           && d.get('deliveredAt', null) == null && d.get('fullyPaidAt', null) == null
           && (d.get('paymentMode', 'full') != 'installment' || (l.get('installmentEnabled', false) == true
-              && d.installmentMonths == 12 && d.total >= 0.12 && d.sellerPayout >= 0.12 && d.installmentDelivery == l.installmentDelivery
-              && ['after_first', 'after_full'].hasAny([d.installmentDelivery])));
+              && count == installmentCount(l) && unit == installmentUnit(l) && validCount
+              && d.total >= count / 100.0 && d.sellerPayout >= count / 100.0
+              && d.installmentDelivery == 'after_full'
+              && (!l.get('warehouseRequired', false) || l.get('warehouseVerified', false) == true)));
       }
       function fullyPaid() {
         return resource.data.get('paymentMode', 'full') != 'installment'
-          || (resource.data.installmentsPaid == 12 && sameMoney(resource.data.totalPaid, resource.data.total));
+          || (resource.data.installmentsPaid == installmentCount(resource.data)
+              && sameMoney(resource.data.totalPaid, resource.data.total));
+      }
+      function noOpenCancellation() {
+        let path = /databases/$(database)/documents/cancellationRequests/$(orderId);
+        return !exists(path) || !['pending', 'approved'].hasAny([get(path).data.status]);
+      }
+      function validDeliveryProof() {
+        let path = /databases/$(database)/documents/orders/$(orderId)/deliveryProof/proof;
+        let proof = get(path).data;
+        let sellerProof = resource.data.get('fulfillmentMode', 'seller') == 'seller'
+          && proof.fulfillmentMode == 'seller' && proof.uid == resource.data.sellerUid;
+        let mailmartProof = resource.data.get('fulfillmentMode', 'seller') == 'mailmart'
+          && proof.fulfillmentMode == 'mailmart';
+        return exists(path) && proof.photo is string && proof.photo.size() > 100 && proof.photo.size() < 500000
+          && proof.signature is string && proof.signature.size() > 100 && proof.signature.size() < 180000
+          && proof.recipientName is string && proof.recipientName.size() >= 2 && proof.recipientName.size() <= 120
+          && (sellerProof || mailmartProof);
       }
       function buyerDelivery() {
         return resource.data.buyerUid == uid() && resource.data.status == 'shipped'
+          && fullyPaid()
           && request.resource.data.deliveredAt == request.time
-          && (fullyPaid() ? (request.resource.data.status == 'completed' && request.resource.data.completedAt == request.time && completionRecordsReferral())
-              : (request.resource.data.status == 'delivered_pending_balance' && noCompletionEdit()));
+          && request.resource.data.status == 'completed'
+          && request.resource.data.completedAt == request.time
+          && validDeliveryProof() && completionRecordsReferral();
       }
       function ownOrder() {
         return request.resource.data.buyerUid == request.auth.uid
           && request.resource.data.status == 'pending_payment'
           && request.resource.data.keys().hasAll(
                ['listingId', 'sellerUid', 'sellerEmail', 'quantity', 'itemPrice',
-                'subtotal', 'deliveryFee', 'serviceFee', 'total', 'sellerPayout',
+                'subtotal', 'deliveryFee', 'serviceFee', 'sellerSaleFeePercent', 'sellerSaleFee', 'total', 'sellerPayout',
                 'address', 'timeline', 'createdAt', 'updatedAt', 'paymentTxId',
-                'referrerUid', 'affiliateUid', 'affiliateCode', 'rewardsSettledAt'])
+                'referrerUid', 'affiliateUid', 'affiliateCode', 'affiliateRatePercent',
+                'selectedVariant', 'fulfillmentMode', 'deliveryEtaDays', 'rewardsSettledAt'])
           && request.resource.data.quantity is int
           && request.resource.data.buyerUid != request.resource.data.sellerUid
           && request.resource.data.buyerEmail == tokenEmail()
@@ -894,7 +1194,7 @@ service cloud.firestore {
           && request.resource.data.rewardsSettledAt == null
           && request.resource.data.get('rewardsSummary', null) == null
           && request.resource.data.paymentTxId is string && matchingPayment()
-          && affiliateAttribution() && pricedCorrectly() && planTerms()
+          && affiliateAttribution() && pricedCorrectly() && variationMatches() && planTerms()
           && request.resource.data.createdAt == request.time
           && request.resource.data.updatedAt == request.time;
       }
@@ -910,9 +1210,13 @@ service cloud.firestore {
       function adminOrderEdit() {
         return isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'updatedAt', 'timeline', 'paidAt', 'completedAt', 'refundedAt',
-          'cancellationReason', 'rewardsSettledAt', 'rewardsSummary', 'deliveredAt', 'totalPaid', 'sellerPaid',
-          'installmentsPaid', 'fullyPaidAt'])
-          && request.resource.data.updatedAt == request.time;
+          'cancellationReason', 'cancellationChoice', 'refundAmount', 'refundFee',
+          'rewardsSettledAt', 'rewardsSummary', 'deliveredAt', 'totalPaid', 'sellerPaid',
+          'installmentsPaid', 'fullyPaidAt', 'stockReserved'])
+          && request.resource.data.updatedAt == request.time
+          && (request.resource.data.status != 'shipped' || (fullyPaid() && noOpenCancellation() && validDeliveryProof()))
+          && (request.resource.data.status != 'completed'
+              || (resource.data.status == 'shipped' && fullyPaid() && validDeliveryProof() && completionRecordsReferral()));
       }
 
       allow read: if signedIn()
@@ -923,14 +1227,57 @@ service cloud.firestore {
       // reward-review fields. A delivery milestone never changes a balance.
       allow update: if signedIn() && (adminOrderEdit() || (statusStep() && (
         (resource.data.sellerUid == uid() && resource.data.status == 'paid'
-          && request.resource.data.status == 'shipped' && noCompletionEdit()
-          && (fullyPaid() || resource.data.get('installmentDelivery', 'after_full') == 'after_first'))
+          && resource.data.get('fulfillmentMode', 'seller') == 'seller'
+          && request.resource.data.status == 'shipped' && noCompletionEdit() && fullyPaid() && noOpenCancellation() && validDeliveryProof())
         || buyerDelivery()
         || (resource.data.buyerUid == uid() && resource.data.status == 'pending_payment'
             && resource.data.get('totalPaid', 0) == 0 && request.resource.data.status == 'cancelled' && noCompletionEdit())
       )));
 
       allow delete: if false;
+
+      match /messages/{messageId} {
+        function orderParticipant() {
+          let order = get(/databases/$(database)/documents/orders/$(orderId)).data;
+          return order.buyerUid == uid() || order.sellerUid == uid() || isAdmin();
+        }
+        allow read: if signedIn() && orderParticipant();
+        allow create: if signedIn() && orderParticipant()
+          && request.resource.data.keys().hasOnly(['uid', 'email', 'text', 'createdAt'])
+          && request.resource.data.uid == uid() && request.resource.data.email == tokenEmail()
+          && request.resource.data.text is string && request.resource.data.text.size() >= 1
+          && request.resource.data.text.size() <= 1000 && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+
+      match /deliveryProof/{proofId} {
+        function proofOrder() {
+          return get(/databases/$(database)/documents/orders/$(orderId)).data;
+        }
+        function completeProof() {
+          let d = request.resource.data;
+          let o = proofOrder();
+          let isSeller = o.get('fulfillmentMode', 'seller') == 'seller' && o.sellerUid == uid();
+          let isMailMartAdmin = o.get('fulfillmentMode', 'seller') == 'mailmart' && isAdmin();
+          let paid = o.get('paymentMode', 'full') != 'installment'
+            || (o.installmentsPaid == installmentCount(o) && sameMoney(o.totalPaid, o.total));
+          return proofId == 'proof' && o.status == 'paid' && paid && (isSeller || isMailMartAdmin)
+            && d.keys().hasOnly(['uid', 'email', 'fulfillmentMode', 'photo', 'signature', 'recipientName', 'note', 'createdAt'])
+            && d.uid == uid() && d.email == tokenEmail()
+            && d.fulfillmentMode == o.get('fulfillmentMode', 'seller')
+            && d.photo is string && d.photo.size() > 100 && d.photo.size() < 500000
+            && d.signature is string && d.signature.size() > 100 && d.signature.size() < 180000
+            && d.recipientName is string && d.recipientName.size() >= 2 && d.recipientName.size() <= 120
+            && d.note is string && d.note.size() <= 500 && d.createdAt == request.time;
+        }
+        function proofReader() {
+          let o = proofOrder();
+          return o.buyerUid == uid() || o.sellerUid == uid() || isAdmin();
+        }
+        allow read: if signedIn() && proofReader();
+        allow create: if signedIn() && completeProof();
+        allow update, delete: if false;
+      }
     }
 
     // ---------- reviewed social assets and authorized manual rentals -----
@@ -1050,9 +1397,9 @@ service cloud.firestore {
 
     // ---------- outgoing mail ---------------------------------------------
     // The Trigger Email extension reads and updates this collection with
-    // admin privileges, bypassing these rules. They exist to stop a browser
-    // queueing arbitrary mail: one notice per real order, addressed only to
-    // that order's actual seller.
+    // admin privileges, bypassing these rules. Browser writes are limited to
+    // one real-order notice for the actual seller; admin writes may notify a
+    // buyer only as part of an approved cancellation or fulfillment refund.
     match /mail/{mailId} {
 
       function orderNotice() {
@@ -1064,8 +1411,27 @@ service cloud.firestore {
           && request.resource.data.to == get(path).data.sellerEmail
           && request.resource.data.message.subject is string;
       }
+      function adminBuyerOrderNotice() {
+        let d = request.resource.data;
+        let orderPath = /databases/$(database)/documents/orders/$(d.orderId);
+        let order = getAfter(orderPath).data;
+        let cancellationPath = /databases/$(database)/documents/cancellationRequests/$(d.orderId);
+        let cancellation = existsAfter(cancellationPath) ? getAfter(cancellationPath).data : {};
+        return isAdmin() && d.keys().hasOnly(['to', 'orderId', 'notificationType', 'message'])
+          && d.orderId is string && d.to == order.buyerEmail
+          && d.notificationType is string && d.message.subject is string && d.message.html is string
+          && d.message.html.size() <= 12000
+          && ((d.notificationType == 'fulfillment_refund'
+               && order.status == 'refunded'
+               && order.cancellationReason == 'MailMart or seller could not fulfill the order')
+              || (d.notificationType == 'cancellation_approved'
+                  && cancellation.status == 'approved'
+                  && ['cancelled', 'refunded'].hasAny([order.status]))
+              || (d.notificationType == 'cancellation_rejected'
+                  && cancellation.status == 'rejected' && order.status == 'paid'));
+      }
 
-      allow create: if orderNotice();
+      allow create: if orderNotice() || adminBuyerOrderNotice();
       allow read, update, delete: if false;
     }
 

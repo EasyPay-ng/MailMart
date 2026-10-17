@@ -73,7 +73,7 @@ function renderOrders() {
 Delivered: ${esc(formatDate(o.completedAt))}
 Goods subtotal: ${esc(formatNaira(o.subtotal))}
 ${o.referrerUid ? "Purchase bonuses: ₦500 referrer + ₦200 buyer, if this is their first completed purchase." : "No registration-referral purchase bonus."}
-${o.affiliateUid ? "Affiliate commission: " + esc(formatNaira(affiliateCommissionFor(o.subtotal))) + " (15% of goods only)" : "No affiliate attributed."}</p>
+${o.affiliateUid ? "Affiliate commission: " + esc(formatNaira(affiliateCommissionFor(o.subtotal, Number(o.affiliateRatePercent ?? 5) / 100))) + " (" + esc(o.affiliateRatePercent ?? 5) + "% of goods only; platform-funded)" : "No affiliate attributed."}</p>
       <p class="reward-code">Order ${esc(o.id)}</p>
       <button class="btn small good" data-release="${esc(o.id)}" ${busy.has(o.id) ? "disabled" : ""}>${busy.has(o.id) ? "Releasing…" : "Release eligible rewards"}</button>
     </article>`).join("") : empty("No delivered orders are awaiting reward review.");
@@ -92,7 +92,7 @@ document.addEventListener("click", async (event) => {
       if (reply === null) return;
       reason = reply.trim();
       if (!reason) { showMessage("Enter a reason for this decision.", "bad"); return; }
-    } else if (!confirm("Approve affiliate access and activate this user's 15% sales links?")) return;
+    } else if (!confirm("Approve affiliate access and activate this user's product-rate tracked sales links?")) return;
   } else if (!confirm("Release this delivered order's eligible rewards? Fixed bonuses are paid once per buyer; all credits and balances commit together.")) return;
   busy.add(key);
   renderApplications(); renderOrders();

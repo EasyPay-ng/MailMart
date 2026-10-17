@@ -272,7 +272,8 @@ export async function settleOrderRewards(orderId, adminUser) {
     if (!snap.exists()) throw new Error("That order no longer exists.");
     const order = { ...snap.data(), id: snap.id };
     if (order.rewardsSettledAt) throw new Error("This order's rewards have already been reviewed.");
-    if (order.status !== "completed" || !order.paidAt || (order.paymentMode === "installment" && (order.installmentsPaid !== 12 || roundMoney(order.totalPaid) !== roundMoney(order.total)))) throw new Error("Rewards require a paid, delivered and fully funded order.");
+    const installmentCount = Number(order.installmentCount || order.installmentMonths || 12);
+    if (order.status !== "completed" || !order.paidAt || (order.paymentMode === "installment" && (order.installmentsPaid !== installmentCount || roundMoney(order.totalPaid) !== roundMoney(order.total)))) throw new Error("Rewards require a paid, delivered and fully funded order.");
     let referralRef = null;
     let referral = null;
     if (order.referrerUid) {

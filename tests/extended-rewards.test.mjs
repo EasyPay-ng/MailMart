@@ -92,8 +92,8 @@ test("first purchase holds paired bonuses but pays unrelated affiliate; release 
   const app = await createApp(seed({ "orders/one": order(), "referrals/buyer": referral("buyer", "referrer", { status: "pending", firstCompletedOrderId: "one" }) }));
   const refs = await app.load("js/referrals.js"), rewards = await app.load("js/referral-rewards.js");
   const result = await refs.settleOrderRewards("one", admin);
-  assert.equal(result.total, 150); assert.equal(result.held.length, 2);
-  assert.equal(app.data("users/affiliate").balance, 200); assert.equal(app.data("users/buyer").balance, 5000);
+  assert.equal(result.total, 50); assert.equal(result.held.length, 2);
+  assert.equal(app.data("users/affiliate").balance, 100); assert.equal(app.data("users/buyer").balance, 5000);
   await review(rewards);
   app.failOn("transactions/purchase_welcome_buyer");
   const before = app.all();

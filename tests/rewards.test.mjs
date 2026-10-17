@@ -118,16 +118,16 @@ test("delivery records the first purchase under concurrency without moving funds
   assert.equal(Object.keys(app.all()).filter((key) => key.startsWith("transactions/")).length, 0);
 });
 
-test("completed purchase pays ₦500 to referrer, ₦200 to buyer and 15% of discounted goods to affiliate", async () => {
+test("completed purchase pays ₦500 to referrer, ₦200 to buyer and the 5% default goods commission to affiliate", async () => {
   const app = await createApp(seed());
   const refs = await app.load("js/referrals.js");
   const result = await refs.settleOrderRewards("one", admin);
-  assert.equal(result.total, 850);
+  assert.equal(result.total, 750);
   assert.equal(app.data("users/referrer").balance, 600);
   assert.equal(app.data("users/buyer").balance, 5200);
-  assert.equal(app.data("users/affiliate").balance, 200);
+  assert.equal(app.data("users/affiliate").balance, 100);
   assert.equal(app.data("users/seller").balance, 200);
-  assert.equal(app.data("transactions/affiliate_one").amount, 150); // NOT 15% of 1350
+  assert.equal(app.data("transactions/affiliate_one").amount, 50); // NOT 5% of 1350
   assert.equal(app.data("transactions/purchase_referral_buyer").balanceAfter, 600);
   assert.equal(app.data("referrals/buyer").purchaseOrderId, "one");
   await assert.rejects(refs.settleOrderRewards("one", admin), /already been reviewed/);
@@ -137,20 +137,20 @@ test("referrer may also be affiliate: accumulate both credits and preserve runni
   const app = await createApp(seed({ "orders/one": order("one", { affiliateUid: "referrer", affiliateCode: "MM-referrer" }) }));
   const refs = await app.load("js/referrals.js");
   await refs.settleOrderRewards("one", admin);
-  assert.equal(app.data("users/referrer").balance, 750);
+  assert.equal(app.data("users/referrer").balance, 650);
   assert.equal(app.data("transactions/purchase_referral_buyer").balanceAfter, 600);
-  assert.equal(app.data("transactions/affiliate_one").balanceAfter, 750);
+  assert.equal(app.data("transactions/affiliate_one").balanceAfter, 650);
 });
 
 test("reviewing a later order first cannot consume first-purchase bonus; repeat purchases only earn commission", async () => {
   const app = await createApp(seed({ "orders/two": order("two") }));
   const refs = await app.load("js/referrals.js");
-  assert.equal((await refs.settleOrderRewards("two", admin)).total, 150);
+  assert.equal((await refs.settleOrderRewards("two", admin)).total, 50);
   assert.equal(app.data("referrals/buyer").purchaseOrderId, null);
-  assert.equal((await refs.settleOrderRewards("one", admin)).total, 850);
+  assert.equal((await refs.settleOrderRewards("one", admin)).total, 750);
   assert.equal(app.data("users/referrer").balance, 600);
   assert.equal(app.data("users/buyer").balance, 5200);
-  assert.equal(app.data("users/affiliate").balance, 350);
+  assert.equal(app.data("users/affiliate").balance, 150);
 });
 
 test("concurrent reward release pays only once and conflicts are retried", async () => {
@@ -159,7 +159,7 @@ test("concurrent reward release pays only once and conflicts are retried", async
   const attempts = await Promise.allSettled([refs.settleOrderRewards("one", admin), refs.settleOrderRewards("one", admin)]);
   assert.equal(attempts.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(app.data("users/referrer").balance, 600);
-  assert.equal(app.data("users/affiliate").balance, 200);
+  assert.equal(app.data("users/affiliate").balance, 100);
   assert.ok(app.stats.retries >= 1);
 });
 

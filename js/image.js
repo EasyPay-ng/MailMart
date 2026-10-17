@@ -17,19 +17,21 @@ export async function fileToBase64(file, options = {}) {
   const {
     maxEdge = DEFAULT_MAX_EDGE,
     quality = DEFAULT_QUALITY,
-    mimeType = "image/jpeg"
+    mimeType = "image/jpeg",
+    maxBase64Chars = MAX_BASE64_CHARS
   } = options;
 
   assertImage(file);
-  const blob = await downscale(file, maxEdge, quality, mimeType);
-  const dataUrl = await blobToDataUrl(blob);
-
-  if (dataUrl.length > MAX_BASE64_CHARS) {
-    throw new Error(
-      "That image is still too large after compressing. Try a smaller picture."
-    );
+  let edge = maxEdge;
+  let compression = quality;
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const blob = await downscale(file, edge, compression, mimeType);
+    const dataUrl = await blobToDataUrl(blob);
+    if (dataUrl.length <= maxBase64Chars) return dataUrl;
+    edge = Math.max(240, Math.round(edge * 0.82));
+    compression = Math.max(0.38, compression - 0.07);
   }
-  return dataUrl;
+  throw new Error("That image is still too large after compressing. Try a smaller or clearer image.");
 }
 
 function assertImage(file) {

@@ -46,6 +46,15 @@
 .track .step.done .dot{background:#69edb8}
 .track .step.now{color:#ffd479}
 .track .step.now .dot{background:#ffd479;box-shadow:0 0 0 3px rgba(255,212,121,.18)}
+.chat-log{min-height:110px;max-height:48vh;overflow:auto;display:flex;flex-direction:column;gap:9px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(0,0,0,.16)}
+.chat-bubble{max-width:86%;padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.07);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.chat-bubble.mine{align-self:flex-end;background:rgba(8,124,255,.18);border:1px solid rgba(8,124,255,.25)}
+.chat-bubble small{display:block;color:#8ba3bd;font-size:9px;margin-top:4px}
+.chat-form{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.chat-form textarea{flex:1;min-width:0;resize:vertical}
+.signature-pad{display:block;width:100%;height:150px;border:1px dashed rgba(255,255,255,.3);border-radius:12px;background:#fff;touch-action:none;cursor:crosshair}
+.proof-view{display:block;width:100%;max-height:330px;object-fit:contain;border-radius:12px;margin:12px 0}
+.proof-signature-view{display:block;max-width:100%;height:100px;object-fit:contain;background:#fff;border-radius:10px;margin:10px 0;padding:8px}
+@media(max-width:560px){.modal{padding:10px}.modal-card{padding:16px}.chat-form{align-items:stretch}.chat-form button{align-self:flex-end}}
 </style>
 </head>
 
@@ -85,18 +94,59 @@
     <div class="panel" id="panel-sales">
         <div class="card">
             <h3>My sales</h3>
-            <p class="hint">Orders buyers have placed with you. Only ship when the listing’s payment and delivery terms allow it. The shipping action stays unavailable for full-payment-before-delivery plans until all 12 payments are paid.</p>
+            <p class="hint">Orders buyers have placed with you. For installment orders, the shipping action stays unavailable until every seller-agreed weekly or monthly payment is paid.</p>
             <div id="sellList"></div>
         </div>
     </div>
 
 </div>
 
+<div class="modal" id="chatModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+        <div class="modal-head"><div><h2 id="chatTitle">Order chat</h2><div class="hint">Messages stay with this order and are visible only to its buyer, seller and MailMart admin.</div></div><button class="modal-close" id="chatClose" type="button" aria-label="Close chat">×</button></div>
+        <div class="chat-log" id="chatLog" aria-live="polite"></div>
+        <form id="chatForm" class="chat-form"><textarea id="chatInput" maxlength="1000" rows="2" placeholder="Write a message about this order…" required></textarea><button class="btn small good" type="submit">Send</button></form>
+        <div id="chatMsg" role="status" aria-live="polite"></div>
+    </section>
+</div>
+
+<div class="modal" id="cancellationModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cancellationTitle">
+        <div class="modal-head"><div><h2 id="cancellationTitle">Cancel paid order</h2><div class="hint" id="cancellationSummary"></div></div><button class="modal-close" id="cancellationClose" type="button" aria-label="Close cancellation options">×</button></div>
+        <p class="hint">Choose how the amount you have paid should be handled. The request is reviewed by MailMart before any wallet balance changes.</p>
+        <div class="acts">
+            <button class="btn good" id="cancelAsCredit" type="button">Use all paid amount as wallet credit</button>
+            <button class="btn ghost" id="cancelAsRefund" type="button">Request wallet refund (20% fee)</button>
+        </div>
+        <div id="cancellationQuote" class="hint" role="status" aria-live="polite"></div>
+        <div id="cancellationMsg" role="status" aria-live="polite"></div>
+    </section>
+</div>
+
+<div class="modal" id="deliveryModal" aria-hidden="true">
+    <section class="modal-card delivery-card" role="dialog" aria-modal="true" aria-labelledby="deliveryTitle">
+        <div class="modal-head"><div><h2 id="deliveryTitle">Delivery proof</h2><div class="hint" id="deliveryHint">Upload a photo and capture the recipient’s signature.</div></div><button class="modal-close" id="deliveryClose" type="button" aria-label="Close delivery proof">×</button></div>
+        <form id="deliveryForm">
+            <div class="field" id="proofPhotoField"><label for="proofPhoto">Delivery photo</label><input type="file" id="proofPhoto" accept="image/*" capture="environment"><div class="hint">The photo is compressed before secure order storage.</div></div>
+            <div class="field" id="recipientField"><label for="recipientName">Recipient’s full name</label><input id="recipientName" maxlength="120" required placeholder="Name of person receiving the item"></div>
+            <div class="field" id="signatureField"><label>Recipient signature</label><canvas id="signatureCanvas" class="signature-pad" width="640" height="220" aria-label="Draw the recipient’s signature"></canvas><div class="row-end"><button class="btn small ghost" id="clearSignature" type="button">Clear signature</button></div></div>
+            <div class="field" id="proofNoteField"><label for="proofNote">Optional delivery note</label><textarea id="proofNote" maxlength="500" rows="2" placeholder="Optional notes for the buyer"></textarea></div>
+            <img id="proofPhotoView" class="proof-view" alt="Delivery photo" hidden>
+            <img id="proofSignatureView" class="proof-signature-view" alt="Recipient signature" hidden>
+            <div id="deliveryMsg" role="status" aria-live="polite"></div>
+            <div class="row-end"><button class="btn ghost" id="deliveryCancel" type="button">Close</button><button class="btn good" id="deliverySubmit" type="submit">Save proof and mark shipped</button></div>
+        </form>
+    </section>
+</div>
+
 <script type="module">
 
 import { auth, onAuthStateChanged, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
 import { formatNaira, formatDate } from "./js/wallet.js";
-import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder, requestInstallmentPayment } from "./js/marketplace.js";
+import { fileToBase64 } from "./js/image.js";
+import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder, requestInstallmentPayment,
+    requestOrderCancellation, cancellationQuote, watchMyCancellationRequests,
+    watchOrderMessages, sendOrderMessage, getOrderDeliveryProof, saveOrderDeliveryProof } from "./js/marketplace.js";
 
 import { installmentSchedule, mayShip, isFullyPaid } from "./js/installments.js";
 
@@ -110,6 +160,13 @@ const FLOW = ["pending_payment", "paid", "shipped", "completed"];
 let currentUser = null;
 let buyerRows = [];
 let sellerRows = [];
+let cancellationRows = [];
+let activeCancellationOrder = null;
+let activeChatOrder = null;
+let stopChat = null;
+let activeDeliveryOrder = null;
+let viewingProof = false;
+let signatureDrawn = false;
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
@@ -133,8 +190,156 @@ function start() {
         renderList($("sellList"), rows, "seller");
     }, (err) => listError($("sellList"), err));
 
+    watchMyCancellationRequests((rows) => {
+        cancellationRows = rows;
+        renderList($("buyList"), buyerRows, "buyer");
+    }, (err) => console.error("Cancellation requests:", err));
+
+    bindModals();
     $("loadingScreen").style.display = "none";
     $("app").style.display = "block";
+}
+
+function bindModals() {
+    $("chatClose").addEventListener("click", closeChat);
+    $("cancellationClose").addEventListener("click", closeCancellation);
+    $("cancellationModal").addEventListener("click", (event) => { if (event.target === $("cancellationModal")) closeCancellation(); });
+    $("cancelAsCredit").addEventListener("click", () => submitCancellation("wallet_credit"));
+    $("cancelAsRefund").addEventListener("click", () => submitCancellation("wallet_refund"));
+    $("chatModal").addEventListener("click", (event) => { if (event.target === $("chatModal")) closeChat(); });
+    $("chatForm").addEventListener("submit", sendChatMessage);
+    $("deliveryClose").addEventListener("click", closeDelivery);
+    $("deliveryCancel").addEventListener("click", closeDelivery);
+    $("deliveryModal").addEventListener("click", (event) => { if (event.target === $("deliveryModal")) closeDelivery(); });
+    $("deliveryForm").addEventListener("submit", submitDeliveryProof);
+    $("clearSignature").addEventListener("click", clearSignature);
+    const canvas = $("signatureCanvas");
+    canvas.addEventListener("pointerdown", (event) => {
+        event.preventDefault(); canvas.setPointerCapture(event.pointerId);
+        const point = signaturePoint(event); const context = canvas.getContext("2d");
+        context.beginPath(); context.moveTo(point.x, point.y); signatureDrawing = true;
+    });
+    canvas.addEventListener("pointermove", (event) => {
+        if (!signatureDrawing) return;
+        event.preventDefault(); const point = signaturePoint(event); const context = canvas.getContext("2d");
+        context.lineTo(point.x, point.y); context.stroke(); signatureDrawn = true;
+    });
+    ["pointerup", "pointercancel", "pointerleave"].forEach((name) => canvas.addEventListener(name, () => { signatureDrawing = false; }));
+    $("signatureCanvas").getContext("2d").strokeStyle = "#10243d";
+    $("signatureCanvas").getContext("2d").lineWidth = 3;
+    $("signatureCanvas").getContext("2d").lineCap = "round";
+}
+let signatureDrawing = false;
+function openCancellation(order) {
+    activeCancellationOrder = order;
+    const paid = Number(order.totalPaid || 0);
+    const credit = cancellationQuote(order, "wallet_credit");
+    const refund = cancellationQuote(order, "wallet_refund");
+    $("cancellationTitle").textContent = `Cancel paid order · ${order.listingTitle || order.id}`;
+    $("cancellationSummary").textContent = `Paid to date: ${formatNaira(paid)}. This request applies only before dispatch.`;
+    $("cancellationQuote").textContent = `Wallet credit: ${formatNaira(credit.amount)} with no fee. Wallet refund: ${formatNaira(refund.amount)} after a ${formatNaira(refund.fee)} fee (20% of the full order price, capped at the amount paid).`;
+    $("cancellationMsg").textContent = "";
+    $("cancelAsCredit").disabled = false; $("cancelAsRefund").disabled = false;
+    $("cancellationModal").classList.add("open"); $("cancellationModal").setAttribute("aria-hidden", "false");
+}
+function closeCancellation() {
+    $("cancellationModal").classList.remove("open"); $("cancellationModal").setAttribute("aria-hidden", "true");
+    activeCancellationOrder = null;
+}
+async function submitCancellation(choice) {
+    if (!activeCancellationOrder) return;
+    $("cancelAsCredit").disabled = true; $("cancelAsRefund").disabled = true;
+    $("cancellationMsg").textContent = "Submitting cancellation request…";
+    try {
+        await requestOrderCancellation(activeCancellationOrder.id, choice);
+        $("cancellationMsg").textContent = "Request submitted. MailMart will review it before crediting your wallet.";
+        setTimeout(closeCancellation, 900);
+    } catch (error) {
+        console.error(error);
+        $("cancellationMsg").innerHTML = `<span class="bad">${esc(error.code ? firestoreErrorSummary(error, "the cancellation request") : error.message)}</span>`;
+        $("cancelAsCredit").disabled = false; $("cancelAsRefund").disabled = false;
+    }
+}
+function signaturePoint(event) {
+    const rect = $("signatureCanvas").getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * $("signatureCanvas").width / rect.width,
+        y: (event.clientY - rect.top) * $("signatureCanvas").height / rect.height };
+}
+function clearSignature() {
+    const canvas = $("signatureCanvas"); const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height); context.fillStyle = "#fff"; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.strokeStyle = "#10243d"; context.lineWidth = 3; context.lineCap = "round"; signatureDrawn = false;
+}
+function closeChat() {
+    if (stopChat) stopChat(); stopChat = null; activeChatOrder = null;
+    $("chatModal").classList.remove("open"); $("chatModal").setAttribute("aria-hidden", "true");
+}
+function openChat(order) {
+    if (stopChat) stopChat(); activeChatOrder = order;
+    $("chatTitle").textContent = `Order chat · ${order.listingTitle || order.id}`;
+    $("chatLog").innerHTML = '<div class="hint">Loading messages…</div>'; $("chatMsg").textContent = "";
+    $("chatModal").classList.add("open"); $("chatModal").setAttribute("aria-hidden", "false");
+    stopChat = watchOrderMessages(order.id, (messages) => {
+        $("chatLog").innerHTML = messages.length ? messages.map((message) => `<div class="chat-bubble${message.uid === currentUser.uid ? " mine" : ""}"><strong>${esc(message.uid === currentUser.uid ? "You" : message.email || "Order participant")}</strong><div>${esc(message.text)}</div><small>${esc(formatDate(message.createdAt))}</small></div>`).join("") : '<div class="hint">No messages yet. Keep all order questions here.</div>';
+        $("chatLog").scrollTop = $("chatLog").scrollHeight;
+    }, (error) => { $("chatLog").innerHTML = `<div class="hint">${firestoreErrorHtml(error, "the order chat")}</div>`; });
+}
+async function sendChatMessage(event) {
+    event.preventDefault();
+    if (!activeChatOrder) return;
+    const button = $("chatForm").querySelector("button[type=submit]");
+    button.disabled = true; $("chatMsg").textContent = "";
+    try { await sendOrderMessage(activeChatOrder.id, $("chatInput").value); $("chatInput").value = ""; }
+    catch (error) { $("chatMsg").innerHTML = `<div class="notice bad">${esc(error.code ? firestoreErrorSummary(error, "the order chat") : error.message)}</div>`; }
+    finally { button.disabled = false; }
+}
+function closeDelivery() {
+    $("deliveryModal").classList.remove("open"); $("deliveryModal").setAttribute("aria-hidden", "true");
+    activeDeliveryOrder = null; viewingProof = false; signatureDrawing = false; signatureDrawn = false;
+    $("deliveryForm").reset(); clearSignature();
+}
+function openDelivery(order) {
+    activeDeliveryOrder = order; viewingProof = false; signatureDrawn = false;
+    $("deliveryTitle").textContent = "Delivery proof";
+    $("deliveryHint").textContent = "Upload a clear photo and capture the recipient’s signature.";
+    ["proofPhotoField", "recipientField", "signatureField", "proofNoteField"].forEach((id) => $(id).hidden = false);
+    $("proofPhotoView").hidden = true; $("proofSignatureView").hidden = true;
+    $("deliverySubmit").hidden = false; $("deliverySubmit").textContent = "Save proof and mark shipped";
+    $("deliveryMsg").textContent = ""; $("recipientName").value = order.address?.name || ""; $("proofNote").value = "";
+    $("proofPhoto").value = ""; clearSignature();
+    $("deliveryModal").classList.add("open"); $("deliveryModal").setAttribute("aria-hidden", "false");
+}
+async function showDeliveryProof(order) {
+    try {
+        const proof = await getOrderDeliveryProof(order.id);
+        if (!proof) throw new Error("Delivery proof has not been uploaded yet.");
+        activeDeliveryOrder = order; viewingProof = true;
+        $("deliveryTitle").textContent = "Delivery proof";
+        $("deliveryHint").textContent = `Received by ${proof.recipientName}${proof.note ? " · " + proof.note : ""}`;
+        ["proofPhotoField", "recipientField", "signatureField", "proofNoteField"].forEach((id) => $(id).hidden = true);
+        $("proofPhotoView").src = proof.photo; $("proofPhotoView").hidden = false;
+        $("proofSignatureView").src = proof.signature; $("proofSignatureView").hidden = false;
+        $("deliverySubmit").hidden = true; $("deliveryMsg").textContent = "";
+        $("deliveryModal").classList.add("open"); $("deliveryModal").setAttribute("aria-hidden", "false");
+    } catch (error) { alert(error.code ? firestoreErrorSummary(error, "the delivery proof") : error.message); }
+}
+async function submitDeliveryProof(event) {
+    event.preventDefault();
+    if (viewingProof || !activeDeliveryOrder) return;
+    const file = $("proofPhoto").files?.[0];
+    if (!file) { $("deliveryMsg").innerHTML = '<div class="notice bad">Choose a delivery photo.</div>'; return; }
+    if (!signatureDrawn) { $("deliveryMsg").innerHTML = '<div class="notice bad">Capture the recipient’s signature.</div>'; return; }
+    const button = $("deliverySubmit"); button.disabled = true; button.textContent = "Saving proof…";
+    try {
+        const photo = await fileToBase64(file, { maxEdge: 1000, quality: 0.72, maxBase64Chars: 480000 });
+        const signature = $("signatureCanvas").toDataURL("image/jpeg", 0.75);
+        await saveOrderDeliveryProof(activeDeliveryOrder.id, { photo, signature, recipientName: $("recipientName").value, note: $("proofNote").value });
+        await advanceOrder(activeDeliveryOrder, "shipped", currentUser.email);
+        closeDelivery();
+    } catch (error) {
+        console.error(error);
+        $("deliveryMsg").innerHTML = `<div class="notice bad">${esc(error.code ? firestoreErrorSummary(error, "the delivery proof") : error.message)}</div>`;
+    } finally { button.disabled = false; button.textContent = "Save proof and mark shipped"; }
 }
 
 function listError(el, err) {
@@ -160,8 +365,13 @@ function orderCard(o, side) {
     const status = o.status || "pending_payment";
     const plan = o.paymentMode === "installment";
     const schedule = plan ? installmentSchedule(o) : [];
+    const planCount = plan ? Number(o.installmentCount || o.installmentMonths || 12) : 0;
+    const planUnit = o.installmentUnit === "week" ? "week" : "month";
+    const planNoun = planUnit === "week" ? "Week" : "Month";
     const next = schedule.find((row) => !row.paid);
     const cancelled = ["cancelled", "refunded"].includes(status);
+    const cancellationRequest = cancellationRows.find((request) => request.orderId === o.id);
+    const cancellationPending = cancellationRequest?.status === "pending";
 
     const timeline = Array.isArray(o.timeline) ? o.timeline : [];
     const reached = new Set(timeline.map((t) => t.status));
@@ -184,23 +394,34 @@ function orderCard(o, side) {
     const address = o.address || {};
 
     const actions = [];
-    if (side === "seller" && mayShip(o)) {
-        actions.push(`<button class="btn small good" data-act="shipped" data-id="${esc(o.id)}">Mark as shipped</button>`);
+    if (side === "seller" && mayShip(o) && o.fulfillmentMode !== "mailmart") {
+        actions.push(`<button class="btn small good" data-act="shipped" data-id="${esc(o.id)}">Upload proof + ship</button>`);
+    }
+    if (side === "seller" && status === "paid" && o.fulfillmentMode === "mailmart") {
+        actions.push('<span class="hint">MailMart delivery team will coordinate dispatch.</span>');
     }
     if (side === "buyer" && status === "shipped") {
+        actions.push(`<button class="btn small ghost" data-act="proof" data-id="${esc(o.id)}">View delivery proof</button>`);
         actions.push(`<button class="btn small good" data-act="completed" data-id="${esc(o.id)}">Confirm delivery</button>`);
     }
+    if (!cancelled && status !== "completed") actions.push(`<button class="btn small ghost" data-act="chat" data-id="${esc(o.id)}">Order chat</button>`);
     if (side === "buyer" && status === "pending_payment" && !o.paidAt) {
         actions.push(`<button class="btn small bad" data-act="cancelled" data-id="${esc(o.id)}">Cancel order</button>`);
     }
+    if (side === "buyer" && status === "paid" && !o.deliveredAt) {
+        if (cancellationPending) actions.push('<span class="hint">Cancellation request under review · further installment payments are paused.</span>');
+        else if (cancellationRequest?.status === "rejected") actions.push(`<span class="hint">Cancellation request declined${cancellationRequest.rejectionReason ? `: ${esc(cancellationRequest.rejectionReason)}` : "."}</span><button class="btn small bad" data-act="cancel-request" data-id="${esc(o.id)}">Request again</button>`);
+        else actions.push(`<button class="btn small bad" data-act="cancel-request" data-id="${esc(o.id)}">Request cancellation</button>`);
+    }
 
-    if (side === "buyer" && plan && next && !cancelled) actions.push(`<button class="btn small" data-act="instalment" data-id="${esc(o.id)}">Request payment ${next.number}/12 · ${esc(formatNaira(next.amount))}</button>`);
-    const planHtml = plan ? `<div class="meta"><strong>12 months · 0% interest</strong> · ${esc(o.installmentsPaid || 0)}/12 paid · ${esc(formatNaira(o.totalPaid || 0))} of ${esc(formatNaira(o.total))}<br>Delivery after ${o.installmentDelivery === "after_first" ? "the first payment" : "all 12 payments"}.${status === "delivered_pending_balance" ? " Delivery confirmed; monthly balance remains due." : ""}${next ? `<br>Next: ${esc(formatNaira(next.amount))} · ${o.paidAt ? "due " + esc(formatDate(next.dueAt)) : "first payment on confirmation"}` : " · Paid in full"}</div><details class="meta"><summary>View monthly payment schedule</summary><div class="scroll"><table class="tbl"><thead><tr><th>Month</th><th>Due date</th><th>Amount</th><th>Status</th></tr></thead><tbody>${schedule.map((row) => `<tr><td>${row.number}/12</td><td>${esc(formatDate(row.dueAt))}${!o.paidAt ? " (estimated)" : ""}</td><td>${esc(formatNaira(row.amount))}</td><td>${row.paid ? "Paid" : "Unpaid"}</td></tr>`).join("")}</tbody></table></div></details>` : "";
+    if (side === "buyer" && plan && next && !cancelled && !cancellationPending) actions.push(`<button class="btn small" data-act="instalment" data-id="${esc(o.id)}">Request ${planUnit} ${next.number}/${planCount} · ${esc(formatNaira(next.amount))}</button>`);
+    const planHtml = plan ? `<div class="meta"><strong>${esc(planCount)} ${esc(planUnit)}${planCount === 1 ? "" : "s"} · 0% interest</strong> · ${esc(o.installmentsPaid || 0)}/${esc(planCount)} paid · ${esc(formatNaira(o.totalPaid || 0))} of ${esc(formatNaira(o.total))}<br>Delivery after full payment.${status === "delivered_pending_balance" ? " Delivery confirmed; balance remains due." : ""}${next ? `<br>Next: ${esc(formatNaira(next.amount))} · ${o.paidAt ? "due " + esc(formatDate(next.dueAt)) : "first payment on confirmation"}` : " · Paid in full"}</div><details class="meta"><summary>View ${esc(planUnit)}ly payment schedule</summary><div class="scroll"><table class="tbl"><thead><tr><th>${planNoun}</th><th>Due date</th><th>Amount</th><th>Status</th></tr></thead><tbody>${schedule.map((row) => `<tr><td>${row.number}/${planCount}</td><td>${esc(formatDate(row.dueAt))}${!o.paidAt ? " (estimated)" : ""}</td><td>${esc(formatNaira(row.amount))}</td><td>${row.paid ? "Paid" : "Unpaid"}</td></tr>`).join("")}</tbody></table></div></details>` : "";
     return `
         <div class="order">
             <img class="shot" src="${esc(o.listingImage || "")}" alt="">
             <div class="body">
                 <div class="title">${esc(o.listingTitle || "Item")} × ${esc(o.quantity || 1)}</div>
+                ${o.selectedVariant ? `<div class="meta">Variation: ${esc(o.selectedVariant)}</div>` : ""}
                 <div class="meta">
                     ${other}<br>
                     ${esc(formatDate(o.createdAt))}
@@ -211,9 +432,10 @@ function orderCard(o, side) {
                     Deliver to ${esc(address.name || "—")} · ${esc(address.street || "")},
                     ${esc(address.lga || "")}, ${esc(address.state || "")} · ${esc(address.phone || "")}
                 </div>
+                <div class="meta"><strong>${o.fulfillmentMode === "mailmart" ? "MailMart delivery" : "Seller delivery"}</strong> · Estimated ${esc(o.deliveryEtaDays || 3)} days</div>
                 <div class="meta">
                     Item ${esc(formatNaira(o.subtotal))} · Delivery ${esc(formatNaira(o.deliveryFee))} ·
-                    Service ${esc(formatNaira(o.serviceFee))}
+                    Buyer purchase fee ${esc(formatNaira(o.serviceFee))}
                 </div>
                 ${planHtml}
                 ${tracker}
@@ -228,14 +450,18 @@ async function onAction(target, act) {
     const row = findOrder(id);
     if (!row) return;
 
-    if (act === "cancelled" && !confirm("Cancel this order?")) return;
-    if (act === "completed" && !confirm("Confirm that you received this order? Eligible referral and affiliate rewards can then be reviewed.")) return;
+    if (act === "cancelled" && !confirm("Cancel this unpaid order?")) return;
+    if (act === "completed" && !confirm("Confirm that you received this order and reviewed its delivery proof? Eligible referral and affiliate rewards can then be reviewed.")) return;
+    if (act === "chat") { openChat(row); return; }
+    if (act === "cancel-request") { openCancellation(row); return; }
+    if (act === "proof") { await showDeliveryProof(row); return; }
+    if (act === "shipped") { openDelivery(row); return; }
 
     try {
         target.disabled = true;
         if (act === "instalment") {
             const result = await requestInstallmentPayment(row.id);
-            alert(result.pending ? "Your next monthly payment is queued for administrator confirmation. Repeated taps do not create another charge." : "Payment requested.");
+            alert(result.pending ? "Your next installment is queued for administrator confirmation. Repeated taps do not create another charge." : "Payment requested.");
         } else await advanceOrder(row, act, currentUser.email);
     } catch (err) {
         console.error(err);

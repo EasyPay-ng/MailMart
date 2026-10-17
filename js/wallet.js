@@ -88,6 +88,8 @@ export const TX_LABELS = {
   order_payout: "Marketplace sale",
   email_payout: "Email sale payout",
   order_refund: "Order refund",
+  listing_fee: "Marketplace listing fee",
+  listing_promotion: "Paid product placement",
   admin_credit: "Admin credit",
   email_referral: "Email referral reward",
   purchase_referral: "Purchase referral reward",
@@ -131,6 +133,10 @@ export function describeTransaction(tx) {
     case "order_refund":
       detail = reference || "Cancelled order";
       break;
+    case "listing_fee":
+    case "listing_promotion":
+      detail = reference || "Marketplace seller fee";
+      break;
     case "admin_credit":
       detail = reference || "Manual wallet credit";
       break;
@@ -167,6 +173,20 @@ export async function saveSettings(values) {
     { ...values, updatedAt: serverTimestamp() },
     { merge: true }
   );
+}
+
+/** Publish only the four approved support/social URLs to the public website. */
+export async function savePublicSocialLinks(values) {
+  const fields = {};
+  for (const key of ["whatsAppUrl", "telegramUrl", "youTubeUrl", "xUrl"]) {
+    const value = String(values?.[key] || "").trim();
+    if (value) {
+      const url = new URL(value);
+      if (url.protocol !== "https:" || value.length > 1000) throw new Error(`Invalid HTTPS URL for ${key}.`);
+    }
+    fields[key] = value;
+  }
+  await setDoc(doc(db, "publicSettings", "social"), { ...fields, updatedAt: serverTimestamp() });
 }
 
 /* ------------------------------------------------------------------ */

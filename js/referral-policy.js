@@ -4,7 +4,7 @@ export const REFERRAL_AMOUNTS = Object.freeze({
   emailSale: 200,
   purchaseReferrer: 500,
   purchaseBuyer: 200,
-  affiliateRate: 0.15
+  affiliateRate: 0.05
 });
 
 export const REWARD_TYPES = Object.freeze([
@@ -36,15 +36,18 @@ export function roundMoney(value) {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-export function affiliateCommissionFor(subtotal) {
+export function affiliateCommissionFor(subtotal, rate = REFERRAL_AMOUNTS.affiliateRate) {
   const amount = roundMoney(subtotal);
+  const selectedRate = Number(rate);
   if (amount < 0) throw new Error("The goods subtotal cannot be negative.");
-  return roundMoney(amount * REFERRAL_AMOUNTS.affiliateRate);
+  if (!Number.isFinite(selectedRate) || selectedRate < 0 || selectedRate > 1) throw new Error("Affiliate rate must be between 0% and 100%.");
+  return roundMoney(amount * selectedRate);
 }
 
 /** A plan, not a payment. Only an administrator can commit these credits. */
 export function orderRewardPlan(order, referral = null) {
-  if (order.status !== "completed" || !order.paidAt || (order.paymentMode === "installment" && (order.installmentsPaid !== 12 || roundMoney(order.totalPaid) !== roundMoney(order.total)))) {
+  const installmentCount = Number(order.installmentCount || order.installmentMonths || 12);
+  if (order.status !== "completed" || !order.paidAt || (order.paymentMode === "installment" && (order.installmentsPaid !== installmentCount || roundMoney(order.totalPaid) !== roundMoney(order.total)))) {
     throw new Error("Rewards require a paid order with confirmed delivery.");
   }
   if (order.buyerUid === order.sellerUid) {
@@ -74,11 +77,13 @@ export function orderRewardPlan(order, referral = null) {
     if ([order.buyerUid, order.sellerUid].includes(order.affiliateUid)) {
       throw new Error("An affiliate cannot earn commission on their own purchase or listing.");
     }
-    const amount = affiliateCommissionFor(order.subtotal);
+    const ratePercent = Number(order.affiliateRatePercent ?? REFERRAL_AMOUNTS.affiliateRate * 100);
+    if (!Number.isFinite(ratePercent) || ratePercent < 0 || ratePercent > 100) throw new Error("The affiliate rate on this order is invalid.");
+    const amount = affiliateCommissionFor(order.subtotal, ratePercent / 100);
     if (amount > 0) rewards.push({
       id: "affiliate_" + order.id,
       type: "affiliate_commission", uid: order.affiliateUid, amount,
-      reference: "15% goods commission — " + (order.listingTitle || "Marketplace order")
+      reference: `${ratePercent}% goods commission — ` + (order.listingTitle || "Marketplace order")
     });
   }
   return rewards;

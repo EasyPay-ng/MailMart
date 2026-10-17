@@ -39,10 +39,10 @@ test("monthly due dates are calendar-month anchored, including month end and lea
   assert.equal(schedule.filter((row) => row.paid).length, 2);
 });
 
-test("delivery policy and reward planning cannot treat a partially paid instalment plan as completed", () => {
+test("all installment delivery waits for full payment, including legacy after-first plans", () => {
   const partial = order("one", { paymentMode: "installment", installmentsPaid: 1, totalPaid: 112.5, status: "paid", installmentDelivery: "after_full" });
   assert.equal(mayShip(partial), false);
-  assert.equal(mayShip({ ...partial, installmentDelivery: "after_first" }), true);
+  assert.equal(mayShip({ ...partial, installmentDelivery: "after_first" }), false);
   assert.equal(isFullyPaid(partial), false);
   assert.throws(() => orderRewardPlan({ ...partial, status: "completed" }, referral()), /paid order/);
   const full = { ...partial, installmentsPaid: 12, totalPaid: 1350 };

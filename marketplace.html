@@ -2,428 +2,188 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Marketplace | MailMart</title>
-
-<meta name="theme-color" content="#020812">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Shop the MailMart Marketplace</title>
+<meta name="description" content="Shop products from trusted MailMart sellers. Find deals, compare options, save favourites and track your orders.">
+<meta name="theme-color" content="#0753b8">
 <link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
-<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
 <link rel="stylesheet" href="css/app.css">
-
-<style>
-.filters{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
-.filters input,.filters select{
-    height:44px;padding:0 14px;border-radius:12px;
-    border:1px solid rgba(255,255,255,.12);
-    background:rgba(255,255,255,.04);
-    color:#fff;font-family:inherit;font-size:13px;font-weight:600;
-}
-.filters input{flex:1;min-width:170px}
-.filters select{cursor:pointer;min-width:180px}
-.filters select option{background:#0b1524}
-.filters input:focus,.filters select:focus{outline:none;border-color:#00d5ff}
-
-.balance-pill{
-    display:flex;align-items:center;gap:8px;
-    padding:9px 15px;border-radius:11px;
-    background:rgba(105,237,184,.10);
-    border:1px solid rgba(105,237,184,.26);
-    font-size:12.5px;font-weight:800;color:#69edb8;
-}
-</style>
+<link rel="stylesheet" href="css/marketplace.css">
 </head>
+<body class="market-body">
+<div id="loadingScreen" aria-live="polite"><div class="spinner"></div><p>Opening the MailMart marketplace…</p></div>
 
-<body>
+<div id="app" hidden>
+  <header class="market-header">
+    <div class="market-header-inner">
+      <div class="market-topline">
+        <a class="market-brand" href="index.html" aria-label="MailMart home">
+          <span class="market-brand-mark" aria-hidden="true">✉</span>
+          <span class="market-brand-copy"><strong>MailMart</strong><small>Shop Smart · Sell · Earn · Grow</small></span>
+        </a>
+        <label class="market-search" for="search">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7.5"/><path d="m16.5 16.5 4 4"/></svg>
+          <input type="search" id="search" placeholder="Search products, brands and more…" autocomplete="off" aria-label="Search products">
+          <button class="search-filter" id="filterFocus" type="button" aria-label="Jump to categories">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10m-7 6h4"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="16" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/></svg>
+          </button>
+        </label>
+        <div class="market-actions" aria-label="Marketplace actions">
+          <button class="market-icon-button" id="wishlistHeader" type="button" aria-label="Open wishlist"><span aria-hidden="true">♡</span><span class="action-label">Wishlist</span><span class="count" id="favCount" hidden>0</span></button>
+          <button class="market-icon-button" id="cartHeader" type="button" aria-label="Open shopping cart"><span aria-hidden="true">🛒</span><span class="action-label">Cart</span><span class="count" id="cartCount" hidden>0</span></button>
+          <a class="market-icon-button account-link" href="dashboard.html" aria-label="Account"><span aria-hidden="true">♙</span><span class="action-label">Account</span></a>
+        </div>
+      </div>
+      <nav class="market-subnav" aria-label="Main navigation">
+        <a href="#productsSection" class="active">Shop</a><a href="#dealsSection">Hot deals</a><a href="#featuredSection">Featured</a>
+        <a href="sell.html">Sell on MailMart</a><a href="orders.html">Order history</a><a href="services.html">Digital services</a>
+      </nav>
+    </div>
+  </header>
 
-<div id="loadingScreen">
-    <div class="spinner"></div>
-    <p>Loading the marketplace…</p>
+  <main class="market-shell">
+    <div id="setupNotice" aria-live="polite"></div>
+
+    <aside class="mail-promo-strip" aria-label="MailMart email service">
+      <span class="promo-icon" aria-hidden="true">✉</span>
+      <span>Have eligible email inventory? <strong>Buy, rent or sell through MailMart’s email service.</strong></span>
+      <a href="email-sale.html">Explore email services →</a>
+    </aside>
+
+    <section class="market-hero" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">Your trusted online marketplace</span>
+        <h1 id="heroTitle">Find your next favourite thing.</h1>
+        <p>Shop from verified sellers, discover real deals and keep every order moving with clear delivery updates.</p>
+        <div class="hero-actions">
+          <a class="hero-btn" href="#productsSection">Shop now <span aria-hidden="true">→</span></a>
+          <a class="hero-btn secondary" href="sell.html">Start selling</a>
+        </div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-orbit"></div>
+        <div class="hero-device"><span>🛍️</span></div>
+        <div class="hero-float phone">📱</div><div class="hero-float watch">⌚</div><div class="hero-float tag">SMART SHOPPING<br>EVERY DAY</div>
+      </div>
+    </section>
+
+    <section class="section-block" aria-label="Quick links">
+      <div class="quick-actions">
+        <a class="quick-action" href="#productsSection"><span class="quick-icon">🛒</span><strong>Shop</strong><small>Browse all products</small></a>
+        <button class="quick-action" id="wishlistQuick" type="button"><span class="quick-icon">♥</span><strong>Wishlist</strong><small>Save for later</small></button>
+        <a class="quick-action" href="orders.html"><span class="quick-icon">◷</span><strong>History</strong><small>Track your orders</small></a>
+        <button class="quick-action" id="trendingQuick" type="button"><span class="quick-icon">↗</span><strong>Trending</strong><small>Popular right now</small></button>
+        <a class="quick-action" href="#featuredSection"><span class="quick-icon">★</span><strong>Featured</strong><small>Promoted picks</small></a>
+        <a class="quick-action" href="services.html"><span class="quick-icon">•••</span><strong>More</strong><small>Explore services</small></a>
+      </div>
+    </section>
+
+    <section class="section-block" aria-labelledby="categoryTitle">
+      <div class="section-head"><div><h2 id="categoryTitle">Shop by category</h2><p>Find what you need, faster.</p></div><a class="section-link" href="#productsSection">All products →</a></div>
+      <div class="category-row" id="categoryRow" aria-label="Product categories"></div>
+    </section>
+
+    <section class="section-block" id="dealsSection" aria-labelledby="dealsTitle">
+      <div class="section-head"><div><h2 id="dealsTitle">🔥 Hot deals</h2><p>Good finds and limited-time offers from MailMart sellers.</p></div><button class="section-link" id="viewAllDeals" type="button">View all →</button></div>
+      <div class="product-grid" id="dealGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="featured-banner" aria-label="Sell on MailMart">
+      <div class="banner-copy"><span class="banner-label">Turn products into earnings</span><h2>Have something great to sell?</h2><p>Join MailMart sellers, showcase your products and manage your orders from one place.</p></div>
+      <a class="hero-btn" href="sell.html">Start selling <span aria-hidden="true">→</span></a>
+    </section>
+
+    <section class="section-block" id="featuredSection" aria-labelledby="featuredTitle">
+      <div class="section-head"><div><h2 id="featuredTitle">⭐ Featured picks</h2><p>Promoted products currently getting extra visibility.</p></div><a class="section-link" href="#productsSection">Explore marketplace →</a></div>
+      <div class="product-grid" id="featuredGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="section-block" id="trendingSection" aria-labelledby="trendingTitle">
+      <div class="section-head"><div><h2 id="trendingTitle">↗ Trending now</h2><p>Products with recent marketplace activity.</p></div><button class="section-link" id="trendSort" type="button">See trends →</button></div>
+      <div class="product-grid" id="trendingGrid" aria-live="polite"></div>
+    </section>
+
+    <section class="section-block" id="wishlistSection" hidden aria-labelledby="wishlistTitle">
+      <div class="section-head"><div><h2 id="wishlistTitle">♡ Your wishlist</h2><p>Saved products, ready when you are.</p></div><button class="section-link" id="closeWishlist" type="button">Show all products →</button></div>
+      <div class="product-grid" id="wishlistGrid"></div>
+    </section>
+
+    <section class="section-block" id="historySection" hidden aria-labelledby="historyTitle">
+      <div class="section-head"><div><h2 id="historyTitle">◷ Recently viewed</h2><p>Pick up where you left off.</p></div><button class="section-link" id="closeHistory" type="button">Show all products →</button></div>
+      <div class="product-grid" id="historyGrid"></div>
+    </section>
+
+    <section class="section-block" id="productsSection" aria-labelledby="catalogTitle">
+      <div class="section-head"><div><h2 id="catalogTitle">Shop all products</h2><p id="catalogSubhead">Thoughtful finds from verified MailMart sellers.</p></div><a class="section-link" href="sell.html">Sell a product →</a></div>
+      <div class="catalog-toolbar"><span class="result-count" id="resultCount">Loading products…</span><select id="sortBy" aria-label="Sort products"><option value="newest">Newest first</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="popular">Most popular</option></select></div>
+      <div class="product-grid" id="productGrid" aria-live="polite"></div>
+    </section>
+
+    <footer class="section-block" style="padding:18px 0 12px;color:#72849c;font-size:10px;line-height:1.7;text-align:center">
+      Payments and delivery terms are shown before checkout. Questions? <a href="mailto:support@mailmart.com" style="color:#0867e8;font-weight:800">Email MailMart support</a> · <a href="services.html" style="color:#0867e8;font-weight:800">Help centre</a>.
+      <div class="market-social-links" id="marketSocialLinks" hidden aria-label="MailMart social links"></div>
+    </footer>
+  </main>
+
+  <nav class="market-bottom-nav" aria-label="Mobile marketplace navigation">
+    <a class="bottom-link active" href="#productsSection"><span class="bottom-icon">⌂</span>Home</a>
+    <a class="bottom-link" href="#productsSection"><span class="bottom-icon">🛒</span>Shop</a>
+    <button class="bottom-link" id="bottomWishlist" type="button"><span class="bottom-icon">♡</span>Wishlist<span class="count" id="bottomFavCount" hidden>0</span></button>
+    <a class="bottom-link" href="orders.html"><span class="bottom-icon">◷</span>History</a>
+    <a class="bottom-link" href="dashboard.html"><span class="bottom-icon">♙</span>Account</a>
+  </nav>
 </div>
 
-<div class="wrap" id="app" style="display:none">
-
-    <div class="topbar">
-        <div class="brand"><span class="dot">M</span> Marketplace</div>
-        <div class="actions">
-            <span class="balance-pill" id="balancePill">₦0.00</span>
-            <a class="back-link primary" href="sell.html">Sell</a>
-            <a class="back-link" href="orders.html">Orders</a>
-            <a class="back-link" href="referrals.html">Referrals</a>
-            <a class="back-link" href="services.html">Digital services</a>
-            <a class="back-link" href="dashboard.html">Dashboard</a>
+<div class="market-modal" id="productModal" aria-hidden="true">
+  <section class="product-dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <header class="dialog-head"><strong>MailMart product details</strong><button class="dialog-close" id="mClose" type="button" aria-label="Close product details">×</button></header>
+    <div class="dialog-content">
+      <div class="detail-gallery">
+        <div class="detail-main-image" id="mMainImage"></div>
+        <div class="gallery-thumbs" id="mThumbs" aria-label="Product photos"></div>
+      </div>
+      <div class="detail-copy">
+        <span class="detail-category" id="mCategory"></span>
+        <h2 id="mTitle">Product</h2>
+        <div class="detail-price" id="mPrice"></div>
+        <p class="detail-stock" id="mStock"></p>
+        <p class="detail-description" id="mDescription"></p>
+        <div class="detail-separator"></div>
+        <div class="detail-form-grid">
+          <div class="market-field" id="mVariantWrap" hidden><label for="mVariant">Choose a variation</label><select id="mVariant"></select></div>
+          <div class="market-field"><label for="mQty">Quantity</label><input type="number" id="mQty" min="1" step="1" value="1" inputmode="numeric"></div>
+          <div class="market-field"><label for="mState">Deliver to (state)</label><select id="mState"></select></div>
         </div>
+        <div class="detail-form-grid">
+          <div class="market-field"><label for="mName">Recipient name</label><input type="text" id="mName" placeholder="Full name"></div>
+          <div class="market-field"><label for="mPhone">Phone number</label><input type="tel" id="mPhone" placeholder="080…" autocomplete="tel"></div>
+        </div>
+        <div class="detail-form-grid">
+          <div class="market-field"><label for="mLga">Local government area</label><select id="mLga"></select></div>
+          <div class="market-field"><label for="mStreet">Street / delivery address</label><input type="text" id="mStreet" placeholder="House number and street"></div>
+        </div>
+        <div class="market-field"><label for="mPaymentMode">Payment option</label><select id="mPaymentMode"><option value="full">Pay in full · before dispatch</option><option value="installment" id="mInstallmentOption" disabled>Installments</option></select><div class="field-tip" id="mPlanTerms">Pay the full amount before dispatch.</div></div>
+        <div class="market-breakdown" id="mBreakdown"></div>
+        <div class="market-field" style="margin-top:12px"><label for="mAffiliateCode">Affiliate code (optional)</label><input type="text" id="mAffiliateCode" maxlength="131" autocomplete="off" spellcheck="false" placeholder="MM-…"><div class="field-tip">An approved affiliate earns a MailMart-funded commission. It does not change your price or the seller’s payout.</div></div>
+        <label class="market-checkbox"><input type="checkbox" id="mReviewConfirm"><span>I have reviewed the product, selected variation, quantity, delivery address and payment terms before placing the order.</span></label>
+        <div class="modal-secondary-actions"><button class="secondary-action" id="mAddCart" type="button">＋ Add to cart</button><button class="secondary-action" id="mShare" type="button">↗ Share</button></div>
+        <div class="market-message" id="mMsg" role="status" aria-live="polite"></div>
+        <button class="market-button" id="mBuy" type="button">Place order</button>
+      </div>
     </div>
-
-    <div id="setupNotice"></div>
-
-    <div class="filters">
-        <input type="search" id="search" placeholder="Search goods…">
-        <select id="categoryFilter"></select>
-    </div>
-
-    <div class="grid" id="grid"></div>
-
+  </section>
 </div>
 
-<!-- ---------------- product detail / buy ---------------- -->
-<div class="modal" id="modal">
-    <div class="modal-card">
-        <div class="modal-head">
-            <div>
-                <h2 id="mTitle">Item</h2>
-                <span class="status" id="mStatus">active</span>
-            </div>
-            <button class="modal-close" id="mClose">✕</button>
-        </div>
-
-        <img class="hero" id="mImage" alt="">
-
-        <p class="card hint" id="mDescription" style="margin-bottom:16px"></p>
-
-        <div class="two">
-            <div class="field">
-                <label for="mQty">Quantity</label>
-                <input type="number" id="mQty" min="1" step="1" value="1" inputmode="numeric">
-            </div>
-            <div class="field">
-                <label for="mState">Deliver to (state)</label>
-                <select id="mState"></select>
-            </div>
-        </div>
-
-        <div class="field">
-            <label for="mName">Recipient name</label>
-            <input type="text" id="mName" placeholder="Who should receive it?">
-        </div>
-
-        <div class="two">
-            <div class="field">
-                <label for="mLga">Local government area</label>
-                <select id="mLga"></select>
-            </div>
-            <div class="field">
-                <label for="mPhone">Phone number</label>
-                <input type="tel" id="mPhone" placeholder="0803 000 0000">
-            </div>
-        </div>
-
-        <div class="field">
-            <label for="mStreet">Street address</label>
-            <input type="text" id="mStreet" placeholder="House number and street">
-        </div>
-
-        <div class="field"><label for="mPaymentMode">Payment option</label><select id="mPaymentMode"><option value="full">Pay in full</option><option value="installment" id="mInstallmentOption" disabled>12 monthly payments · 0% interest</option></select><div class="tip" id="mPlanTerms">Pay the complete order amount.</div></div>
-        <div class="breakdown" id="mBreakdown"></div>
-
-        <div class="field">
-            <label for="mAffiliateCode">Affiliate code (optional)</label>
-            <input type="text" id="mAffiliateCode" maxlength="131" autocomplete="off" spellcheck="false" placeholder="MM-… (case-sensitive)">
-            <div class="tip">A sales link fills this in for you. An approved affiliate earns 15% of goods only after delivery; your checkout price is unchanged. Clear the field to remove attribution.</div>
-        </div>
-
-        <div id="mMsg" role="status" aria-live="polite"></div>
-
-        <button class="btn block" id="mBuy">Place order</button>
-        <p class="field tip" style="text-align:center;margin-top:10px">
-            Your wallet is debited once an administrator confirms the payment.
-        </p>
-    </div>
-</div>
-
-<script type="module">
-
-import { auth, db, doc, onSnapshot, onAuthStateChanged, signOut, firestoreErrorHtml, firestoreErrorSummary } from "./js/firebase.js";
-import { installmentQuote } from "./js/installments.js";
-import { STATES, lgasFor } from "./js/data/nigeria.js";
-import { loadSettings, formatNaira } from "./js/wallet.js";
-import { captureAffiliateVisit, rememberAffiliateCode, rememberMarketplaceReturn } from "./js/referrals.js";
-import {
-    CATEGORIES,
-    watchActiveListings,
-    placeOrder,
-    quoteFor,
-    hasDiscount,
-    unitPriceOf,
-    deliveryFeeFor
-} from "./js/marketplace.js";
-
-const $ = (id) => document.getElementById(id);
-const esc = (v) =>
-    String(v ?? "").replace(/[&<>"']/g, (c) =>
-        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-let currentUser = null;
-let balance = 0;
-let settings = null;
-let listings = [];
-let active = null;
-let affiliateCode = captureAffiliateVisit();
-const requestedItem = new URL(location.href).searchParams.get("item");
-let requestedItemHandled = false;
-
-/* ------------------------------------------------------------------ */
-/* guard                                                               */
-/* ------------------------------------------------------------------ */
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        rememberMarketplaceReturn();
-        window.location.href = "login.html";
-        return;
-    }
-    currentUser = user;
-    start(user);
-});
-
-async function start(user) {
-    onSnapshot(doc(db, "users", user.uid), (snap) => {
-        balance = Number((snap.exists() ? snap.data() : {}).balance || 0);
-        $("balancePill").textContent = formatNaira(balance);
-    });
-
-    settings = await loadSettings().catch(() => null);
-    if (!settings) {
-        $("setupNotice").innerHTML =
-            '<div class="notice warn">An administrator has not configured the ' +
-            "platform service fee yet. Orders will be quoted with a ₦0 service fee " +
-            "until they save the settings.</div>";
-    }
-
-    buildFilters();
-    watchActiveListings((rows) => {
-        listings = rows;
-        render();
-        if (requestedItem && !requestedItemHandled) {
-            requestedItemHandled = true;
-            const linked = listings.find((l) => l.id === requestedItem);
-            if (linked) openListing(linked);
-            else $("setupNotice").insertAdjacentHTML("beforeend", '<div class="notice info">The linked item is no longer available. You can still browse other goods below.</div>');
-        }
-    }, (err) => {
-        console.error("Could not load listings:", err);
-        $("grid").innerHTML = `<div class="empty">${firestoreErrorHtml(err, "the listings")}</div>`;
-    });
-
-    $("loadingScreen").style.display = "none";
-    $("app").style.display = "block";
-}
-
-/* ------------------------------------------------------------------ */
-/* filters                                                             */
-/* ------------------------------------------------------------------ */
-function buildFilters() {
-    $("categoryFilter").innerHTML =
-        '<option value="">All categories</option>' +
-        CATEGORIES.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
-
-    $("mState").innerHTML =
-        '<option value="">Select your state</option>' +
-        STATES.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
-}
-
-$("search").addEventListener("input", render);
-$("categoryFilter").addEventListener("change", render);
-
-function visibleListings() {
-    const term = $("search").value.trim().toLowerCase();
-    const category = $("categoryFilter").value;
-    return listings.filter((l) => {
-        if (category && l.category !== category) return false;
-        if (!term) return true;
-        return (l.title || "").toLowerCase().includes(term) ||
-               (l.description || "").toLowerCase().includes(term);
-    });
-}
-
-/* ------------------------------------------------------------------ */
-/* grid                                                                */
-/* ------------------------------------------------------------------ */
-function render() {
-    const rows = visibleListings();
-
-    if (!rows.length) {
-        $("grid").innerHTML =
-            '<div class="empty"><div class="big">Nothing here yet</div>' +
-            "<p>Listed goods will appear here as soon as a verified seller posts them.</p></div>";
-        return;
-    }
-
-    $("grid").innerHTML = rows
-        .map((l) => {
-            const discounted = hasDiscount(l);
-            const unit = unitPriceOf(l);
-            const old = Number(l.price || 0);
-            const saving = discounted
-                ? Math.round(((old - unit) / old) * 100)
-                : 0;
-
-            const priceBlock = discounted
-                ? `<div class="prices">
-                       <span class="price-new">${esc(formatNaira(unit))}</span>
-                       <span class="price-old">${esc(formatNaira(old))}</span>
-                       <span class="save">−${saving}%</span>
-                   </div>`
-                : `<div class="prices"><span class="price-plain">${esc(formatNaira(unit))}</span></div>`;
-
-            return `
-                <div class="item" data-id="${esc(l.id)}">
-                    <img class="shot" src="${esc(l.image || "")}" alt="${esc(l.title || "")}">
-                    <div class="body">
-                        <span class="chip">${esc(l.category || "Other")}</span>
-                        <div class="name">${esc(l.title || "")}</div>
-                        ${priceBlock}
-                        <div class="field tip" style="margin:0">
-                            Delivery from ${esc(formatNaira(deliveryFeeFor(l, "")))}
-                        </div>
-                    </div>
-                </div>`;
-        })
-        .join("");
-}
-
-$("grid").addEventListener("click", (e) => {
-    const card = e.target.closest(".item");
-    if (!card) return;
-    const listing = listings.find((l) => l.id === card.dataset.id);
-    if (listing) openListing(listing);
-});
-
-/* ------------------------------------------------------------------ */
-/* detail + buy                                                        */
-/* ------------------------------------------------------------------ */
-function openListing(listing) {
-    active = listing;
-    $("mTitle").textContent = listing.title || "Item";
-    $("mStatus").textContent = listing.status || "active";
-    $("mStatus").className = `status ${esc(listing.status || "active")}`;
-    $("mImage").src = listing.image || "";
-    $("mDescription").textContent = listing.description || "";
-
-    $("mPaymentMode").value = "full";
-    $("mInstallmentOption").disabled = listing.installmentEnabled !== true;
-    $("mQty").value = "1";
-    $("mAffiliateCode").value = affiliateCode;
-    $("mMsg").innerHTML = "";
-    if (currentUser) {
-        $("mName").value = "";
-        $("mPhone").value = "";
-        $("mStreet").value = "";
-    }
-    updateQuote();
-    $("modal").classList.add("open");
-}
-
-function closeModal() {
-    $("modal").classList.remove("open");
-    active = null;
-}
-
-$("mClose").addEventListener("click", closeModal);
-$("modal").addEventListener("click", (e) => {
-    if (e.target === $("modal")) closeModal();
-});
-
-$("mState").addEventListener("change", () => {
-    const state = $("mState").value;
-    const lgas = lgasFor(state);
-    $("mLga").innerHTML =
-        '<option value="">Select an area</option>' +
-        lgas.map((l) => `<option value="${esc(l)}">${esc(l)}</option>`).join("");
-    updateQuote();
-});
-
-["mQty", "mState", "mPaymentMode"].forEach((id) => $(id).addEventListener("input", updateQuote));
-
-function updateQuote() {
-    if (!active) return;
-    const qty = Math.max(1, Math.floor(Number($("mQty").value) || 1));
-    const state = $("mState").value;
-    const q = quoteFor(active, qty, state, settings);
-    const plan = $("mPaymentMode").value === "installment" ? installmentQuote(q.total) : null;
-    $("mPlanTerms").textContent = plan ? `12 monthly payments, 0% interest, total ${formatNaira(plan.total)}. First 11: ${formatNaira(plan.first)} each; final ${formatNaira(plan.final)} (rounding only). Delivery after ${active.installmentDelivery === "after_first" ? "first payment" : "all 12 payments"}. No automatic debit; request each month in Orders.` : (active.installmentEnabled ? "Pay the complete amount, or choose the 12-month option. No interest." : "Pay in full. Admin has not enabled instalments for this item.");
-
-    $("mBreakdown").innerHTML = `
-        <div class="brow">
-            <span>Item · ${esc(active.title || "")} × ${q.quantity}</span>
-            <span>${esc(formatNaira(q.subtotal))}</span>
-        </div>
-        <div class="brow">
-            <span>Delivery${state ? ` to ${esc(state)}` : ""}</span>
-            <span>${esc(formatNaira(q.deliveryFee))}</span>
-        </div>
-        <div class="brow">
-            <span>Service fee</span>
-            <span>${esc(formatNaira(q.serviceFee))}</span>
-        </div>
-        <div class="brow total">
-            <span>Total · ${plan ? "12 months, 0% interest" : "full payment"}</span>
-            <span>${esc(formatNaira(q.total))}</span>
-        </div>${plan ? `<div class="brow"><span>First payment due now</span><strong>${esc(formatNaira(plan.first))}</strong></div>` : ""}`;
-}
-
-$("mBuy").addEventListener("click", async () => {
-    const btn = $("mBuy");
-    const state = $("mState").value;
-    const lga = $("mLga").value;
-    const name = $("mName").value.trim();
-    const phone = $("mPhone").value.trim();
-    const street = $("mStreet").value.trim();
-    const qty = Math.max(1, Math.floor(Number($("mQty").value) || 1));
-
-    if (!name) return fail("Enter the recipient's name.");
-    if (!state) return fail("Choose the state to deliver to.");
-    if (!lga) return fail("Choose the local government area.");
-    if (!street) return fail("Enter the street address.");
-    if (!phone) return fail("Enter a phone number for the delivery.");
-
-    if (!active) return;
-    const quote = quoteFor(active, qty, state, settings);
-    const dueNow = $("mPaymentMode").value === "installment" ? installmentQuote(quote.total).first : quote.total;
-    if (dueNow > balance) {
-        return fail(
-            `This payment is ${formatNaira(dueNow)} but your balance is ` +
-            `${formatNaira(balance)}. Top up your wallet first.`
-        );
-    }
-
-    btn.disabled = true;
-    btn.textContent = "Placing order…";
-
-    try {
-        await placeOrder({
-            listing: active,
-            quantity: qty,
-            address: { name, phone, state, lga, street },
-            settings,
-            affiliateCode: $("mAffiliateCode").value.trim(),
-            paymentMode: $("mPaymentMode").value
-        });
-        affiliateCode = $("mAffiliateCode").value.trim();
-        rememberAffiliateCode(affiliateCode);
-        $("mMsg").innerHTML =
-            '<div class="notice good">Order placed. The seller has been notified by ' +
-            "email, and your payment is queued for confirmation.</div>";
-        setTimeout(closeModal, 1400);
-    } catch (err) {
-        console.error(err);
-        fail(err.code ? firestoreErrorSummary(err, "your order") : err.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = "Place order";
-    }
-});
-
-function fail(message) {
-    $("mMsg").innerHTML = `<div class="notice bad">${esc(message)}</div>`;
-}
-
-</script>
-
+<aside class="cart-drawer" id="cartDrawer" aria-hidden="true">
+  <section class="cart-panel" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+    <header class="cart-panel-head"><h2 id="cartTitle">Your cart</h2><button class="dialog-close" id="cartClose" type="button" aria-label="Close cart">×</button></header>
+    <div id="cartList"></div>
+  </section>
+</aside>
+<div class="market-toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="js/marketplace-page.js"></script>
 </body>
 </html>
