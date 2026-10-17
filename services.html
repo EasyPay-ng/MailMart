@@ -1,35 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Social & Inbox Services | MailMart</title><meta name="theme-color" content="#020812">
-<link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/referrals.css"><link rel="stylesheet" href="css/services.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social & Email Services | MailMart</title>
+<meta name="theme-color" content="#edf5ff">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/referrals.css">
+<link rel="stylesheet" href="css/services.css">
+<link rel="stylesheet" href="css/light-theme.css">
 </head>
-<body>
+<body class="mm-light-theme">
 <div id="loadingScreen"><div class="spinner"></div><p>Loading services…</p></div>
 <main class="wrap" id="app" hidden>
-  <header class="topbar"><a class="brand" href="dashboard.html"><span class="dot">M</span> MailMart / Services</a><nav class="actions" aria-label="Quick links"><a class="back-link" href="marketplace.html">Goods</a><a class="back-link" href="referrals.html">Referrals</a><a class="back-link" href="wallet.html">Wallet</a><a class="back-link" href="dashboard.html">Dashboard</a><a class="back-link" href="admin-services.html" id="adminLink" hidden>Service Admin</a></nav></header>
-  <section class="reward-hero"><div class="eyebrow">Reviewed. Authorized. Clearly priced.</div><h1>Digital services.<br>A human in the loop.</h1><p>Admin-priced social accounts and assets, plus manually supplied Gmail inboxes for authorized codes. No passwords or session cookies are collected here.</p></section>
+  <header class="topbar">
+    <a class="brand" href="dashboard.html"><span class="dot">M</span> MailMart / Services</a>
+    <nav class="actions" aria-label="Quick links">
+      <a class="back-link" href="marketplace.html">Goods</a>
+      <a class="back-link" href="referrals.html">Referrals</a>
+      <a class="back-link" href="wallet.html">Wallet</a>
+      <a class="back-link" href="dashboard.html">Dashboard</a>
+      <a class="back-link" href="admin-services.html" id="adminLink" hidden>Service Admin</a>
+    </nav>
+  </header>
+
+  <section class="reward-hero">
+    <div class="eyebrow">Reviewed. Authorized. Clearly priced.</div>
+    <h1>MailMart services.<br>A human in the loop.</h1>
+    <p>Buy listed social accounts and business assets from MailMart, or request a one-time email verification code for an authorized purpose. Social transfers and email requests are reviewed and manually fulfilled.</p>
+  </section>
+
   <div class="service-balance">Available cash <strong id="walletBalance">—</strong><a href="wallet.html">Top up →</a></div>
   <div id="pageMsg" role="status" aria-live="polite"></div>
-  <div class="tabs" aria-label="Service sections"><button class="tab active" data-tab="social">Social assets</button><button class="tab" data-tab="rental">Gmail codes</button><button class="tab" data-tab="activity">My requests</button></div>
+
+  <div class="tabs" aria-label="Service sections">
+    <button class="tab active" data-tab="social" type="button">Social accounts</button>
+    <button class="tab" data-tab="rental" type="button">Email codes</button>
+    <button class="tab" data-tab="activity" type="button">My requests</button>
+  </div>
+
   <section class="panel active" id="panel-social">
-    <div class="section-heading"><h2>Buy or sell social assets</h2><p class="hint">Facebook, Instagram, X (formerly Twitter) and other authorized assets. Admin sets both prices. A request is not a completed transfer; ownership, platform terms and fulfilment must be reviewed first.</p></div>
+    <div class="section-heading">
+      <h2>Social accounts for sale</h2>
+      <p class="hint">These are customer offers from MailMart. Requests are not charged until the admin reviews availability, confirms the permitted handoff and settles the request. No passwords, session cookies or recovery secrets should be sent through the app.</p>
+    </div>
     <div class="service-grid" id="socialCatalog"><p class="hint">Loading offers…</p></div>
-    <section class="card" id="socialRequestCard" hidden><h3 id="socialRequestTitle">New request</h3><p class="hint" id="socialRequestQuote"></p>
-      <form id="socialRequestForm"><div id="ownershipFields" hidden><div class="field"><label for="socialUrl">Public HTTPS asset/profile URL</label><input id="socialUrl" type="url" maxlength="1000" placeholder="https://…" autocomplete="off"></div><div class="field"><label for="ownershipNote">Explain ownership and the permitted transfer method</label><textarea id="ownershipNote" minlength="10" maxlength="1000" placeholder="Authorization, asset type and a transfer method permitted by the platform. Never enter a password, cookie or recovery code."></textarea></div></div>
-      <label class="reward-check"><input id="socialTerms" type="checkbox" required><span>I own this asset or am an authorized buyer, and the transfer is permitted by the platform. I agree to manual review and will not send passwords, session cookies or someone else’s account credentials.</span></label>
-      <div class="row-end"><button class="btn" id="socialSubmit" type="submit">Submit for review</button><button class="btn ghost" id="socialClose" type="button">Close</button></div><div id="socialMsg" role="status" aria-live="polite"></div></form>
+    <section class="card" id="socialRequestCard" hidden>
+      <h3 id="socialRequestTitle">Request a social account</h3>
+      <p class="hint" id="socialRequestQuote"></p>
+      <form id="socialRequestForm">
+        <label class="reward-check"><input id="socialTerms" type="checkbox" required><span>I am an authorized buyer. I understand that the admin must confirm stock and a platform-permitted handoff before payment is completed. I will not request or send passwords, session cookies, recovery codes or another person’s credentials.</span></label>
+        <div class="row-end"><button class="btn" id="socialSubmit" type="submit">Request this account</button><button class="btn ghost" id="socialClose" type="button">Close</button></div>
+        <div id="socialMsg" role="status" aria-live="polite"></div>
+      </form>
     </section>
   </section>
+
   <section class="panel" id="panel-rental">
-    <div class="section-heading"><h2>One authorized inbox. One requested code.</h2><p class="hint">From ₦50 per code; each category has an admin-set price. Admin supplies an inbox they control or are authorized to provide. This is manual provisioning, not automatic Gmail account creation or direct Gmail integration.</p></div>
-    <div class="two service-columns"><section class="card"><h3>Request a Gmail code rental</h3><form id="rentalRequestForm"><div class="field"><label for="rentalCategory">What will you use it for?</label><select id="rentalCategory" required><option value="">Loading categories…</option></select></div><div class="quoted-price" id="rentalPrice">Select an available category</div><p class="hint" id="rentalDescription"></p><div class="field"><label for="rentalPurpose">Service & authorized purpose</label><textarea id="rentalPurpose" minlength="5" maxlength="500" required placeholder="For example, registration for my own authorized test account. Do not include a password, card number or OTP."></textarea></div>
-      <label class="reward-check"><input id="rentalTerms" type="checkbox" required><span>Only my own authorized registration/access or a permitted test. No other person’s login, financial/banking OTPs, spam, mass registration or restriction bypass. I understand this is a temporary inbox/code service, not permanent Gmail ownership.</span></label>
-      <button class="btn block" type="submit" id="rentalSubmit" disabled>Request one code</button><div id="rentalMsg" role="status" aria-live="polite"></div></form></section>
-      <aside class="card"><h3>How it works</h3><ol class="service-steps"><li>Choose a category and keep its full price available (minimum ₦50).</li><li>Admin reviews your use, rechecks your wallet and reserves that one-code payment before assigning an authorized inbox.</li><li>Use the assigned address only for the approved purpose. Follow progress in My requests.</li><li>Admin manually delivers the code. Reveal it privately within 10 minutes (the provider may expire it sooner). No delivered code means admin can cancel and refund the reserved amount.</li></ol><div class="notice info">No inbox login or Gmail password is provided. Do not use a temporary inbox for banking, recovery or valuable personal accounts. A mailbox is never reassigned to another customer through this service.</div></aside></div>
+    <div class="section-heading">
+      <h2>One authorized email code</h2>
+      <p class="hint">A temporary, manually fulfilled code service—not a sale of a permanent Gmail account or inbox login. Available categories and prices are set by MailMart (minimum ₦50 per code).</p>
+    </div>
+    <div class="two service-columns">
+      <section class="card">
+        <h3>Request an email verification code</h3>
+        <form id="rentalRequestForm">
+          <div class="field"><label for="rentalCategory">What will you use it for?</label><select id="rentalCategory" required><option value="">Loading categories…</option></select></div>
+          <div class="quoted-price" id="rentalPrice">Select an available category</div>
+          <p class="hint" id="rentalDescription"></p>
+          <div class="field"><label for="rentalPurpose">Service and authorized purpose</label><textarea id="rentalPurpose" minlength="5" maxlength="500" required placeholder="For example, registration for my own authorized test account. Do not include a password, card number or OTP."></textarea></div>
+          <label class="reward-check"><input id="rentalTerms" type="checkbox" required><span>This is my own authorized registration/access or a permitted test. I will not use another person’s login, request financial/banking OTPs, spam, mass-register or bypass restrictions. I understand this is a temporary code service, not permanent Gmail ownership.</span></label>
+          <button class="btn block" type="submit" id="rentalSubmit" disabled>Request one code</button>
+          <div id="rentalMsg" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+      <aside class="card">
+        <h3>How email codes work</h3>
+        <ol class="service-steps">
+          <li>Choose a category and keep its full price available (minimum ₦50).</li>
+          <li>MailMart reviews your purpose and manually assigns an authorized inbox. The quoted amount is reserved before the code is supplied.</li>
+          <li>Use the address only for the approved purpose. Follow the request in My requests.</li>
+          <li>When delivered, reveal the code privately in the app. Access expires after 10 minutes; an unfulfilled funded request can be cancelled and refunded.</li>
+        </ol>
+        <div class="notice info">No inbox login or Gmail password is provided. Do not use a temporary inbox for banking, account recovery or valuable personal accounts. Mailboxes are not transferred or recycled between customers.</div>
+      </aside>
+    </div>
   </section>
-  <section class="panel" id="panel-activity"><div class="two service-columns"><section class="card"><h3>Social requests</h3><div id="socialRequests" class="reward-list"><p class="hint">Loading requests…</p></div></section><section class="card"><h3>Gmail code rentals</h3><p class="hint">Codes are private and time-limited. Request one rental per code; each request has its own quoted price.</p><div id="rentalRequests" class="reward-list"><p class="hint">Loading rentals…</p></div></section></div></section>
+
+  <section class="panel" id="panel-activity">
+    <div class="two service-columns">
+      <section class="card"><h3>Social purchase requests</h3><div id="socialRequests" class="reward-list"><p class="hint">Loading requests…</p></div></section>
+      <section class="card"><h3>Email-code requests</h3><p class="hint">One code per request. Codes are private and time-limited; this is not a permanent mailbox sale.</p><div id="rentalRequests" class="reward-list"><p class="hint">Loading rentals…</p></div></section>
+    </div>
+  </section>
 </main>
 <script type="module" src="js/services-page.js"></script>
 </body>

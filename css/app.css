@@ -1,7 +1,6 @@
-/* MailMart shared theme.
-   Used by the marketplace, selling, orders and admin screens. The older
-   pages still carry their own inline styles; this is the template for new
-   ones, and the old ones can be migrated to it later. */
+/* MailMart shared component foundation.
+   The marketplace and legacy account/admin pages keep their existing layouts;
+   marketplace.css and light-theme.css apply the storefront palette where needed. */
 
 *{margin:0;padding:0;box-sizing:border-box}
 

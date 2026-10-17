@@ -296,9 +296,20 @@ test("real four-week plans enforce warehouse verification, dynamic amounts, stoc
   await assert.rejects(market.requestInstallmentPayment(id), /active instalment|paid in full/);
 });
 
-test("admin-priced social buy/sell requests are private, cannot forge quotes or self-settle, and pay once", async () => {
+test("admin-priced social customer purchases are private, cannot forge quotes or self-settle, and user-to-MailMart sales are denied", async () => {
   const a = await client(admin.uid); const adminServices = await a.load("js/services.js");
-  const offerId = await assertSucceeds(adminServices.saveSocialOffer({ title: "Authorized business asset", platform: "Instagram", description: "Business assets with platform-permitted transfer only.", buyPrice: 300, sellPrice: 500, stock: 1, active: true }, admin));
+  const offerId = await assertSucceeds(adminServices.saveSocialOffer({ title: "MailMart social account", platform: "Instagram", description: "Business assets with platform-permitted customer transfer only.", buyPrice: 300, sellPrice: 500, stock: 1, active: true }, admin));
+  assert.equal((await sdk.getDoc(sdk.doc(a.db, "socialOffers", offerId))).data().buyPrice, 0);
+  await seed({ "socialRequests/legacy": {
+    uid: "buyer", email: "buyer@example.com", offerId, platform: "Instagram", title: "MailMart social account",
+    side: "sell", amount: 300, accountUrl: "https://instagram.com/owned-business",
+    ownershipNote: "Previously accepted authorized business asset.", acceptedTerms: true,
+    status: "pending", createdAt: new Date(), updatedAt: new Date()
+  } });
+  await assertFails(sdk.updateDoc(sdk.doc(a.db, "socialRequests", "legacy"), {
+    status: "completed", ownershipReviewed: true, transferReference: "Legacy transfer reference",
+    reviewedBy: admin.email, reviewedAt: now(), updatedAt: now()
+  }));
   const buyer = await client("buyer"); const services = await buyer.load("js/services.js");
   const request = await assertSucceeds(services.requestSocial({ offerId, side: "buy", acceptedTerms: true }));
   await assertFails(sdk.getDoc(sdk.doc(database("outsider"), "socialRequests", request.id)));
@@ -308,9 +319,15 @@ test("admin-priced social buy/sell requests are private, cannot forge quotes or 
   assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "users/buyer"))).data().balance, 4500);
   await assertSucceeds((await a.load("js/referral-rewards.js")).releaseReferralClaim("lifetime_social_buy_" + request.id, admin));
   await assert.rejects(adminServices.completeSocialRequest({ requestId: request.id, ownershipReviewed: true, transferReference: "duplicate #123", adminUser: admin }), /no longer pending/);
-  const sale = await assertSucceeds(services.requestSocial({ offerId, side: "sell", accountUrl: "https://instagram.com/owned-business", ownershipNote: "I own and manage this business asset and its authorized transfer.", acceptedTerms: true }));
-  await assertSucceeds(adminServices.completeSocialRequest({ requestId: sale.id, ownershipReviewed: true, transferReference: "Reviewed authorized incoming transfer #234", adminUser: admin }));
-  assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "users/buyer"))).data().balance, 4800);
+  const inbound = sdk.addDoc(sdk.collection(buyer.db, "socialRequests"), {
+    uid: "buyer", email: "buyer@example.com", offerId, platform: "Instagram", title: "MailMart social account",
+    side: "sell", amount: 300, accountUrl: "https://instagram.com/owned-business",
+    ownershipNote: "I own and manage this authorized business asset.", acceptedTerms: true,
+    status: "pending", createdAt: now(), updatedAt: now()
+  });
+  await assertFails(inbound);
+  await assert.rejects(services.requestSocial({ offerId, side: "sell", acceptedTerms: true }), /customer purchases only/);
+  assert.equal((await sdk.getDoc(sdk.doc(buyer.db, "users/buyer"))).data().balance, 4500);
 });
 
 test("manual Gmail rentals reserve/finalize/refund once and codes stay private, unlistable and unreadable after expiry", async () => {

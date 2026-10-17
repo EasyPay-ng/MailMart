@@ -120,12 +120,13 @@ test("lifetime commissions follow both real spending and earnings, and wait for 
   const pending = order("one", { status: "pending_payment", paidAt: null, completedAt: null });
   const app = await createApp(seed({ "users/seller": profile("seller", 200, "referrer"),
     "referrals/seller": referral("seller", "referrer", { lifetimeRatePercent: 5 }), "orders/one": pending,
-    "transactions/payment-one": { type: "order_payment", status: "pending", amount: 1350, uid: "buyer", orderId: "one" } }));
+    "transactions/payment-one": { type: "order_payment", status: "pending", amount: 1350, uid: "buyer", orderId: "one" } }), { user: user("seller") });
   const market = await app.load("js/marketplace.js"), rewards = await app.load("js/referral-rewards.js");
   await market.settleOrderPayment(pending, admin);
   assert.equal(app.data("referralClaims/lifetime_payment-one").amount, 54);
   assert.equal(app.data("referralClaims/lifetime_order_payout_one").amount, 65);
   await assert.rejects(rewards.releaseReferralClaim("lifetime_payment-one", admin), /fulfilment/);
+  await market.saveOrderDeliveryProof("one", { photo: "data:image/jpeg;base64," + "p".repeat(300), signature: "data:image/jpeg;base64," + "s".repeat(150), recipientName: "Buyer Name", note: "Handed over" });
   await market.advanceOrder({ id: "one" }, "shipped", "seller@example.com");
   await market.advanceOrder({ id: "one" }, "completed", "buyer@example.com");
   await rewards.releaseReferralClaim("lifetime_payment-one", admin);

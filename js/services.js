@@ -60,7 +60,7 @@ export async function saveSocialOffer(values, adminUser) {
   if (!Number.isInteger(stock) || stock < 0 || stock > 100000) throw new Error("Stock must be a whole number from 0 to 100,000.");
   await setDoc(ref, {
     title: text(values.title, 120, "Offer title"), platform,
-    description: text(values.description, 1000, "Description"), buyPrice: price(values.buyPrice), sellPrice: price(values.sellPrice),
+    description: text(values.description, 1000, "Description"), buyPrice: 0, sellPrice: price(values.sellPrice),
     stock, active: values.active === true, authorizedTransfersOnly: true,
     createdAt: previous.exists() ? previous.data().createdAt : serverTimestamp(),
     updatedAt: serverTimestamp(), updatedBy: actor(adminUser)
@@ -79,35 +79,29 @@ export async function saveRentalCategory(values, adminUser) {
   return id;
 }
 
-export async function requestSocial({ offerId, side, accountUrl = "", ownershipNote = "", acceptedTerms, expectedAmount = null }) {
+export async function requestSocial({ offerId, side = "buy", acceptedTerms, expectedAmount = null }) {
   const user = await verifiedUser();
-  if (!["buy", "sell"].includes(side)) throw new Error("Choose whether you are buying or selling.");
-  if (acceptedTerms !== true) throw new Error("Confirm ownership/authorization and the transfer terms.");
+  if (side !== "buy") throw new Error("MailMart social offers are for customer purchases only.");
+  if (acceptedTerms !== true) throw new Error("Confirm you are an authorized buyer and accept the transfer terms.");
   const offer = await getDoc(doc(db, "socialOffers", offerId));
   if (!offer.exists() || !offer.data().active) throw new Error("This offer is not available.");
   const data = offer.data();
-  const amount = price(side === "buy" ? data.sellPrice : data.buyPrice, 0.01);
+  const amount = price(data.sellPrice, 0.01);
   if (expectedAmount !== null && amount !== price(expectedAmount, 0.01)) throw new Error("The admin price changed. Close this form and review the current offer before accepting it.");
-  if (side === "buy" && data.stock < 1) throw new Error("This offer is currently out of stock.");
-  let url = "";
-  if (side === "sell") {
-    try { const parsed = new URL(accountUrl); if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.href.length > 1000) throw new Error(); url = parsed.href; }
-    catch { throw new Error("Enter the public HTTPS URL of the asset you own."); }
-    text(ownershipNote, 1000, "Ownership/authorized-transfer explanation", 10);
-  }
+  if (data.stock < 1) throw new Error("This offer is currently out of stock.");
   const profile = await getDoc(doc(db, "users", user.uid));
   if (!profile.exists()) throw new Error("Finish setting up your profile first.");
-  if (side === "buy" && profile.data().balance < amount) throw new Error("Top up your wallet before requesting this purchase.");
+  if (profile.data().balance < amount) throw new Error("Top up your wallet before requesting this purchase.");
   return addDoc(collection(db, "socialRequests"), {
     uid: user.uid, email: user.email || "", offerId, platform: data.platform, title: data.title,
-    side, amount, accountUrl: url, ownershipNote: side === "sell" ? ownershipNote.trim() : "",
-    acceptedTerms: true, status: "pending", createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    side: "buy", amount, accountUrl: "", ownershipNote: "", acceptedTerms: true,
+    status: "pending", createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   });
 }
 
-/** Pay the owner or debit a buyer ONLY after an authorized transfer is reviewed. */
+/** Charge a customer only after an authorized, platform-permitted handoff is reviewed. */
 export async function completeSocialRequest({ requestId, transferReference, ownershipReviewed, adminUser }) {
-  if (ownershipReviewed !== true) throw new Error("Confirm that ownership and the platform-permitted transfer were reviewed.");
+  if (ownershipReviewed !== true) throw new Error("Confirm that MailMart owns or controls the asset and that the platform-permitted transfer was reviewed.");
   const reference = text(transferReference, 800, "Authorized transfer reference", 5);
   const reviewer = actor(adminUser);
   await runTransaction(db, async (t) => {
@@ -115,27 +109,27 @@ export async function completeSocialRequest({ requestId, transferReference, owne
     const snap = await t.get(ref);
     if (!snap.exists() || snap.data().status !== "pending") throw new Error("This request is no longer pending.");
     const request = snap.data();
+    if (request.side !== "buy") throw new Error("MailMart no longer accepts social-account sales from users. Reject this legacy request.");
     const offerRef = doc(db, "socialOffers", request.offerId);
     const offer = await t.get(offerRef);
     const walletRef = doc(db, "users", request.uid);
     const wallet = await t.get(walletRef);
-    const ledgerId = "social_" + request.side + "_" + requestId;
+    const ledgerId = "social_buy_" + requestId;
     const existing = await t.get(doc(db, "transactions", ledgerId));
     if (existing.exists()) throw new Error("This request has already been settled.");
     if (!offer.exists() || !offer.data().active || !wallet.exists()) throw new Error("The offer or customer account is unavailable.");
-    const buying = request.side === "buy";
-    if (buying && offer.data().stock < 1) throw new Error("There is no remaining stock.");
+    if (offer.data().stock < 1) throw new Error("There is no remaining stock.");
     const amount = price(request.amount, 0.01);
-    const next = roundMoney(wallet.data().balance + (buying ? -amount : amount));
+    const next = roundMoney(wallet.data().balance - amount);
     if (next < 0) throw new Error("The buyer no longer has sufficient balance. No transfer or charge was recorded.");
-    const type = buying ? "social_purchase" : "social_sale";
+    const type = "social_purchase";
     const lifetime = await prepareLifetimeReferral(t, { uid: request.uid, profile: wallet.data(), sourceId: ledgerId, type, amount, adminUser });
     t.update(walletRef, { balance: next, updatedAt: serverTimestamp() });
-    t.update(offerRef, { stock: offer.data().stock + (buying ? -1 : 1), updatedAt: serverTimestamp(), updatedBy: reviewer });
+    t.update(offerRef, { stock: offer.data().stock - 1, updatedAt: serverTimestamp(), updatedBy: reviewer });
     t.update(ref, { status: "completed", ownershipReviewed: true, transferReference: reference,
       reviewedBy: reviewer, reviewedAt: serverTimestamp(), updatedAt: serverTimestamp() });
     t.set(doc(db, "transactions", ledgerId), {
-      type, direction: buying ? "debit" : "credit", status: "completed", uid: request.uid, email: request.email,
+      type, direction: "debit", status: "completed", uid: request.uid, email: request.email,
       amount, balanceAfter: next, socialRequestId: requestId, reference: request.title,
       reviewedBy: reviewer, reviewedAt: serverTimestamp(), createdAt: serverTimestamp(), updatedAt: serverTimestamp()
     });

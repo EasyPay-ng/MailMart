@@ -261,8 +261,9 @@ write path in the former marketplace settlement code.
   referral record. This is a **manual review queue**, not an automatic bot or
   fraud detection system.
 - Real eligible ledger types are `email_payout`, `order_payment`, `order_payout`,
-  `social_sale`, `social_purchase` and `rental_payment`. Commission uses the
-  actual settled naira amount (including the fees in an actual goods debit;
+  legacy `social_sale` records, `social_purchase` and `rental_payment`. New
+  social settlements are customer purchases only. Commission uses the actual
+  settled naira amount (including the fees in an actual goods debit;
   unlike the separate product-specific, goods-only affiliate base). Deposits, withdrawals,
   refunds, arbitrary admin credits and **all referral/affiliate rewards are
   excluded**. No recursive rewards-on-rewards or downline commissions.
@@ -323,30 +324,31 @@ automatically reclaimed; returned goods and seller/platform recovery remain an
 admin decision. Canceled/refunded orders are excluded from completed-order
 rewards.
 
-## Reviewed social assets and manual Gmail code rentals
+## MailMart social sales and manual Gmail code rentals
 
 User entry: **Dashboard → Services** (`services.html`). Administration:
 `admin-services.html`, linked from the other admin desks. Catalogs are empty
 until an administrator configures real prices and availability; no fictional
 stock, balances, Gmail accounts or rental codes are generated.
 
-### Social buy/sell
+### MailMart social accounts for customer purchase
 
-Create Facebook, Instagram, X (formerly Twitter), or other **platform-permitted
-social asset** offers with fixed platform-buy/user-earn and platform-sell/
-user-pay prices. Set stock and availability; a zero price disables that side.
-Users accept ownership/authorized-transfer terms. Sellers provide a public
-HTTPS asset URL and an authorization explanation, **never passwords, session
-cookies or recovery secrets**. Only the requester and admins can read a request.
+An administrator lists social accounts or business assets that MailMart owns or
+is authorized to transfer, sets one customer price, and manages available
+stock. Customers can request a purchase from MailMart; this flow no longer
+accepts social-account sales from users. Offers must describe only transfers
+permitted by the platform. The app never collects passwords, session cookies or
+recovery secrets.
 
-A request snapshots the current admin price. A changed displayed quote requires
-review/renewed consent; later catalog edits do not reprice an accepted request.
-Admin manually checks ownership, platform permission, and the transfer, then
-records its completion reference. Completion atomically settles the quoted
-wallet amount, adjusts stock, writes one immutable ledger row and queues the
-eligible lifetime claim. Rejection/cancellation of an uncharged request moves
-no money. Personal-account trades forbidden by a provider's terms must not be
-listed or approved.
+A purchase request snapshots the current admin price. A changed displayed
+quote requires review/renewed consent; later catalog edits do not reprice an
+accepted request. Admin manually verifies MailMart's entitlement, the platform
+permission, available stock and the completed handoff. Completion atomically
+debits the quoted wallet amount, reduces stock, writes one immutable ledger row
+and queues the eligible lifetime claim. Rejection/cancellation of an uncharged
+request moves no money. Personal-account trades forbidden by a provider's terms
+must not be listed or approved. Legacy inbound social-sale requests can only be
+rejected; they cannot be settled.
 
 **External transfer limitation:** this is a reviewed request/settlement flow,
 not a provider API or escrow service. No external social-platform transfer can
@@ -386,8 +388,10 @@ that a temporary code service does not grant permanent mailbox ownership.
 inbox access, other people's sign-ins, financial/banking OTPs, spam, mass
 registration or restriction bypass.** Requests are manually reviewed, not a
 technical guarantee of an external provider's consent. Admin must reject
-unapproved purposes. The new flows do not change the sensitive legacy email-sale
-workflow described in Security notes below.
+unapproved purposes. No permanent email account, inbox login or password is
+sold to customers through Services. The separate legacy user-to-MailMart
+email-sale workflow is unchanged and is extremely sensitive; see Security notes
+below before enabling it.
 
 **Production retention gate:** enable Firestore TTL on
 `rentalCodes.expiresAt` (Console → Firestore → TTL, or an appropriately authorized
@@ -425,7 +429,7 @@ acted — who acted. The types:
 | `purchase_welcome` | credit | referral admin, after first delivery | ₦200 to the invited buyer |
 | `affiliate_commission` | credit | referral admin, after paid delivery | Admin-set product rate of goods subtotal; MailMart-funded |
 | `lifetime_commission` | credit | referral admin, after source/review checks | 4–5% of an eligible direct invitee event |
-| `social_sale` / `social_purchase` | credit / debit | reviewed service settlement | Fixed quoted social transfer amount |
+| `social_sale` (legacy) / `social_purchase` | credit / debit | legacy records / reviewed service settlement | Historical social-sale credits; new settlements debit the customer for a MailMart offer |
 | `rental_payment` | debit | admin assigns, then delivers | Reserved one-code price, finalized on delivery |
 | `rental_refund` | credit | admin rejects an unfulfilled funded rental | Return exactly the reserved code price |
 
@@ -675,7 +679,7 @@ Google button on the register page no longer rewrites an existing profile
 | `admin-referrals.html` | Verification/fraud review, lifetime rates/claims, affiliate/reward review |
 | `js/referral-rewards.js` | Verified review, private audits, held and lifetime reward claims |
 | `services.html` / `admin-services.html` | User requests and admin prices/manual fulfilment |
-| `js/services.js` | Authorized social transfers, Gmail rental reserve/finalize/refund |
+| `js/services.js` | Customer-only social purchases, Gmail rental reserve/finalize/refund |
 | `js/installments.js` | Weekly/monthly kobo arithmetic, delivery gates and due-date schedule |
 | `js/referrals.js` | Private attribution, applications and atomic reward settlement |
 | `js/referral-policy.js` | Agreed naira amounts and commission calculations |
@@ -694,7 +698,8 @@ Google button on the register page no longer rewrites an existing profile
 | `orders.html` | Order tracking for buyers and sellers |
 | `admin-marketplace.html` | Verification queue, listings, fees, settlement |
 | `js/marketplace.js` | KYC, listings, orders, pricing |
-| `css/app.css` | Shared theme for the marketplace screens |
+| `css/app.css` | Shared component foundation |
+| `css/light-theme.css` | Marketplace-inspired light palette across 20 non-storefront pages |
 | `subadmin-desk.html` | The mail desk: claim, verify, complete |
 | `admin-team.html` | Promote sub-admins, see who handled what |
 | `js/emaildesk.js` | Queue, atomic claim, presence, notifications |

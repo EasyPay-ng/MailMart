@@ -1,31 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Service Admin | MailMart</title><meta name="theme-color" content="#020812">
-<link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/referrals.css"><link rel="stylesheet" href="css/services.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Admin | MailMart</title>
+<meta name="theme-color" content="#edf5ff">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/referrals.css">
+<link rel="stylesheet" href="css/services.css">
+<link rel="stylesheet" href="css/light-theme.css">
 </head>
-<body>
+<body class="mm-light-theme">
 <div id="loadingScreen"><div class="spinner"></div><p>Checking administrator access…</p></div>
 <main class="wrap" id="app" hidden>
-  <header class="topbar"><div class="brand"><span class="dot">M</span> Service Admin</div><nav class="actions" aria-label="Administration"><a class="back-link" href="admin-marketplace.html">Marketplace Admin</a><a class="back-link" href="admin-referrals.html">Referral Admin</a><a class="back-link" href="admin-wallet.html">Wallet Admin</a><a class="back-link" href="admin.html">Sales review</a><a class="back-link" href="services.html">User services</a></nav></header>
-  <section class="reward-hero"><div class="eyebrow">Manual fulfilment / Administration</div><h1>Set fair prices.<br>Review every transfer.</h1><p>Manage social buy/sell offers, Gmail rental categories and authorized manual inbox delivery. All settlements are atomic and recorded in the wallet ledger.</p></section>
-  <div class="reward-metrics"><div class="metric"><span>Social requests pending</span><strong id="socialCount">—</strong></div><div class="metric"><span>Rental requests pending</span><strong id="rentalCount">—</strong></div><div class="metric"><span>Awaiting a code</span><strong id="codeCount">—</strong></div><div class="metric"><span>Active offers / categories</span><strong id="catalogCount">—</strong></div></div>
-  <div id="actionMsg" role="status" aria-live="polite"></div>
-  <div class="tabs" aria-label="Administration sections"><button class="tab active" data-tab="requests">Review requests</button><button class="tab" data-tab="catalog">Prices & availability</button></div>
-  <section class="panel active" id="panel-requests"><div class="field service-filter"><label for="requestFilter">Request status</label><select id="requestFilter"><option value="open">Open requests</option><option value="">All statuses</option><option value="completed">Completed</option><option value="rejected">Rejected</option><option value="refunded">Refunded</option><option value="cancelled">Cancelled</option></select></div>
-    <div class="notice warn">Only platform-permitted, ownership-reviewed social transfers. Only inboxes you control or are authorized to provide. Reject other people’s sign-ins, financial/banking OTPs, spam and restriction bypass. Never request passwords, session cookies or recovery secrets.</div>
-    <div class="two service-columns"><section class="card"><h3>Social transfers</h3><div id="socialReviewList" class="reward-list"><p class="hint">Loading requests…</p></div></section><section class="card"><h3>Gmail inbox / code rentals</h3><p class="hint">Assign an authorized inbox only after reviewing the purpose. Assignment reserves one code’s quoted price, at least ₦50. Delivering the code finalizes that payment. Reject an unfulfilled funded request to refund exactly the reserved amount. Canonical Gmail aliases cannot be assigned to a different customer.</p><div id="rentalReviewList" class="reward-list"><p class="hint">Loading rentals…</p></div></section></div>
+  <header class="topbar">
+    <div class="brand"><span class="dot">M</span> Service Admin</div>
+    <nav class="actions" aria-label="Administration">
+      <a class="back-link" href="admin-marketplace.html">Marketplace Admin</a>
+      <a class="back-link" href="admin-referrals.html">Referral Admin</a>
+      <a class="back-link" href="admin-wallet.html">Wallet Admin</a>
+      <a class="back-link" href="admin.html">Sales review</a>
+      <a class="back-link" href="services.html">User services</a>
+    </nav>
+  </header>
+
+  <section class="reward-hero">
+    <div class="eyebrow">Manual fulfilment / Administration</div>
+    <h1>Set fair prices.<br>Review every transfer.</h1>
+    <p>List MailMart social accounts for customer purchase and set prices for one-time, authorized email-code rentals. Social requests are manually reviewed; email codes are never permanent inbox or account sales.</p>
   </section>
-  <section class="panel" id="panel-catalog"><div class="two service-columns">
-    <section class="card"><h3>Social offers & fixed prices</h3><p class="hint">Zero price disables that side of the offer. Stock is manually managed; buying reduces it, an approved sale to MailMart increases it. Only list assets whose platform allows the transfer.</p><div id="socialOfferList" class="reward-list"></div>
-      <details class="catalog-editor" id="offerEditor"><summary>Create or edit an offer</summary><form id="offerForm"><input id="offerId" type="hidden"><div class="field"><label for="offerTitle">Offer title</label><input id="offerTitle" required maxlength="120" placeholder="Authorized Instagram business asset"></div><div class="field"><label for="offerPlatform">Platform</label><select id="offerPlatform"><option>Facebook</option><option>Instagram</option><option>X</option><option>Other</option></select></div><div class="field"><label for="offerDescription">Description / permitted transfer requirements</label><textarea id="offerDescription" required maxlength="1000"></textarea></div><div class="two"><div class="field"><label for="offerBuyPrice">Platform buys / user earns (₦)</label><input id="offerBuyPrice" type="number" required min="0" max="100000000" step="0.01"></div><div class="field"><label for="offerSellPrice">Platform sells / user pays (₦)</label><input id="offerSellPrice" type="number" required min="0" max="100000000" step="0.01"></div></div><div class="field"><label for="offerStock">Available units</label><input id="offerStock" type="number" min="0" max="100000" step="1" required value="0"></div><label class="reward-check"><input id="offerActive" type="checkbox" checked><span>Offer open for reviewed requests</span></label><div class="row-end"><button class="btn small good" id="offerSave" type="submit">Save offer</button><button class="btn small ghost" id="newOffer" type="button">New / clear form</button></div><div id="offerMsg" role="status" aria-live="polite"></div></form></details>
+
+  <div class="reward-metrics" aria-label="Service overview">
+    <div class="metric"><span>Social purchase requests pending</span><strong id="socialCount">—</strong></div>
+    <div class="metric"><span>Email-code requests pending</span><strong id="rentalCount">—</strong></div>
+    <div class="metric"><span>Awaiting a code</span><strong id="codeCount">—</strong></div>
+    <div class="metric"><span>Active offers / categories</span><strong id="catalogCount">—</strong></div>
+  </div>
+
+  <div id="actionMsg" role="status" aria-live="polite"></div>
+
+  <div class="tabs" aria-label="Administration sections">
+    <button class="tab active" data-tab="requests" type="button">Review requests</button>
+    <button class="tab" data-tab="social-catalog" type="button">Social accounts</button>
+    <button class="tab" data-tab="email-catalog" type="button">Email codes to customers</button>
+  </div>
+
+  <section class="panel active" id="panel-requests">
+    <div class="field service-filter">
+      <label for="requestFilter">Request status</label>
+      <select id="requestFilter">
+        <option value="open">Open requests</option>
+        <option value="">All statuses</option>
+        <option value="completed">Completed</option>
+        <option value="rejected">Rejected</option>
+        <option value="refunded">Refunded</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+    <div class="notice warn">Only list social accounts or business assets that MailMart is authorized to transfer under the platform’s rules. Never collect passwords, session cookies or recovery secrets. Email services here are one-time authorized code rentals only—not sales of permanent Gmail accounts or logins.</div>
+    <div class="two service-columns">
+      <section class="card">
+        <h3>Social account purchase requests</h3>
+        <p class="hint">Review the customer’s request, confirm MailMart can make the platform-permitted handoff, and recheck their balance before settlement.</p>
+        <div id="socialReviewList" class="reward-list"><p class="hint">Loading requests…</p></div>
+      </section>
+      <section class="card">
+        <h3>One-time email-code rentals</h3>
+        <p class="hint">Assign an inbox MailMart controls or is authorized to provide. Assignment reserves one code’s quoted price (minimum ₦50); delivering the code finalizes payment. Refund an unfulfilled funded request exactly once.</p>
+        <div id="rentalReviewList" class="reward-list"><p class="hint">Loading rentals…</p></div>
+      </section>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-social-catalog">
+    <section class="card">
+      <h3>MailMart social accounts for sale</h3>
+      <p class="hint">Create customer-facing offers for platform-permitted accounts or business assets MailMart controls. Set a customer price and available stock. MailMart does not buy social accounts from users through this section.</p>
+      <div id="socialOfferList" class="reward-list"></div>
+      <details class="catalog-editor" id="offerEditor">
+        <summary>Create or edit a social account offer</summary>
+        <form id="offerForm">
+          <input id="offerId" type="hidden">
+          <div class="field"><label for="offerTitle">Offer title</label><input id="offerTitle" required maxlength="120" placeholder="Instagram business account"></div>
+          <div class="field"><label for="offerPlatform">Platform</label><select id="offerPlatform"><option>Facebook</option><option>Instagram</option><option>X</option><option>Other</option></select></div>
+          <div class="field"><label for="offerDescription">Description and permitted transfer details</label><textarea id="offerDescription" required maxlength="1000" placeholder="Describe the asset and the platform-approved handoff. Never include a password, cookie or recovery code."></textarea></div>
+          <div class="two"><div class="field"><label for="offerCustomerPrice">Customer price (₦)</label><input id="offerCustomerPrice" type="number" required min="0" max="100000000" step="0.01"></div><div class="field"><label for="offerStock">Available units</label><input id="offerStock" type="number" min="0" max="100000" step="1" required value="0"></div></div>
+          <label class="reward-check"><input id="offerActive" type="checkbox" checked><span>Offer available for customer requests</span></label>
+          <div class="row-end"><button class="btn small good" id="offerSave" type="submit">Save social offer</button><button class="btn small ghost" id="newOffer" type="button">New / clear form</button></div>
+          <div id="offerMsg" role="status" aria-live="polite"></div>
+        </form>
+      </details>
     </section>
-    <section class="card"><h3>Gmail categories & per-code prices</h3><p class="hint">Create categories such as card-sale platform, Instagram registration or other authorized use. Minimum ₦50 per code. Disable a category when authorized inboxes are unavailable. This app does not create Gmail accounts or connect to Gmail.</p><div id="rentalCategoryList" class="reward-list"></div>
-      <details class="catalog-editor" id="categoryEditor"><summary>Create or edit a rental category</summary><form id="categoryForm"><input id="categoryId" type="hidden"><div class="field"><label for="categoryName">Category name</label><input id="categoryName" required maxlength="100" placeholder="Instagram registration"></div><div class="field"><label for="categoryDescription">Authorized uses / availability note</label><textarea id="categoryDescription" required maxlength="1000"></textarea></div><div class="field"><label for="categoryPrice">Price per code (₦, minimum 50)</label><input id="categoryPrice" type="number" required min="50" max="100000000" step="0.01"></div><label class="reward-check"><input id="categoryActive" type="checkbox" checked><span>Available for manual provisioning</span></label><div class="row-end"><button class="btn small good" id="categorySave" type="submit">Save category</button><button class="btn small ghost" id="newCategory" type="button">New / clear form</button></div><div id="categoryMsg" role="status" aria-live="polite"></div></form></details>
+  </section>
+
+  <section class="panel" id="panel-email-catalog">
+    <section class="card">
+      <h3>One-time email codes for customers</h3>
+      <p class="hint">Create authorized-use categories and set the price for each requested code (minimum ₦50). This is a manual, temporary code service—not the sale of a permanent Gmail account, inbox login or password. Never offer financial or banking OTPs.</p>
+      <div id="rentalCategoryList" class="reward-list"></div>
+      <details class="catalog-editor" id="categoryEditor">
+        <summary>Create or edit an email-code category</summary>
+        <form id="categoryForm">
+          <input id="categoryId" type="hidden">
+          <div class="field"><label for="categoryName">Category name</label><input id="categoryName" required maxlength="100" placeholder="Authorized registration code"></div>
+          <div class="field"><label for="categoryDescription">Allowed uses and availability note</label><textarea id="categoryDescription" required maxlength="1000"></textarea></div>
+          <div class="field"><label for="categoryPrice">Price per code (₦, minimum 50)</label><input id="categoryPrice" type="number" required min="50" max="100000000" step="0.01"></div>
+          <label class="reward-check"><input id="categoryActive" type="checkbox" checked><span>Available for manual provisioning</span></label>
+          <div class="row-end"><button class="btn small good" id="categorySave" type="submit">Save email-code offer</button><button class="btn small ghost" id="newCategory" type="button">New / clear form</button></div>
+          <div id="categoryMsg" role="status" aria-live="polite"></div>
+        </form>
+      </details>
     </section>
-  </div></section>
-  <p class="reward-footnote">One code per rental. Delivered codes live only in a private, time-limited document; they never enter referral records or the financial ledger. Enable Firestore TTL for rentalCodes.expiresAt in production. No bulk-delivery threshold or discount has been changed.</p>
+  </section>
+
+  <p class="reward-footnote">Each email rental is one code for an approved, non-financial purpose. The assigned address is not a customer login; code access expires after 10 minutes. No permanent mailbox sale, automatic Gmail account creation, passwords or session cookies are supported.</p>
 </main>
 <script type="module" src="js/admin-services-page.js"></script>
 </body>
