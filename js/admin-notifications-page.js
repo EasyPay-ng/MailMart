@@ -67,6 +67,7 @@ function render(policy) {
   $("audienceAccount").checked = policy.audiences.account;
   $("audienceAdmin").checked = policy.audiences.admin;
   $("channelPhone").checked = policy.channels.phone;
+  $("channelDigest").checked = policy.channels.digest;
 
   const audiences = ["buyer", "seller", "admin"];
   $("eventGroups").innerHTML = audiences.map((audience) => {
@@ -99,7 +100,8 @@ function readForm() {
       inApp: $("channelInApp").checked,
       browser: $("channelBrowser").checked,
       sound: $("channelSound").checked,
-      phone: $("channelPhone").checked
+      phone: $("channelPhone").checked,
+      digest: $("channelDigest").checked
     },
     audiences: {
       buyer: $("audienceBuyer").checked,

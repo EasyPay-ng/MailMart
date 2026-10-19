@@ -89,7 +89,7 @@ test("notification surfaces are wired together (bell, admin policy, phone alerts
   assert.match(dashboard, /mountPhoneAlerts\(user/);
 
   const adminPage = await fs.readFile(path.join(root, "admin-notifications.html"), "utf8");
-  for (const id of ["channelInApp", "channelBrowser", "channelSound", "channelPhone",
+  for (const id of ["channelInApp", "channelBrowser", "channelSound", "channelPhone", "channelDigest",
     "audienceBuyer", "audienceSeller", "audienceAccount", "audienceAdmin"]) {
     assert.match(adminPage, new RegExp(`id="${id}"`), id);
   }
@@ -101,6 +101,10 @@ test("notification surfaces are wired together (bell, admin policy, phone alerts
 
   const sender = await fs.readFile(path.join(root, "scripts/notify-worker.mjs"), "utf8");
   assert.match(sender, /collectAlerts\(/);
+  // One message per person: the sender must group before publishing.
+  assert.match(sender, /buildDigest\(/);
+  assert.match(sender, /channels\.digest/);
+  assert.match(sender, /pending/);
   assert.match(sender, /pushSubscriptions/);
   assert.match(sender, /notifyLog/);
 

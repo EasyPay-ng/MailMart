@@ -347,7 +347,10 @@ export function resolvePolicy(stored) {
       browser: readBoolean(channels.browser, true),
       sound: readBoolean(channels.sound, true),
       // Closed-app delivery through ntfy, run by the scheduled sender.
-      phone: readBoolean(channels.phone, true)
+      phone: readBoolean(channels.phone, true),
+      // One combined message per person per run instead of one per event.
+      // Fewer sends, and a phone that is not woken up five times in a row.
+      digest: readBoolean(channels.digest, true)
     },
     // Master switches: turning "Buyer" off silences every buyer event without
     // losing the wording that was configured for it.
@@ -600,6 +603,53 @@ export function buildNotificationItems({
       body: alert.body,
       at: alert.at
     }));
+}
+
+/**
+ * Fold one person's pending alerts into a single message.
+ *
+ * A single alert keeps its own administrator-written title and body exactly:
+ * combining must never blunt the wording of "Your order has been dispatched".
+ * Two or more become one digest, newest first, with a line each.
+ *
+ * `keys` always lists every alert folded in — including ones cut for length —
+ * because the sender marks every one of them as sent. Dropping a cut alert's
+ * key from that list would resurrect it on the next run.
+ */
+export const DIGEST_LIMITS = { maxItems: 6, maxChars: 3800 };
+
+export function buildDigest(alerts, { maxItems = DIGEST_LIMITS.maxItems, maxChars = DIGEST_LIMITS.maxChars } = {}) {
+  const list = (alerts || [])
+    .filter((alert) => alert && alert.key)
+    .slice()
+    .sort((a, b) => (b.at || 0) - (a.at || 0));
+
+  if (!list.length) return null;
+  if (list.length === 1) {
+    return {
+      title: list[0].title,
+      message: list[0].body,
+      count: 1,
+      keys: [list[0].key],
+      digest: false
+    };
+  }
+
+  const shown = list.slice(0, Math.max(1, maxItems));
+  let message = shown.map((alert) => `• ${alert.title} — ${alert.body}`).join("\n");
+  const hidden = list.length - shown.length;
+  if (hidden > 0) message += `\n…and ${hidden} more update${hidden === 1 ? "" : "s"}.`;
+  if (message.length > maxChars) {
+    message = message.slice(0, Math.max(1, maxChars - 1)).trimEnd() + "…";
+  }
+
+  return {
+    title: `MailMart · ${list.length} updates`,
+    message,
+    count: list.length,
+    keys: list.map((alert) => alert.key),
+    digest: true
+  };
 }
 
 /** Items the reader has not seen yet. `readKeys` is an array or a Set. */

@@ -163,7 +163,10 @@ The switchboard is a single Firestore document, `settings/notifications`:
 ```json
 {
   "version": 1,
-  "channels": { "inApp": true, "browser": true, "sound": true, "phone": true },
+  "channels": {
+    "inApp": true, "browser": true, "sound": true,
+    "phone": true, "digest": true
+  },
   "audiences": { "buyer": true, "seller": true, "account": true, "admin": true },
   "events": {
     "buyer_shipped": {
@@ -216,9 +219,12 @@ MailMart with server privileges. Each run:
    (`orders`, `transactions`, `socialRequests`, `rentals`, `kyc`);
 3. builds the same alerts the bell would, resolving each event's recipients
    (buyer, seller, account holder, or every administrator);
-4. skips anyone who has not opted in, posts the rest to **ntfy**, and writes a
-   `notifyLog/{event}:{kind}:{record}::{uid}` row so a re-run or an overlapping
-   window can never send the same alert twice.
+4. skips anyone who has not opted in, then **groups what is left by person**;
+5. posts one message per person — a lone alert keeps its exact wording, two or
+   more become a short digest (`MailMart · 3 updates` with one line each);
+6. writes a `notifyLog/{event}:{kind}:{record}::{uid}` row for *every* alert the
+   message covered, so a re-run, an overlapping window, or a digest cut short
+   for length can never send the same alert twice.
 
 Customers opt in on **Dashboard → Phone alerts**: it registers a long random
 topic on `pushSubscriptions/{uid}` and shows it with a copy button. They install
@@ -236,9 +242,16 @@ rules-deploy workflow already uses. The trade-offs, stated plainly:
 - **The topic is the password.** `ntfy.sh` has no accounts, so anyone who learns
   a topic can read it. Topics are long random strings, readable only by their
   owner and administrators, and can be rotated by turning alerts off and on.
-- **Free ntfy limits** apply per sender: a burst of 60 requests, then one every
-  5 seconds, and 250 messages a day. The sender pauses 250 ms between sends and
-  stops at `MAX_SENDS_PER_RUN` (default 25), so a normal day never approaches it.
+- **Free ntfy limits** apply per publishing address: a burst of 60 requests,
+  then one every 5 seconds, and 250 messages a day.
+- **Message budget.** One alert is one message per recipient, so without
+  grouping a 40-order day could easily reach 150–200 messages. Grouping makes it
+  one message per person per run instead: the same day is roughly 40–60. The
+  sender pauses 250 ms between sends and stops at `MAX_SENDS_PER_RUN`
+  (default 25 messages), so it cannot trip the burst limit even on a bad day.
+  Turn grouping off under **Channels → One message per person** if you would
+  rather have one notification per event; the per-event wording and switches
+  are unchanged either way.
 - **iOS needs the ntfy app**, which uses Apple's push service; Android keeps a
   socket open. Both are fine for this volume.
 
@@ -249,16 +262,16 @@ the same idea and can be swapped later without touching the policy or the bell.
 
 ### Deploying this
 
-The bell and the ntfy registration need one rules deploy — `pushSubscriptions`
-is new:
+`pushSubscriptions` is a new collection, so `firestore.rules` must reach
+Firebase. That already happens by itself: `.github/workflows/deploy-firestore.yml`
+watches `firestore.rules` on `main` and deploys it when the change lands — no
+manual step. `npm run deploy:rules` is only needed if you are deploying from a
+workstation instead.
 
-```sh
-npm run deploy:rules
-```
-
-Then add the `FIREBASE_SERVICE_ACCOUNT` repository secret (the workflow summary
-says how) and run **Actions → Send phone alerts → Run workflow** with
-`dry_run = 1` first to watch it match alerts without sending.
+The one thing no workflow can supply is the `FIREBASE_SERVICE_ACCOUNT`
+repository secret. If it is already set (the rules deploy uses the same one),
+phone alerts start with the next scheduled run. If it is missing, the sender's
+run summary says exactly that and nothing is sent; the in-app bell is unaffected.
 
 ### Trying it quickly
 

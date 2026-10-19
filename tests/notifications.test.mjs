@@ -8,6 +8,8 @@ import {
   serializePolicy,
   buildNotificationItems,
   collectAlerts,
+  buildDigest,
+  DIGEST_LIMITS,
   recipientUidsFor,
   notificationKey,
   topicForUid,
@@ -71,7 +73,9 @@ test("every catalogue event is valid and defaults are usable", () => {
   for (const event of EVENT_CATALOG) {
     assert.deepEqual(policy.events[event.id], { enabled: true, title: event.title, body: event.body });
   }
-  assert.deepEqual(policy.channels, { inApp: true, browser: true, sound: true, phone: true });
+  assert.deepEqual(policy.channels, {
+    inApp: true, browser: true, sound: true, phone: true, digest: true
+  });
   assert.deepEqual(policy.audiences, { buyer: true, seller: true, account: true, admin: true });
 });
 
@@ -298,4 +302,69 @@ test("phone topics are unguessable enough and reject nonsense ids", () => {
   assert.notEqual(topicForUid("uid-one-123456"), topicForUid("uid-two-123456"));
   assert.throws(() => topicForUid("short"));
   assert.match(topicForUid("AbCdEfGh12345678xyz", "s4lt"), /-s4lt$/);
+});
+
+const alert = (index, at) => ({
+  key: `buyer_paid:order:${index}`,
+  title: `Alert ${index}`,
+  body: `Body ${index}`,
+  at
+});
+
+test("a lone alert keeps the administrator's exact wording", () => {
+  const one = buildDigest([alert(1, 1000)]);
+  assert.deepEqual(one, {
+    title: "Alert 1",
+    message: "Body 1",
+    count: 1,
+    keys: ["buyer_paid:order:1"],
+    digest: false
+  });
+  assert.equal(buildDigest([]), null);
+  assert.equal(buildDigest(null), null);
+  assert.equal(buildDigest([{ title: "no key" }]), null);
+});
+
+test("several alerts become one digest, newest first, with every key marked", () => {
+  const digest = buildDigest([alert(1, 1000), alert(2, 3000), alert(3, 2000)]);
+  assert.equal(digest.title, "MailMart · 3 updates");
+  assert.equal(digest.message, ["• Alert 2 — Body 2", "• Alert 3 — Body 3", "• Alert 1 — Body 1"].join("\n"));
+  assert.equal(digest.count, 3);
+  assert.equal(digest.digest, true);
+  // Hidden or not, every folded-in alert is reported so none is re-sent.
+  assert.deepEqual(digest.keys.sort(), [
+    "buyer_paid:order:1", "buyer_paid:order:2", "buyer_paid:order:3"
+  ]);
+});
+
+test("a long batch is cut for length but still reports every key", () => {
+  const many = Array.from({ length: 9 }, (_, index) => alert(index, 1000 + index));
+  const digest = buildDigest(many);
+  assert.equal(digest.title, "MailMart · 9 updates");
+  assert.equal(digest.keys.length, 9, "all keys are reported even when lines are hidden");
+  assert.match(digest.message, /…and 3 more updates\.$/);
+  assert.equal(digest.message.split("\n").length, DIGEST_LIMITS.maxItems + 1);
+
+  const long = buildDigest([
+    { key: "a", title: "A", body: "x".repeat(4000), at: 2 },
+    { key: "b", title: "B", body: "y".repeat(4000), at: 1 }
+  ]);
+  assert.ok(long.message.length <= DIGEST_LIMITS.maxChars, "message stays inside ntfy's 4 KB body");
+  assert.match(long.message, /…$/);
+  assert.deepEqual(long.keys, ["a", "b"]);
+
+  const tiny = buildDigest(
+    [{ key: "a", title: "A", body: "b", at: 2 }, { key: "b", title: "B", body: "c", at: 1 }],
+    { maxChars: 12 }
+  );
+  assert.equal(tiny.message.length, 12);
+  assert.deepEqual(tiny.keys, ["a", "b"]);
+});
+
+test("digest is on by default and the administrator can switch it off", () => {
+  assert.equal(resolvePolicy(null).channels.digest, true);
+  assert.equal(resolvePolicy({ channels: { digest: false } }).channels.digest, false);
+  assert.equal(resolvePolicy({ channels: { digest: "no" } }).channels.digest, true);
+  const round = serializePolicy({ channels: { digest: false } });
+  assert.equal(round.channels.digest, false);
 });
