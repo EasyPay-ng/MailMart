@@ -151,6 +151,153 @@ can notify only the real seller for an order, while admins can notify only the
 buyer for an approved cancellation or fulfillment refund. This prevents
 arbitrary client-generated mail.
 
+## Notifications
+
+MailMart has a notification centre: a bell (top bar on the dashboard, a floating
+button elsewhere) with a feed of order events, plus system notifications in the
+phone's notification shade. The administrator decides which events exist and
+what they say, at **Admin → Notifications** (`admin-notifications.html`).
+
+The switchboard is a single Firestore document, `settings/notifications`:
+
+```json
+{
+  "version": 1,
+  "channels": {
+    "inApp": true, "browser": true, "sound": true,
+    "phone": true, "digest": true
+  },
+  "audiences": { "buyer": true, "seller": true, "account": true, "admin": true },
+  "events": {
+    "buyer_shipped": {
+      "enabled": true,
+      "title": "Order Update",
+      "body": "Your order {orderId} has been dispatched! Track your order in your dashboard."
+    }
+  }
+}
+```
+
+There is one entry per event. Orders cover received, payment confirmed,
+dispatched, completed, cancelled/refunded and balance-due; wallet covers deposit
+approved or declined, withdrawal paid or declined, payouts and refunds; digital
+services cover social-account and email-code requests; seller verification
+covers approval and rejection; administrators get new orders awaiting payment.
+Each can be turned off or reworded independently. The four `audiences` switches
+are master switches: turning “Buyer” off silences every buyer event everywhere
+without discarding the wording saved for it. `{orderId}`, `{item}`,
+`{total}`, `{statusLabel}`, `{buyer}` and `{seller}` are filled in per order.
+Saving takes effect on every open page immediately (the client watches the
+document); a missing or half-saved document falls back to the catalogue
+defaults in `js/notification-policy.js` rather than breaking the bell.
+
+No rules change is needed: `settings/*` is already readable by every signed-in
+user and writable only by an administrator, so the browser cannot re-enable an
+event or edit its own wording.
+
+### What actually delivers an alert
+
+Two paths, one policy. Both read the same `settings/notifications`, and both
+fold records through `js/notification-policy.js`, so the bell and the phone can
+never disagree about what happened.
+
+**1. The in-app bell (while a MailMart page is open).** The page keeps live
+listeners on the records the person's rules already allow: their orders as
+buyer and seller, their wallet ledger, their service requests, their
+verification document — plus platform-wide orders and service requests for an
+administrator. A status the administrator enabled appears in the feed, and the
+browser's Notification API raises a system alert. `sw.js` supplies the click
+handler and the `ServiceWorkerRegistration.showNotification` path Android
+Chrome requires.
+
+**2. Phone alerts (with MailMart closed).** `.github/workflows/notify-cron.yml`
+runs `scripts/notify-worker.mjs` every five minutes. It is the only part of
+MailMart with server privileges. Each run:
+
+1. reads `settings/notifications`;
+2. scans the records whose `updatedAt` is inside the look-back window
+   (`orders`, `transactions`, `socialRequests`, `rentals`, `kyc`);
+3. builds the same alerts the bell would, resolving each event's recipients
+   (buyer, seller, account holder, or every administrator);
+4. skips anyone who has not opted in, then **groups what is left by person**;
+5. posts one message per person — a lone alert keeps its exact wording, two or
+   more become a short digest (`MailMart · 3 updates` with one line each);
+6. writes a `notifyLog/{event}:{kind}:{record}::{uid}` row for *every* alert the
+   message covered, so a re-run, an overlapping window, or a digest cut short
+   for length can never send the same alert twice.
+
+Customers opt in on **Dashboard → Phone alerts**: it registers a long random
+topic on `pushSubscriptions/{uid}` and walks them through three steps. On
+Android the card offers **Open in ntfy app** — an `ntfy://host/topic` deep link
+that subscribes in one tap. iOS has no deep-link support for this, so there the
+customer taps **Copy topic** and adds it under *+ → Subscribe to topic*. Either
+way there is no account, no key and no card.
+
+The administrator cannot complete this step for a customer: the subscription
+lives on their phone, and the topic belongs to their account. (Admins *can* read
+any topic through the rules — that is there for support and auditing, and
+subscribing your own phone to a customer's topic would put their order alerts on
+your device.)
+
+Choosing ntfy was deliberate: it needs no third-party signup, so the only
+credential anywhere is the `FIREBASE_SERVICE_ACCOUNT` GitHub Secret that the
+rules-deploy workflow already uses. The trade-offs, stated plainly:
+
+- **Minutes, not seconds.** GitHub's shortest schedule is five minutes and runs
+  can queue under load.
+- **Scheduled workflows pause** after 60 days without repository activity. The
+  workflow file is the reminder; re-enable it from the Actions tab.
+- **The topic is the password.** `ntfy.sh` has no accounts, so anyone who learns
+  a topic can read it. Topics are long random strings, readable only by their
+  owner and administrators, and can be rotated by turning alerts off and on.
+- **Free ntfy limits** apply per publishing address: a burst of 60 requests,
+  then one every 5 seconds, and 250 messages a day.
+- **Message budget.** One alert is one message per recipient, so without
+  grouping a 40-order day could easily reach 150–200 messages. Grouping makes it
+  one message per person per run instead: the same day is roughly 40–60. The
+  sender pauses 250 ms between sends and stops at `MAX_SENDS_PER_RUN`
+  (default 25 messages), so it cannot trip the burst limit even on a bad day.
+  Turn grouping off under **Channels → One message per person** if you would
+  rather have one notification per event; the per-event wording and switches
+  are unchanged either way.
+- **iOS needs the ntfy app**, which uses Apple's push service; Android keeps a
+  socket open. Both are fine for this volume.
+
+This path replaces the earlier "needs FCM plus a Cloud Function" note: FCM would
+be instant and would not need a third-party app, but it requires the Blaze plan,
+a VAPID key and a device-token lifecycle. The ntfy sender is the free version of
+the same idea and can be swapped later without touching the policy or the bell.
+
+### Deploying this
+
+`pushSubscriptions` is a new collection, so `firestore.rules` must reach
+Firebase. That already happens by itself: `.github/workflows/deploy-firestore.yml`
+watches `firestore.rules` on `main` and deploys it when the change lands — no
+manual step. `npm run deploy:rules` is only needed if you are deploying from a
+workstation instead.
+
+The one thing no workflow can supply is the `FIREBASE_SERVICE_ACCOUNT`
+repository secret. If it is already set (the rules deploy uses the same one),
+phone alerts start with the next scheduled run. If it is missing, the sender's
+run summary says exactly that and nothing is sent; the in-app bell is unaffected.
+
+### Trying it quickly
+
+1. Sign in as an administrator, open **Admin → Notifications**, and leave
+   “Order dispatched” enabled.
+2. On a phone, sign in as the buyer, tap the bell and choose **Enable device
+   alerts**.
+3. As the seller or an administrator, mark that order shipped. The buyer's open
+   page shows a “Order Update · Your order #… has been dispatched!” alert in
+   the shade, and the bell badge increments.
+4. For the closed-app path, have the buyer open **Dashboard → Phone alerts**,
+   turn them on, and subscribe to the topic in the ntfy app. Then ship another
+   order: the alert arrives within about five minutes even with no MailMart tab
+   open.
+
+`tests/notifications.test.mjs` covers the policy merge, audience separation,
+templates, ordering and de-duplication offline; it needs no Firebase.
+
 ## Referrals and affiliates
 
 Open **Dashboard → Referrals & Affiliates** (`referrals.html`). The program has
@@ -703,6 +850,14 @@ Google button on the register page no longer rewrites an existing profile
 | `subadmin-desk.html` | The mail desk: claim, verify, complete |
 | `admin-team.html` | Promote sub-admins, see who handled what |
 | `js/emaildesk.js` | Queue, atomic claim, presence, notifications |
+| `js/notifications.js` | Bell, device alerts, live order feed, policy watcher |
+| `js/notification-policy.js` | Event catalogue, admin policy merge, alert matching |
+| `admin-notifications.html` | Administrator switches and wording for notifications |
+| `js/admin-notifications-page.js` | Notification admin form and save/reset/test |
+| `js/phone-alerts.js` | Customer-facing phone-alert opt-in (ntfy topic) |
+| `scripts/notify-worker.mjs` | Scheduled sender: Firestore → policy → ntfy |
+| `.github/workflows/notify-cron.yml` | Runs the sender every five minutes |
+| `sw.js` | Notification click handling for Android/desktop |
 
 ## Security notes
 

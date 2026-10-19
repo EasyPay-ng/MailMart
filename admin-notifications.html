@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notification Admin | MailMart</title>
+<meta name="theme-color" content="#edf5ff">
+<link rel="icon" type="image/jpeg" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="shortcut icon" href="https://res.cloudinary.com/wfcrf1ps/image/upload/f_auto,q_auto,w_128/v1786979320/WhatsApp_Image_2026-08-16_at_11.41.57_PM.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/light-theme.css">
+<style>
+  .notif-group{margin-bottom:22px}
+  .notif-group > h2{font-size:15px;font-weight:800;margin:0 0 4px}
+  .notif-group > p.hint{margin:0 0 12px}
+  .event-card{border:1px solid #e2eaf5;border-radius:16px;background:#fff;padding:16px 18px;margin-bottom:12px;box-shadow:0 8px 22px rgba(21,69,137,.05)}
+  .event-top{display:flex;align-items:flex-start;gap:12px}
+  .event-top input[type="checkbox"]{width:18px;height:18px;margin-top:2px;accent-color:#0867e8;flex-shrink:0}
+  .event-top .who{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#6e8098}
+  .event-top h3{font-size:13.5px;font-weight:800;margin:2px 0 3px}
+  .event-top p{font-size:11.5px;line-height:1.6;color:#6e8098;margin:0}
+  .event-fields{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid #eef4fb}
+  .event-fields .field{margin:0}
+  .event-fields input,.event-fields textarea{width:100%}
+  .event-fields textarea{min-height:74px;resize:vertical;line-height:1.55}
+  .event-fields .tokens{font-size:10.5px;color:#8195ad;margin:4px 0 0;line-height:1.5}
+  .event-card.off{opacity:.62}
+  .event-card.off .event-fields{display:none}
+  .channel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .channel{display:flex;gap:11px;align-items:flex-start;border:1px solid #e2eaf5;border-radius:14px;padding:13px 15px;background:#fbfdff}
+  .channel input{width:18px;height:18px;margin-top:2px;accent-color:#0867e8;flex-shrink:0}
+  .channel b{display:block;font-size:12.5px;font-weight:800;margin-bottom:2px}
+  .channel span{font-size:11.5px;line-height:1.55;color:#6e8098}
+  .sticky-actions{position:sticky;bottom:0;z-index:2;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    padding:14px 0;background:linear-gradient(180deg,rgba(247,250,254,0),#f7faff 32%)}
+  .chrome-note{font-size:12px;line-height:1.65;color:#506783}
+  @media (min-width:760px){ .event-fields{grid-template-columns:1fr 1fr} .event-fields .wide{grid-column:1/-1} }
+</style>
+</head>
+<body class="mm-light-theme">
+
+<div id="loadingScreen"><div class="spinner"></div><p>Checking administrator access…</p></div>
+
+<main class="wrap" id="app" hidden>
+
+  <header class="topbar">
+    <div class="brand"><span class="dot">M</span> Notification Admin</div>
+    <nav class="actions" aria-label="Administration">
+      <a class="back-link" href="admin.html">Sales Review</a>
+      <a class="back-link" href="admin-marketplace.html">Marketplace Admin</a>
+      <a class="back-link" href="admin-wallet.html">Wallet Admin</a>
+      <a class="back-link" href="admin-services.html">Service Admin</a>
+      <a class="back-link" href="dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <section class="card">
+    <h3>What MailMart notifies people about</h3>
+    <p class="hint">
+      Each switch below turns one event on or off for everyone. The two text boxes
+      are the wording that appears in the bell and in the phone's notification
+      shade. Nothing is sent until you save.
+    </p>
+    <p class="chrome-note">
+      The bell is live while a MailMart page is open. Phone alerts are sent by the
+      scheduled sender in <code>.github/workflows/notify-cron.yml</code>: it reads the
+      records that changed since the last run, applies exactly these settings, and
+      pushes to the free ntfy app — so they keep arriving with MailMart closed. That
+      sender runs every five minutes, so treat phone alerts as “within a few
+      minutes”, not instant. See “Notifications” in the README.
+    </p>
+  </section>
+
+  <section class="card">
+    <h3>Channels</h3>
+    <p class="hint">Applies to every event below.</p>
+    <div class="channel-grid">
+      <label class="channel"><input type="checkbox" id="channelInApp">
+        <span><b>In-app bell</b><span>Show the notification bell and its feed on MailMart pages.</span></span></label>
+      <label class="channel"><input type="checkbox" id="channelBrowser">
+        <span><b>Device alerts</b><span>Ask the browser to raise an alert. The person still has to allow notifications for this site.</span></span></label>
+      <label class="channel"><input type="checkbox" id="channelSound">
+        <span><b>Chime</b><span>Play a short two-tone sound with a new alert.</span></span></label>
+      <label class="channel"><input type="checkbox" id="channelPhone">
+        <span><b>Phone alerts (ntfy)</b><span>Send to the customer's phone through the free ntfy app, including while MailMart is closed. Delivered by the scheduled sender every few minutes.</span></span></label>
+      <label class="channel"><input type="checkbox" id="channelDigest">
+        <span><b>One message per person</b><span>Combine everything that happened to one account into a single notification. A lone update still keeps its exact wording below; two or more arrive as a short list.</span></span></label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Who receives notifications</h3>
+    <p class="hint">A master switch per audience. Turning one off silences that whole group everywhere, without losing the wording saved for it.</p>
+    <div class="channel-grid">
+      <label class="channel"><input type="checkbox" id="audienceBuyer">
+        <span><b>Buyers</b><span>Payment confirmed, dispatched, delivered, cancelled and balance-due updates.</span></span></label>
+      <label class="channel"><input type="checkbox" id="audienceSeller">
+        <span><b>Sellers</b><span>New order, payment confirmed and delivery confirmed.</span></span></label>
+      <label class="channel"><input type="checkbox" id="audienceAccount">
+        <span><b>Account holders</b><span>Wallet movements, refunds, payouts, digital-service updates.</span></span></label>
+      <label class="channel"><input type="checkbox" id="audienceAdmin">
+        <span><b>Administrators</b><span>Orders waiting for a payment check.</span></span></label>
+    </div>
+  </section>
+
+  <div id="eventGroups"></div>
+
+  <div class="sticky-actions">
+    <button class="btn good" type="button" id="saveBtn">Save notification settings</button>
+    <button class="btn ghost" type="button" id="resetBtn">Reset wording to defaults</button>
+    <button class="btn ghost" type="button" id="testBtn">Send a test to this device</button>
+    <span id="saveMsg" role="status" aria-live="polite" class="chrome-note"></span>
+  </div>
+
+  <p class="hint" style="margin-top:4px">
+    Placeholders you can use in a title or message: <code>{orderId}</code>,
+    <code>{item}</code>, <code>{total}</code>, <code>{statusLabel}</code>,
+    <code>{buyer}</code>, <code>{seller}</code>. An unknown placeholder is left
+    visible on purpose, so a typo is easy to spot.
+  </p>
+
+</main>
+
+<script type="module" src="js/admin-notifications-page.js"></script>
+</body>
+</html>

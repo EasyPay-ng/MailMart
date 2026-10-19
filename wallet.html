@@ -550,6 +550,7 @@ import {
     formatDate
 } from "./js/wallet.js";
 import { ensureUserProfile } from "./js/account.js";
+import { mountNotificationBell } from "./js/notifications.js";
 
 /* ------------------------------------------------------------------ */
 /* tiny DOM helpers                                                    */
@@ -581,6 +582,7 @@ onAuthStateChanged(auth, (user) => {
     }
     currentUser = user;
     start(user);
+    mountNotificationBell(user, { isAdmin: false });
 });
 
 $("logoutBtn").addEventListener("click", async () => {

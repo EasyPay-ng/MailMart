@@ -520,6 +520,39 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ---------- phone alert registrations -------------------------------
+    // A customer opts into free phone alerts by registering an ntfy topic.
+    // The scheduled sender (scripts/notify-worker.mjs) reads this collection
+    // with the Admin SDK, so rules never need to grant it service access.
+    // The topic is the only secret in the system: it is a long random string,
+    // readable by its owner and by administrators, and never by anyone else.
+    match /pushSubscriptions/{userId} {
+      function topicShape() {
+        let topic = request.resource.data.get('topic', '');
+        return topic is string && topic.matches('^mailmart-[a-z0-9-]{6,40}$');
+      }
+      function baseShape() {
+        let base = request.resource.data.get('ntfyBase', '');
+        return base is string && base.matches('^https://[^ ]{4,200}$');
+      }
+      allow read: if signedIn() && (userId == uid() || isAdmin());
+      allow create: if signedIn() && userId == uid()
+        && request.resource.data.keys().hasAll(['topic', 'ntfyBase', 'enabled', 'createdAt', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['topic', 'ntfyBase', 'enabled', 'createdAt', 'updatedAt'])
+        && topicShape() && baseShape()
+        && request.resource.data.enabled is bool
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if signedIn() && userId == uid()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['topic', 'ntfyBase', 'enabled', 'updatedAt'])
+        && topicShape() && baseShape()
+        && request.resource.data.get('enabled', true) is bool
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if signedIn() && (userId == uid() || isAdmin());
+    }
+
     // ---------- transactions --------------------------------------------
     // Append-only ledger. Owners raise pending requests; only an
     // administrator can settle one, and settling is what moves money.
