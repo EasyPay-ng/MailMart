@@ -227,9 +227,17 @@ MailMart with server privileges. Each run:
    for length can never send the same alert twice.
 
 Customers opt in on **Dashboard → Phone alerts**: it registers a long random
-topic on `pushSubscriptions/{uid}` and shows it with a copy button. They install
-the free **ntfy** app, subscribe to that topic, and alerts arrive like any other
-app's. No account, no key, no card.
+topic on `pushSubscriptions/{uid}` and walks them through three steps. On
+Android the card offers **Open in ntfy app** — an `ntfy://host/topic` deep link
+that subscribes in one tap. iOS has no deep-link support for this, so there the
+customer taps **Copy topic** and adds it under *+ → Subscribe to topic*. Either
+way there is no account, no key and no card.
+
+The administrator cannot complete this step for a customer: the subscription
+lives on their phone, and the topic belongs to their account. (Admins *can* read
+any topic through the rules — that is there for support and auditing, and
+subscribing your own phone to a customer's topic would put their order alerts on
+your device.)
 
 Choosing ntfy was deliberate: it needs no third-party signup, so the only
 credential anywhere is the `FIREBASE_SERVICE_ACCOUNT` GitHub Secret that the

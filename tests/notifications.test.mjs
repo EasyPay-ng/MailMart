@@ -13,6 +13,9 @@ import {
   recipientUidsFor,
   notificationKey,
   topicForUid,
+  phoneAlertLink,
+  phoneAlertDeepLink,
+  isAppleMobile,
   unreadItems,
   renderTemplate,
   formatNaira,
@@ -367,4 +370,25 @@ test("digest is on by default and the administrator can switch it off", () => {
   assert.equal(resolvePolicy({ channels: { digest: "no" } }).channels.digest, true);
   const round = serializePolicy({ channels: { digest: false } });
   assert.equal(round.channels.digest, false);
+});
+
+test("the one-tap ntfy link is built only where ntfy supports it", () => {
+  assert.equal(phoneAlertDeepLink("mailmart-abc123", "https://ntfy.sh"),
+    "ntfy://ntfy.sh/mailmart-abc123?display=MailMart");
+  assert.equal(phoneAlertDeepLink("mailmart-abc123", "https://ntfy.sh/", "MailMart NG"),
+    "ntfy://ntfy.sh/mailmart-abc123?display=MailMart%20NG");
+  assert.equal(phoneAlertDeepLink("topic/with slash", "https://ntfy.sh"),
+    "ntfy://ntfy.sh/topic%2Fwith%20slash?display=MailMart");
+  assert.equal(phoneAlertDeepLink("", "https://ntfy.sh"), "");
+  assert.equal(phoneAlertLink("mailmart-abc123", "https://ntfy.sh/"), "https://ntfy.sh/mailmart-abc123");
+
+  const ios = { userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)", maxTouchPoints: 5 };
+  const ipad = { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", maxTouchPoints: 5 };
+  const mac = { userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", maxTouchPoints: 0 };
+  const android = { userAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 8)", maxTouchPoints: 5 };
+  assert.equal(isAppleMobile(ios), true);
+  assert.equal(isAppleMobile(ipad), true, "iPadOS reports as a Mac; touch gives it away");
+  assert.equal(isAppleMobile(mac), false);
+  assert.equal(isAppleMobile(android), false);
+  assert.equal(isAppleMobile(null), false);
 });

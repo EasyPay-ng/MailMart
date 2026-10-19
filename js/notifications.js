@@ -49,10 +49,16 @@ import {
   buildNotificationItems,
   unreadItems,
   formatNaira,
-  topicForUid
+  topicForUid,
+  phoneAlertLink,
+  phoneAlertDeepLink,
+  isAppleMobile
 } from "./notification-policy.js";
 
 export {
+  phoneAlertLink,
+  phoneAlertDeepLink,
+  isAppleMobile,
   EVENT_CATALOG,
   ORDER_STATUS_LABEL,
   AUDIENCE_LABEL,
@@ -329,10 +335,11 @@ export async function disablePhoneAlerts(user) {
   await deleteDoc(doc(db, "pushSubscriptions", user.uid));
 }
 
-/** The subscribe link a phone can open (or type into the ntfy app). */
-export function phoneAlertLink(topic, base = NTFY_BASE) {
-  return String(base || NTFY_BASE).replace(/\/+$/, "") + "/" + encodeURIComponent(String(topic || ""));
-}
+/*
+ * The `phoneAlert*` helpers and `isAppleMobile` live in notification-policy.js
+ * because they are pure; they are re-exported with the block below so pages
+ * only ever import from this module.
+ */
 
 /* ------------------------------------------------------------------ */
 /* per-browser state                                                   */

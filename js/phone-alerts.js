@@ -14,8 +14,11 @@
 //     and a busy GitHub can delay a run further.
 
 import { db, doc, onSnapshot, setDoc, serverTimestamp } from "./firebase.js";
-import { topicForUid, resolvePolicy, POLICY_DOC_PATH } from "./notification-policy.js";
-import { phoneAlertLink, NTFY_BASE } from "./notifications.js";
+import {
+  topicForUid, resolvePolicy, POLICY_DOC_PATH,
+  phoneAlertLink, phoneAlertDeepLink, isAppleMobile
+} from "./notification-policy.js";
+import { NTFY_BASE } from "./notifications.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -63,6 +66,17 @@ export function mountPhoneAlerts(user, container) {
     const topic = subscription?.topic || "";
     const base = subscription?.ntfyBase || NTFY_BASE;
     const link = topic ? phoneAlertLink(topic, base) : "";
+    const deepLink = topic && !isAppleMobile() ? phoneAlertDeepLink(topic, base) : "";
+
+    const steps = topic
+      ? `<ol class="phone-steps">
+           <li>Install the free <b>ntfy</b> app from your app store.</li>
+           <li>${deepLink
+             ? 'Tap <b>Open in ntfy app</b> below — it adds this topic for you.'
+             : 'Tap <b>Copy topic</b>, then in ntfy tap <b>+ → Subscribe to topic</b> and paste it.'}</li>
+           <li>Allow notifications when the phone asks. That is it.</li>
+         </ol>`
+      : "";
 
     container.innerHTML = `
       <div class="kv"><span>Status</span><b>${active ? "On — this phone can receive alerts" : "Off"}</b></div>
@@ -72,15 +86,16 @@ export function mountPhoneAlerts(user, container) {
         <button class="btn-fill" type="button" id="phoneAlertsToggle" ${busy ? "disabled" : ""}>
           ${active ? "Turn phone alerts off" : (topic ? "Turn phone alerts back on" : "Turn on phone alerts")}
         </button>
+        ${deepLink ? `<a class="btn-ghost" href="${esc(deepLink)}" style="text-align:center">Open in ntfy app</a>` : ""}
         ${topic ? '<button class="btn-ghost" type="button" id="phoneAlertsCopy">Copy topic</button>' : ""}
-        ${topic ? `<a class="btn-ghost" href="${esc(link)}" target="_blank" rel="noopener" style="text-align:center">Open ntfy</a>` : ""}
+        ${topic ? `<a class="btn-ghost" href="${esc(link)}" target="_blank" rel="noopener" style="text-align:center">Open ntfy.sh</a>` : ""}
       </div>
+      ${steps}
       <p class="msg">
-        Install the free <b>ntfy</b> app (Android, iPhone or desktop), choose
-        <b>Subscribe to topic</b>, and paste the topic above. Alerts then arrive with
-        MailMart closed. They are sent every few minutes rather than instantly, and
-        the topic is the password: anyone who learns it can read these alerts, so
-        rotate it here if that ever matters.
+        Alerts keep arriving with MailMart closed. They are sent every few minutes
+        rather than instantly, and the topic is the password: anyone who learns it
+        can read these alerts, so rotate it by turning alerts off and on if that
+        ever matters.
       </p>`;
 
     const toggle = container.querySelector("#phoneAlertsToggle");
@@ -103,7 +118,9 @@ export function mountPhoneAlerts(user, container) {
             createdAt: serverTimestamp(), updatedAt: serverTimestamp()
           }, { merge: true });
           note.className = "msg good";
-          note.textContent = "Phone alerts are on. Subscribe to this topic in the ntfy app.";
+          note.textContent = isAppleMobile()
+            ? "Phone alerts are on. Copy the topic, then add it in ntfy under + → Subscribe to topic."
+            : "Phone alerts are on. Tap “Open in ntfy app” to add the topic.";
         }
       } catch (error) {
         note.className = "msg bad";

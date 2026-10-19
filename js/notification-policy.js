@@ -658,6 +658,35 @@ export function unreadItems(items, readKeys) {
   return (items || []).filter((item) => !seen.has(item.key));
 }
 
+/** The web link for a topic (opens ntfy.sh, which can also subscribe). */
+export function phoneAlertLink(topic, base = "https://ntfy.sh") {
+  return String(base || "https://ntfy.sh").replace(/\/+$/, "") + "/" + encodeURIComponent(String(topic || ""));
+}
+
+/**
+ * One-tap subscribe link for the ntfy app.
+ *
+ * Android only, by ntfy's design: its app registers the `ntfy://` scheme and
+ * subscribes on open. iOS has no deep-link support for this (ntfy issue #450),
+ * so there the topic has to be copied into the app by hand — the phone-alert
+ * card checks the platform before offering this.
+ */
+export function phoneAlertDeepLink(topic, base = "https://ntfy.sh", display = "MailMart") {
+  const host = String(base || "https://ntfy.sh").replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const name = String(topic || "").trim();
+  if (!host || !name) return "";
+  return `ntfy://${host}/${encodeURIComponent(name)}?display=${encodeURIComponent(display)}`;
+}
+
+/** True on iPhone/iPad, where ntfy cannot be opened by link. */
+export function isAppleMobile(nav = typeof navigator === "undefined" ? null : navigator) {
+  if (!nav) return false;
+  const ua = String(nav.userAgent || "");
+  if (/iPad|iPhone|iPod/i.test(ua)) return true;
+  // iPadOS 13+ reports itself as a Mac; a touch screen gives it away.
+  return /Macintosh/i.test(ua) && Number(nav.maxTouchPoints || 0) > 1;
+}
+
 /** A short, unguessable ntfy topic for one account. */
 export function topicForUid(uid, salt = "") {
   const clean = String(uid || "").replace(/[^A-Za-z0-9]/g, "");
