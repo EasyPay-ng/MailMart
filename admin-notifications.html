@@ -65,11 +65,12 @@
       shade. Nothing is sent until you save.
     </p>
     <p class="chrome-note">
-      Delivery is live while a MailMart page is open: the page watches the buyer's
-      and seller's own orders and raises the alert the moment a status changes.
-      With every MailMart tab closed nothing can fire — that needs Firebase Cloud
-      Messaging plus a Cloud Function, which this static site does not have. See
-      “Notifications” in the README before promising users otherwise.
+      The bell is live while a MailMart page is open. Phone alerts are sent by the
+      scheduled sender in <code>.github/workflows/notify-cron.yml</code>: it reads the
+      records that changed since the last run, applies exactly these settings, and
+      pushes to the free ntfy app — so they keep arriving with MailMart closed. That
+      sender runs every five minutes, so treat phone alerts as “within a few
+      minutes”, not instant. See “Notifications” in the README.
     </p>
   </section>
 
@@ -83,6 +84,8 @@
         <span><b>Device alerts</b><span>Ask the browser to raise an alert. The person still has to allow notifications for this site.</span></span></label>
       <label class="channel"><input type="checkbox" id="channelSound">
         <span><b>Chime</b><span>Play a short two-tone sound with a new alert.</span></span></label>
+      <label class="channel"><input type="checkbox" id="channelPhone">
+        <span><b>Phone alerts (ntfy)</b><span>Send to the customer's phone through the free ntfy app, including while MailMart is closed. Delivered by the scheduled sender every few minutes.</span></span></label>
     </div>
   </section>
 
@@ -94,6 +97,8 @@
         <span><b>Buyers</b><span>Payment confirmed, dispatched, delivered, cancelled and balance-due updates.</span></span></label>
       <label class="channel"><input type="checkbox" id="audienceSeller">
         <span><b>Sellers</b><span>New order, payment confirmed and delivery confirmed.</span></span></label>
+      <label class="channel"><input type="checkbox" id="audienceAccount">
+        <span><b>Account holders</b><span>Wallet movements, refunds, payouts, digital-service updates.</span></span></label>
       <label class="channel"><input type="checkbox" id="audienceAdmin">
         <span><b>Administrators</b><span>Orders waiting for a payment check.</span></span></label>
     </div>

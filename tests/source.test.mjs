@@ -62,7 +62,7 @@ test("all private service and claim queries have deployable indexes and service 
 
 test("rules keep all legacy/new collection boundaries and balanced delimiters (not a rules compiler)", async () => {
   const text = await fs.readFile(path.join(root, "firestore.rules"), "utf8");
-  for (const collection of ["users", "sales", "presence", "settings", "transactions", "kyc", "listings", "orders", "mail", "referrals", "referralCodes", "affiliateApplications", "referralClaims", "referralAudit", "socialOffers", "socialRequests", "rentalCategories", "rentals", "rentalInboxes", "rentalCodes"]) assert.match(text, new RegExp("match /" + collection + "/"), collection);
+  for (const collection of ["users", "sales", "presence", "settings", "transactions", "kyc", "listings", "orders", "mail", "referrals", "referralCodes", "affiliateApplications", "referralClaims", "referralAudit", "pushSubscriptions", "socialOffers", "socialRequests", "rentalCategories", "rentals", "rentalInboxes", "rentalCodes"]) assert.match(text, new RegExp("match /" + collection + "/"), collection);
   assert.doesNotMatch(text, /[A-Za-z0-9_]\$\(/, "Build dynamic document IDs first, then interpolate them as a full Firestore path segment.");
   const stripped = text.replace(/'[^'\\]*(?:\\.[^'\\]*)*'|\"[^\"\\]*(?:\\.[^\"\\]*)*\"|\/\/[^\n]*/g, "");
   const stack = [], pair = { ")": "(", "]": "[", "}": "{" };
@@ -71,4 +71,39 @@ test("rules keep all legacy/new collection boundaries and balanced delimiters (n
     else if (")]}".includes(c)) assert.equal(stack.pop(), pair[c]);
   }
   assert.equal(stack.length, 0);
+});
+
+test("notification surfaces are wired together (bell, admin policy, phone alerts, sender)", async () => {
+  const admin = await fs.readFile(path.join(root, "admin.html"), "utf8");
+  assert.match(admin, /href="admin-notifications\.html"/);
+  assert.match(admin, /mountNotificationBell\(user,\{isAdmin:true\}\)/);
+
+  for (const page of ["dashboard.html", "orders.html", "wallet.html", "sell.html"]) {
+    assert.match(await fs.readFile(path.join(root, page), "utf8"), /mountNotificationBell/, page);
+  }
+  // The storefront keeps its logic in a module, not inline.
+  assert.match(await fs.readFile(path.join(root, "js/marketplace-page.js"), "utf8"), /mountNotificationBell/);
+
+  const dashboard = await fs.readFile(path.join(root, "dashboard.html"), "utf8");
+  assert.match(dashboard, /id="phone-alerts"/);
+  assert.match(dashboard, /mountPhoneAlerts\(user/);
+
+  const adminPage = await fs.readFile(path.join(root, "admin-notifications.html"), "utf8");
+  for (const id of ["channelInApp", "channelBrowser", "channelSound", "channelPhone",
+    "audienceBuyer", "audienceSeller", "audienceAccount", "audienceAdmin"]) {
+    assert.match(adminPage, new RegExp(`id="${id}"`), id);
+  }
+
+  const workflow = await fs.readFile(path.join(root, ".github/workflows/notify-cron.yml"), "utf8");
+  assert.match(workflow, /scripts\/notify-worker\.mjs/);
+  assert.match(workflow, /FIREBASE_SERVICE_ACCOUNT/);
+  assert.match(workflow, /cron: "\*\/5 \* \* \* \*"/);
+
+  const sender = await fs.readFile(path.join(root, "scripts/notify-worker.mjs"), "utf8");
+  assert.match(sender, /collectAlerts\(/);
+  assert.match(sender, /pushSubscriptions/);
+  assert.match(sender, /notifyLog/);
+
+  const rules = await fs.readFile(path.join(root, "firestore.rules"), "utf8");
+  assert.match(rules, /match \/pushSubscriptions\/\{userId\}/);
 });

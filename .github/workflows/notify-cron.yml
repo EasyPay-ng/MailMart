@@ -1,0 +1,90 @@
+name: Send phone alerts
+
+# Why this exists
+# ---------------
+# MailMart is a static site. A page can only notice an order change while it is
+# open, so a customer with the app closed hears nothing. This workflow is the
+# thing that is always awake: every five minutes it runs
+# scripts/notify-worker.mjs, which reads the records that changed, applies the
+# administrator's settings/notifications policy, and pushes to each opted-in
+# customer's ntfy topic.
+#
+# It is free: public-repository Actions minutes, GitHub's own scheduler, and
+# ntfy.sh (no account, no key). The only credential is the same
+# FIREBASE_SERVICE_ACCOUNT secret the rules-deploy workflow already uses.
+
+on:
+  schedule:
+    # GitHub's shortest interval. Runs are queued, not guaranteed on the exact
+    # minute: under load an alert can arrive a few minutes late.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      lookback_minutes:
+        description: "How far back to scan for changed records"
+        required: false
+        default: "20"
+      dry_run:
+        description: "Log alerts without sending (1 = yes)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: notify-cron
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    name: Send queued phone alerts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # firebase-admin is installed here rather than added to package.json so
+      # the browser app keeps its "no dependencies, no build step" property and
+      # the lockfile stays about the test runner only.
+      - name: Install the sender's dependency
+        run: npm install --no-save --no-audit --no-fund firebase-admin@13
+
+      # A missing credential is a configuration gap, not a broken site. Say so
+      # in the run summary instead of failing every five minutes forever.
+      - name: Check the credential
+        id: guard
+        env:
+          KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$KEY" ]; then
+            {
+              echo "### Phone alerts are not configured"
+              echo
+              echo 'The `FIREBASE_SERVICE_ACCOUNT` repository secret is not set, so'
+              echo 'nothing can read Firestore on a schedule. The in-app bell keeps'
+              echo 'working; phone alerts stay off until the secret is added.'
+              echo
+              echo 'Firebase Console → Project settings → Service accounts → **Generate new private key**,'
+              echo 'then GitHub → Settings → Secrets and variables → Actions → **New repository secret**.'
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT is missing; phone alerts were not sent."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Send alerts
+        if: steps.guard.outputs.configured == 'true'
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes || '20' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '' }}
+          NTFY_BASE: https://ntfy.sh
+          MAX_SENDS_PER_RUN: "25"
+        run: node scripts/notify-worker.mjs

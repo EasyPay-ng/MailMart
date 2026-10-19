@@ -35,6 +35,7 @@ import {
   limit,
   onSnapshot,
   setDoc,
+  deleteDoc,
   serverTimestamp
 } from "./firebase.js";
 import {
@@ -42,17 +43,20 @@ import {
   POLICY_DOC_PATH,
   ORDER_STATUS_LABEL,
   AUDIENCE_LABEL,
+  SOURCE_LABEL,
   resolvePolicy,
   serializePolicy,
   buildNotificationItems,
   unreadItems,
-  formatNaira
+  formatNaira,
+  topicForUid
 } from "./notification-policy.js";
 
 export {
   EVENT_CATALOG,
   ORDER_STATUS_LABEL,
   AUDIENCE_LABEL,
+  SOURCE_LABEL,
   resolvePolicy,
   serializePolicy,
   buildNotificationItems,
@@ -101,29 +105,37 @@ export async function saveNotificationPolicy(policy, user) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Watch the orders that can raise notifications for this user.
+ * Watch every record that can raise a notification for this user.
  *
- * Nothing is emitted until every listener has answered once, so the first
+ * Nothing is emitted until each listener has answered once, so the first
  * snapshot is complete. That matters: a partial first snapshot would make the
  * reader look like they had already seen half their feed, and the second half
  * would then alert as if it were new.
+ *
+ * Only collections the person's security rules already allow are opened:
+ * their own orders, their own wallet ledger, their own service requests, their
+ * own verification document — plus platform-wide orders and service requests
+ * for an administrator.
  */
-export function watchNotificationOrders(user, { isAdmin = false } = {}, onOrders, onError = console.error) {
+export function watchNotificationSources(user, { isAdmin = false } = {}, onSources, onError = console.error) {
   if (!user) return () => {};
 
-  const buckets = { buyer: [], seller: [], all: [] };
-  const ready = { buyer: false, seller: false, all: !isAdmin };
+  const state = {
+    orders: [],
+    transactions: [],
+    services: [],
+    verifications: []
+  };
+  const ready = new Set();
+  const expected = ["buyer", "seller", "transactions", "socialRequests", "rentals", "kyc"];
+  if (isAdmin) expected.push("allOrders", "allSocial", "allRentals");
   const stops = [];
   let stopped = false;
 
   const emit = () => {
     if (stopped) return;
-    if (!(ready.buyer && ready.seller && ready.all)) return;
-    const byId = new Map();
-    for (const order of buckets.buyer) byId.set(order.id, order);
-    for (const order of buckets.seller) byId.set(order.id, order);
-    if (isAdmin) for (const order of buckets.all) byId.set(order.id, order);
-    onOrders([...byId.values()]);
+    if (!expected.every((name) => ready.has(name))) return;
+    onSources({ ...state, services: [...state.services] });
   };
 
   const subscribe = (name, buildQuery) => {
@@ -132,22 +144,69 @@ export function watchNotificationOrders(user, { isAdmin = false } = {}, onOrders
       stop = onSnapshot(
         buildQuery(),
         (snap) => {
-          buckets[name] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          ready[name] = true;
+          apply(name, snap);
+          ready.add(name);
           emit();
         },
         (error) => {
-          ready[name] = true;
+          ready.add(name);
           onError(error);
           emit();
         }
       );
     } catch (error) {
-      ready[name] = true;
+      ready.add(name);
       onError(error);
       emit();
     }
     stops.push(() => stop());
+  };
+
+  const apply = (name, snap) => {
+    const docs = typeof snap.docs?.map === "function"
+      ? snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      : (snap.exists ? [{ id: snap.id, ...snap.data() }] : []);
+    switch (name) {
+      case "buyer": {
+        const seen = new Set(docs.map((row) => row.id));
+        state.orders = [...docs, ...state.orders.filter((row) => !seen.has(row.id))];
+        break;
+      }
+      case "seller": {
+        const byId = new Map(state.orders.map((row) => [row.id, row]));
+        for (const row of docs) byId.set(row.id, row);
+        state.orders = [...byId.values()];
+        break;
+      }
+      case "allOrders": {
+        const byId = new Map(state.orders.map((row) => [row.id, row]));
+        for (const row of docs) byId.set(row.id, row);
+        state.orders = [...byId.values()];
+        break;
+      }
+      case "transactions":
+        state.transactions = docs;
+        break;
+      case "socialRequests":
+      case "allSocial":
+        state.services = [
+          ...state.services.filter((row) => row._kind !== "socialRequests"),
+          ...docs.map((row) => ({ ...row, _kind: "socialRequests" }))
+        ];
+        break;
+      case "rentals":
+      case "allRentals":
+        state.services = [
+          ...state.services.filter((row) => row._kind !== "rentals"),
+          ...docs.map((row) => ({ ...row, _kind: "rentals" }))
+        ];
+        break;
+      case "kyc":
+        state.verifications = docs;
+        break;
+      default:
+        break;
+    }
   };
 
   subscribe("buyer", () => query(
@@ -164,11 +223,44 @@ export function watchNotificationOrders(user, { isAdmin = false } = {}, onOrders
     limit(100)
   ));
 
+  subscribe("transactions", () => query(
+    collection(db, "transactions"),
+    where("uid", "==", user.uid),
+    orderBy("createdAt", "desc"),
+    limit(50)
+  ));
+
+  subscribe("socialRequests", () => query(
+    collection(db, "socialRequests"),
+    where("uid", "==", user.uid),
+    orderBy("createdAt", "desc"),
+    limit(30)
+  ));
+
+  subscribe("rentals", () => query(
+    collection(db, "rentals"),
+    where("uid", "==", user.uid),
+    orderBy("createdAt", "desc"),
+    limit(30)
+  ));
+
+  subscribe("kyc", () => doc(db, "kyc", user.uid));
+
   if (isAdmin) {
-    subscribe("all", () => query(
+    subscribe("allOrders", () => query(
       collection(db, "orders"),
       orderBy("createdAt", "desc"),
       limit(100)
+    ));
+    subscribe("allSocial", () => query(
+      collection(db, "socialRequests"),
+      orderBy("createdAt", "desc"),
+      limit(50)
+    ));
+    subscribe("allRentals", () => query(
+      collection(db, "rentals"),
+      orderBy("createdAt", "desc"),
+      limit(50)
     ));
   }
 
@@ -178,6 +270,68 @@ export function watchNotificationOrders(user, { isAdmin = false } = {}, onOrders
       try { stop(); } catch { /* already closed */ }
     }
   };
+}
+
+/**
+ * Backwards-compatible alias: earlier code (and the reference in the README)
+ * talked about "the orders feed". The feed now covers more than orders.
+ */
+export const watchNotificationOrders = watchNotificationSources;
+
+/* ------------------------------------------------------------------ */
+/* phone alerts (free, delivered by the scheduled sender)              */
+/* ------------------------------------------------------------------ */
+
+export const NTFY_BASE = "https://ntfy.sh";
+
+/** Where this account's phone alerts are registered, if they are. */
+export function watchPhoneAlerts(user, onValue, onError = console.error) {
+  if (!user) return () => {};
+  return onSnapshot(
+    doc(db, "pushSubscriptions", user.uid),
+    (snap) => onValue(snap.exists() ? { id: snap.id, ...snap.data() } : null),
+    onError
+  );
+}
+
+/**
+ * Register (or re-register) this account's phone alert topic.
+ *
+ * The topic is a long random string, because ntfy has no accounts on the free
+ * tier: knowing the topic is what lets a device subscribe. It is stored on a
+ * document only this account (and administrators) may read.
+ */
+export async function enablePhoneAlerts(user, { base = NTFY_BASE, topic } = {}) {
+  if (!user) throw new Error("Sign in first.");
+  const value = topic || topicForUid(user.uid, Math.random().toString(36).slice(2, 10));
+  await setDoc(doc(db, "pushSubscriptions", user.uid), {
+    topic: value,
+    ntfyBase: base,
+    enabled: true,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+  return value;
+}
+
+/** Keep the topic but stop sending to it. */
+export async function pausePhoneAlerts(user) {
+  if (!user) throw new Error("Sign in first.");
+  await setDoc(doc(db, "pushSubscriptions", user.uid), {
+    enabled: false,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+/** Remove the registration entirely. */
+export async function disablePhoneAlerts(user) {
+  if (!user) throw new Error("Sign in first.");
+  await deleteDoc(doc(db, "pushSubscriptions", user.uid));
+}
+
+/** The subscribe link a phone can open (or type into the ntfy app). */
+export function phoneAlertLink(topic, base = NTFY_BASE) {
+  return String(base || NTFY_BASE).replace(/\/+$/, "") + "/" + encodeURIComponent(String(topic || ""));
 }
 
 /* ------------------------------------------------------------------ */
@@ -450,7 +604,7 @@ export function mountNotificationBell(user, { isAdmin = false, trigger = null } 
 
   const state = {
     policy: resolvePolicy(null),
-    orders: [],
+    sources: { orders: [], transactions: [], services: [], verifications: [] },
     items: [],
     read: loadKeySet("read", user.uid),
     alerted: loadKeySet("alerted", user.uid),
@@ -489,7 +643,8 @@ export function mountNotificationBell(user, { isAdmin = false, trigger = null } 
       parts.push('<span class="mm-note" style="width:auto">This browser cannot show device alerts; the bell still works.</span>');
     }
     if (isAdmin) parts.push('<a class="mm-admin" href="admin-notifications.html">Admin settings</a>');
-    parts.push('<p class="mm-note">MailMart alerts you while a MailMart tab is open. Administrators choose which events appear here.</p>');
+    if (state.policy.channels.phone) parts.push('<a class="mm-admin" href="dashboard.html#phone-alerts">Phone alerts</a>');
+    parts.push('<p class="mm-note">Administrators choose which events appear here. Phone alerts keep arriving with MailMart closed — set them up under Dashboard → Phone alerts.</p>');
     foot.innerHTML = parts.join("");
     const enable = foot.querySelector("#mmBellEnable");
     if (enable) enable.addEventListener("click", async () => {
@@ -563,7 +718,7 @@ export function mountNotificationBell(user, { isAdmin = false, trigger = null } 
 
   const recompute = ({ alert = false } = {}) => {
     state.items = buildNotificationItems({
-      orders: state.orders,
+      ...state.sources,
       uid: user.uid,
       isAdmin,
       policy: state.policy
@@ -637,11 +792,11 @@ export function mountNotificationBell(user, { isAdmin = false, trigger = null } 
     (error) => console.warn("Notification policy:", error)
   ));
 
-  stops.push(watchNotificationOrders(user, { isAdmin }, (orders) => {
-    state.orders = orders;
+  stops.push(watchNotificationSources(user, { isAdmin }, (sources) => {
+    state.sources = sources;
     state.ordersReady = true;
     recompute({ alert: state.seeded });
-  }, (error) => console.warn("Notification order feed:", error)));
+  }, (error) => console.warn("Notification feed:", error)));
 
   registerNotificationWorker();
   render();

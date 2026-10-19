@@ -3,9 +3,14 @@ import assert from "node:assert/strict";
 import {
   EVENT_CATALOG,
   ORDER_STATUS_LABEL,
+  statusLabelFor,
   resolvePolicy,
   serializePolicy,
   buildNotificationItems,
+  collectAlerts,
+  recipientUidsFor,
+  notificationKey,
+  topicForUid,
   unreadItems,
   renderTemplate,
   formatNaira,
@@ -36,6 +41,11 @@ function order(id, status, overrides = {}) {
   };
 }
 
+function statusLabelForKind(event, status) {
+  const kind = { order: "order", transaction: "transaction", kyc: "kyc" }[event.source] || event.collection;
+  return statusLabelFor(kind, status);
+}
+
 function itemsFor(orders, { uid = BUYER, isAdmin = false, policy = resolvePolicy(null) } = {}) {
   return buildNotificationItems({ orders, uid, isAdmin, policy });
 }
@@ -45,9 +55,14 @@ test("every catalogue event is valid and defaults are usable", () => {
   for (const event of EVENT_CATALOG) {
     assert.ok(!ids.has(event.id), "duplicate event id " + event.id);
     ids.add(event.id);
-    assert.ok(["buyer", "seller", "admin"].includes(event.audience), event.id);
+    assert.ok(["buyer", "seller", "account", "admin"].includes(event.audience), event.id);
+    assert.ok(["order", "transaction", "service", "kyc"].includes(event.source), event.id);
+    if (event.source === "service") assert.ok(["socialRequests", "rentals"].includes(event.collection), event.id);
+    if (event.source === "transaction") assert.ok(Array.isArray(event.types) && event.types.length, event.id);
     assert.ok(event.statuses.length > 0, event.id);
-    for (const status of event.statuses) assert.ok(ORDER_STATUS_LABEL[status], event.id + " → " + status);
+    for (const status of event.statuses) {
+      assert.ok(statusLabelForKind(event, status), event.id + " → " + status);
+    }
     assert.ok(event.title.length <= 80, event.id);
     assert.ok(event.body.length <= 300, event.id);
     assert.match(event.label, /\S/);
@@ -56,8 +71,8 @@ test("every catalogue event is valid and defaults are usable", () => {
   for (const event of EVENT_CATALOG) {
     assert.deepEqual(policy.events[event.id], { enabled: true, title: event.title, body: event.body });
   }
-  assert.deepEqual(policy.channels, { inApp: true, browser: true, sound: true });
-  assert.deepEqual(policy.audiences, { buyer: true, seller: true, admin: true });
+  assert.deepEqual(policy.channels, { inApp: true, browser: true, sound: true, phone: true });
+  assert.deepEqual(policy.audiences, { buyer: true, seller: true, account: true, admin: true });
 });
 
 test("a stored policy overrides defaults field by field and drops rubbish", () => {
@@ -75,7 +90,7 @@ test("a stored policy overrides defaults field by field and drops rubbish", () =
   assert.equal(policy.channels.browser, false);
   assert.equal(policy.channels.inApp, true, "missing channel keeps the default");
   assert.equal(policy.channels.sound, true, "non-boolean channel keeps the default");
-  assert.deepEqual(policy.audiences, { buyer: true, seller: false, admin: true });
+  assert.deepEqual(policy.audiences, { buyer: true, seller: false, account: true, admin: true });
 
   assert.deepEqual(policy.events.buyer_shipped, {
     enabled: false,
@@ -197,4 +212,90 @@ test("templates, money and unread helper behave predictably", () => {
   assert.deepEqual(unreadItems(items, ["one"]).map((item) => item.key), ["two"]);
   assert.deepEqual(unreadItems(items, new Set(["one", "two"])), []);
   assert.equal(unreadItems(items, []).length, 2);
+});
+
+const TX = (id, type, status, overrides = {}) => ({
+  id, type, status, uid: BUYER, email: "buyer@example.com", amount: 5000,
+  createdAt: stamp(1000), updatedAt: stamp(3000), ...overrides
+});
+
+test("wallet alerts reach the wallet owner only, and respect the ledger type", () => {
+  const deposit = buildNotificationItems({
+    uid: BUYER,
+    transactions: [TX("t1", "deposit", "completed"), TX("t2", "deposit", "pending")]
+  });
+  assert.deepEqual(deposit.map((item) => item.eventId), ["wallet_deposit_approved"]);
+  assert.equal(deposit[0].body, "Your deposit of ₦5,000.00 has been added to your MailMart wallet.");
+
+  const mixed = buildNotificationItems({
+    uid: BUYER,
+    transactions: [
+      TX("t3", "withdrawal", "completed"),
+      TX("t4", "withdrawal", "rejected"),
+      TX("t5", "order_payout", "completed"),
+      TX("t6", "email_payout", "completed"),
+      TX("t7", "order_refund", "completed"),
+      TX("t8", "listing_fee", "completed"),
+      TX("t9", "order_payment", "completed")
+    ]
+  });
+  assert.deepEqual(mixed.map((item) => item.eventId).sort(), [
+    "wallet_payout", "wallet_payout", "wallet_refund",
+    "wallet_withdrawal_paid", "wallet_withdrawal_rejected"
+  ]);
+
+  const someoneElse = buildNotificationItems({ uid: "stranger", transactions: [TX("t1", "deposit", "completed")] });
+  assert.deepEqual(someoneElse, []);
+});
+
+test("service requests and seller verification raise their own alerts", () => {
+  const services = buildNotificationItems({
+    uid: BUYER,
+    services: [
+      { id: "s1", _kind: "socialRequests", uid: BUYER, title: "Instagram page", status: "completed" },
+      { id: "r1", _kind: "rentals", uid: BUYER, categoryName: "Registration code", status: "awaiting_code", amount: 50 },
+      { id: "r2", _kind: "rentals", uid: "someone-else", categoryName: "Other", status: "completed" }
+    ]
+  });
+  assert.deepEqual(services.map((item) => item.eventId).sort(), ["service_rental_update", "service_social_reviewed"]);
+  const social = services.find((item) => item.eventId === "service_social_reviewed");
+  assert.equal(social.body, "Your request “Instagram page” is now Completed.");
+  const rental = services.find((item) => item.eventId === "service_rental_update");
+  assert.equal(rental.title, "Email code Awaiting code");
+
+  const kyc = buildNotificationItems({
+    uid: SELLER,
+    verifications: [
+      { id: SELLER, uid: SELLER, status: "approved", fullName: "Ada" },
+      { id: "other", uid: "other", status: "rejected" }
+    ]
+  });
+  assert.deepEqual(kyc.map((item) => item.eventId), ["seller_verified"]);
+  assert.equal(kyc[0].title, "Seller verification Approved");
+});
+
+test("collectAlerts fans administrator events out to every administrator once", () => {
+  const alerts = collectAlerts({
+    orders: [order("abc", "pending_payment")],
+    adminUids: ["admin-1", "admin-2"]
+  });
+  const adminAlert = alerts.find((alert) => alert.eventId === "admin_placed");
+  assert.deepEqual(adminAlert.recipientUids, ["admin-1", "admin-2"]);
+
+  const twice = collectAlerts({ orders: [order("abc", "pending_payment")], adminUids: ["admin-1", "admin-1"] });
+  assert.deepEqual(twice.filter((alert) => alert.eventId === "admin_placed").length, 1);
+
+  assert.deepEqual(recipientUidsFor(EVENT_CATALOG.find((e) => e.id === "buyer_paid"), { buyerUid: "b" }), ["b"]);
+  assert.deepEqual(recipientUidsFor(EVENT_CATALOG.find((e) => e.id === "seller_paid"), { sellerUid: "s" }), ["s"]);
+  assert.deepEqual(recipientUidsFor(EVENT_CATALOG.find((e) => e.id === "seller_verified"), { uid: "s" }), ["s"]);
+  assert.deepEqual(recipientUidsFor(EVENT_CATALOG.find((e) => e.id === "wallet_payout"), { uid: "u" }), ["u"]);
+  assert.equal(notificationKey("buyer_paid", "order", "abc"), "buyer_paid:order:abc");
+});
+
+test("phone topics are unguessable enough and reject nonsense ids", () => {
+  const topic = topicForUid("AbCdEfGh12345678xyz");
+  assert.match(topic, /^mailmart-[a-z0-9]{8,20}$/);
+  assert.notEqual(topicForUid("uid-one-123456"), topicForUid("uid-two-123456"));
+  assert.throws(() => topicForUid("short"));
+  assert.match(topicForUid("AbCdEfGh12345678xyz", "s4lt"), /-s4lt$/);
 });

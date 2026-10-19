@@ -1671,6 +1671,19 @@ body::before{
 
         </section>
 
+        <!-- Phone alerts: the free delivery path that works with MailMart closed -->
+        <div class="section-title" id="phone-alerts">
+            <h2>Phone alerts</h2>
+            <a class="link" href="admin-notifications.html" id="phoneAlertsAdminLink" hidden>Admin settings</a>
+        </div>
+
+        <section class="panel">
+            <div class="panel-head">
+                <h2>Alerts with MailMart closed</h2>
+            </div>
+            <div class="acct" id="phoneAlerts"></div>
+        </section>
+
     </main>
 
 </div>
@@ -1691,6 +1704,7 @@ import {
     STATUS_LABEL, watchBuyerOrders, watchSellerOrders
 } from "./js/marketplace.js";
 import { mountNotificationBell } from "./js/notifications.js";
+import { mountPhoneAlerts } from "./js/phone-alerts.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -1736,8 +1750,13 @@ onAuthStateChanged(auth,(user)=>{
     /* The bell in the top bar is the notification centre. Administrator
        status decides whether the feed also includes platform-wide events. */
     adminStatus(user)
-        .then((status)=>mountNotificationBell(user,{isAdmin:status.isAdmin,trigger:$("activityBtn")}))
+        .then((status)=>{
+            mountNotificationBell(user,{isAdmin:status.isAdmin,trigger:$("activityBtn")});
+            $("phoneAlertsAdminLink").hidden = !status.isAdmin;
+        })
         .catch(()=>mountNotificationBell(user,{isAdmin:false,trigger:$("activityBtn")}));
+
+    mountPhoneAlerts(user, $("phoneAlerts"));
 
 });
 

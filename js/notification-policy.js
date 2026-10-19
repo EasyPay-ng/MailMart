@@ -1,18 +1,19 @@
 // Notification policy — pure, dependency-free, and therefore testable.
 //
-// MailMart does not push notifications from a server: there is no backend in
-// this repository. Instead every page the user already has open listens to the
-// same Firestore data it always read (their orders), and turns order changes
-// into notification items. This module is the part that decides *what* becomes
-// a notification and *what wording* it uses. The administrator owns both:
-// settings/notifications stores an enable flag plus a title and body per event,
-// and resolvePolicy() folds that document over the defaults below.
+// MailMart does not push notifications from the browser: a GitHub Actions job
+// (scripts/notify-worker.mjs) reads Firestore with the Admin SDK, folds each
+// changed record through this same module, and delivers a phone alert through
+// ntfy. The browser runs the identical matching for its in-app bell. Keeping
+// the matching in one pure module is what stops the two from disagreeing.
 //
-// Nothing here talks to Firebase or the DOM, so the rules can be tested
-// directly (tests/notifications.test.mjs) instead of only in a browser.
+// The administrator owns both halves of the decision:
+//   settings/notifications { channels, audiences, events }
+// and resolvePolicy() folds that document over the defaults below. A missing
+// document, a half-saved one, or one written by an older version of the site
+// all resolve to something safe.
 
 /* ------------------------------------------------------------------ */
-/* order language                                                      */
+/* record language                                                     */
 /* ------------------------------------------------------------------ */
 
 /** The marketplace's order statuses, in the words a customer understands. */
@@ -26,25 +27,68 @@ export const ORDER_STATUS_LABEL = {
   refunded: "Refunded"
 };
 
+/** Wallet-ledger statuses. */
+export const TRANSACTION_STATUS_LABEL = {
+  pending: "Pending",
+  approved: "Approved",
+  completed: "Completed",
+  rejected: "Rejected",
+  refunded: "Refunded"
+};
+
+/** Service requests (social purchases and one-time email codes). */
+export const SERVICE_STATUS_LABEL = {
+  pending: "Pending review",
+  awaiting_code: "Awaiting code",
+  completed: "Completed",
+  rejected: "Rejected",
+  cancelled: "Cancelled",
+  refunded: "Refunded"
+};
+
+/** Seller verification. */
+export const KYC_STATUS_LABEL = {
+  pending: "Pending review",
+  approved: "Approved",
+  rejected: "Not approved"
+};
+
 export const AUDIENCE_LABEL = {
   buyer: "Buyer",
   seller: "Seller",
+  account: "Account holder",
   admin: "Administrator"
 };
 
+/** Which collection feeds each source. */
+export const SOURCE_LABEL = {
+  order: "Marketplace order",
+  transaction: "Wallet",
+  service: "Digital service",
+  kyc: "Seller verification"
+};
+
+/* ------------------------------------------------------------------ */
+/* the catalogue                                                       */
+/* ------------------------------------------------------------------ */
+
 /**
- * The catalogue of things that can raise a notification.
+ * Every event that can raise a notification.
  *
- * `statuses` is the order status that triggers the event. Each event gets its
- * own key per order, so an order moving paid → shipped → completed produces
- * three separate entries rather than one mutating entry in the feed.
+ *   source    order | transaction | service | kyc
+ *   statuses  the record statuses that trigger it
+ *   types     transaction-only: which ledger `type` values count
+ *   collection service-only: "socialRequests" or "rentals"
+ *   audience  who receives it (recipientFor() below)
  *
- * `field` names in `{braces}` are filled by renderTemplate():
- *   orderId, status, statusLabel, item, total, buyer, seller
+ * Placeholders in title/body: orderId, item, total, amount, reference,
+ * statusLabel, typeLabel, buyer, seller, recipient.
  */
 export const EVENT_CATALOG = [
+  /* ---------------------------- orders ---------------------------- */
   {
     id: "buyer_placed",
+    source: "order",
     audience: "buyer",
     statuses: ["pending_payment"],
     label: "Order received",
@@ -54,6 +98,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "buyer_paid",
+    source: "order",
     audience: "buyer",
     statuses: ["paid"],
     label: "Payment confirmed",
@@ -63,15 +108,17 @@ export const EVENT_CATALOG = [
   },
   {
     id: "buyer_shipped",
+    source: "order",
     audience: "buyer",
     statuses: ["shipped"],
     label: "Order dispatched",
-    hint: "The one in your screenshot — sent when the seller marks the order shipped.",
+    hint: "The one in the screenshot — sent when the seller marks the order shipped.",
     title: "Order Update",
     body: "Your order {orderId} has been dispatched! Track your order in your dashboard."
   },
   {
     id: "buyer_completed",
+    source: "order",
     audience: "buyer",
     statuses: ["completed"],
     label: "Order completed",
@@ -81,6 +128,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "buyer_balance_due",
+    source: "order",
     audience: "buyer",
     statuses: ["delivered_pending_balance"],
     label: "Delivered — balance outstanding",
@@ -90,6 +138,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "buyer_cancelled",
+    source: "order",
     audience: "buyer",
     statuses: ["cancelled", "refunded"],
     label: "Order cancelled or refunded",
@@ -99,6 +148,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "seller_placed",
+    source: "order",
     audience: "seller",
     statuses: ["pending_payment"],
     label: "New order received",
@@ -108,6 +158,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "seller_paid",
+    source: "order",
     audience: "seller",
     statuses: ["paid"],
     label: "Payment confirmed for your sale",
@@ -117,6 +168,7 @@ export const EVENT_CATALOG = [
   },
   {
     id: "seller_completed",
+    source: "order",
     audience: "seller",
     statuses: ["completed"],
     label: "Delivery confirmed on your sale",
@@ -126,12 +178,117 @@ export const EVENT_CATALOG = [
   },
   {
     id: "admin_placed",
+    source: "order",
     audience: "admin",
     statuses: ["pending_payment"],
     label: "New order waiting for payment",
     hint: "Sent to administrators so a new order can be checked and confirmed.",
     title: "New order awaiting payment",
     body: "Order {orderId} for {item} ({total}) is waiting for a payment check."
+  },
+
+  /* ---------------------------- wallet ---------------------------- */
+  {
+    id: "wallet_deposit_approved",
+    source: "transaction",
+    audience: "account",
+    types: ["deposit"],
+    statuses: ["completed"],
+    label: "Deposit approved",
+    hint: "Sent when an administrator confirms a bank deposit.",
+    title: "Deposit confirmed",
+    body: "Your deposit of {amount} has been added to your MailMart wallet."
+  },
+  {
+    id: "wallet_deposit_rejected",
+    source: "transaction",
+    audience: "account",
+    types: ["deposit"],
+    statuses: ["rejected"],
+    label: "Deposit declined",
+    hint: "Sent when a deposit receipt cannot be verified.",
+    title: "Deposit not confirmed",
+    body: "We could not confirm your deposit of {amount}. Open your wallet for the reason and next steps."
+  },
+  {
+    id: "wallet_withdrawal_paid",
+    source: "transaction",
+    audience: "account",
+    types: ["withdrawal"],
+    statuses: ["completed"],
+    label: "Withdrawal paid",
+    hint: "Sent when an administrator marks a withdrawal as paid out.",
+    title: "Withdrawal sent",
+    body: "Your withdrawal of {amount} has been paid out."
+  },
+  {
+    id: "wallet_withdrawal_rejected",
+    source: "transaction",
+    audience: "account",
+    types: ["withdrawal"],
+    statuses: ["rejected"],
+    label: "Withdrawal declined",
+    hint: "Sent when a withdrawal cannot be completed; the balance stays in the wallet.",
+    title: "Withdrawal not completed",
+    body: "Your withdrawal of {amount} was declined and the balance remains in your wallet."
+  },
+  {
+    id: "wallet_payout",
+    source: "transaction",
+    audience: "account",
+    types: ["order_payout", "email_payout"],
+    statuses: ["completed"],
+    label: "Seller payout released",
+    hint: "Sent when a sale payout (marketplace or email sale) is credited.",
+    title: "Payout released",
+    body: "A payout of {amount} has been credited to your wallet."
+  },
+  {
+    id: "wallet_refund",
+    source: "transaction",
+    audience: "account",
+    types: ["order_refund", "rental_refund", "admin_credit"],
+    statuses: ["completed"],
+    label: "Refund or credit credited",
+    hint: "Sent when a refund, service refund or manual credit lands in the wallet.",
+    title: "Wallet credited",
+    body: "{amount} has been credited to your MailMart wallet."
+  },
+
+  /* ------------------------ digital services ---------------------- */
+  {
+    id: "service_social_reviewed",
+    source: "service",
+    collection: "socialRequests",
+    audience: "account",
+    statuses: ["completed", "rejected", "refunded"],
+    label: "Social account request reviewed",
+    hint: "Sent when MailMart completes or rejects a social account purchase request.",
+    title: "Social request {statusLabel}",
+    body: "Your request “{item}” is now {statusLabel}."
+  },
+  {
+    id: "service_rental_update",
+    source: "service",
+    collection: "rentals",
+    audience: "account",
+    statuses: ["awaiting_code", "completed", "rejected", "refunded"],
+    label: "Email code request updated",
+    hint: "Sent when a one-time email code is assigned, delivered, rejected or refunded.",
+    title: "Email code {statusLabel}",
+    body: "Your {item} code request is now {statusLabel}. Open Services for the next step."
+  },
+
+  /* ---------------------- seller verification --------------------- */
+  {
+    id: "seller_verified",
+    source: "kyc",
+    audience: "seller",
+    statuses: ["approved", "rejected"],
+    label: "Seller verification decided",
+    hint: "Sent when an administrator approves or rejects a seller application.",
+    title: "Seller verification {statusLabel}",
+    body: "Your seller verification was {statusLabel}. Open Sell to see what happens next."
   }
 ];
 
@@ -161,15 +318,15 @@ function defaultsFor(event) {
 
 /**
  * Turn the administrator's stored document (or nothing at all) into the policy
- * every page uses. A missing document, a half-saved one, or one written by an
- * older version of the site all resolve to something safe: unknown events are
- * ignored, unknown fields are dropped, and blank wording falls back to the
- * catalogue default rather than rendering an empty notification.
+ * every page uses. Unknown events are ignored, unknown fields are dropped, and
+ * blank wording falls back to the catalogue default rather than rendering an
+ * empty notification.
  */
 export function resolvePolicy(stored) {
   const source = stored && typeof stored === "object" ? stored : {};
   const channels = source.channels && typeof source.channels === "object" ? source.channels : {};
   const storedEvents = source.events && typeof source.events === "object" ? source.events : {};
+  const audiences = source.audiences && typeof source.audiences === "object" ? source.audiences : {};
 
   const events = {};
   for (const event of EVENT_CATALOG) {
@@ -184,19 +341,20 @@ export function resolvePolicy(stored) {
     };
   }
 
-  const audiences = source.audiences && typeof source.audiences === "object" ? source.audiences : {};
-
   return {
     channels: {
       inApp: readBoolean(channels.inApp, true),
       browser: readBoolean(channels.browser, true),
-      sound: readBoolean(channels.sound, true)
+      sound: readBoolean(channels.sound, true),
+      // Closed-app delivery through ntfy, run by the scheduled sender.
+      phone: readBoolean(channels.phone, true)
     },
-    // A master switch per audience: turning "Buyer" off silences every buyer
-    // event without losing the wording that was configured for it.
+    // Master switches: turning "Buyer" off silences every buyer event without
+    // losing the wording that was configured for it.
     audiences: {
       buyer: readBoolean(audiences.buyer, true),
       seller: readBoolean(audiences.seller, true),
+      account: readBoolean(audiences.account, true),
       admin: readBoolean(audiences.admin, true)
     },
     events
@@ -223,7 +381,7 @@ export function serializePolicy(policy) {
 }
 
 /* ------------------------------------------------------------------ */
-/* rendering notification items                                         */
+/* formatting helpers                                                  */
 /* ------------------------------------------------------------------ */
 
 /** Naira with two decimals, no Intl dependency. */
@@ -260,75 +418,200 @@ export function renderTemplate(template, values = {}) {
     Object.prototype.hasOwnProperty.call(values, name) ? String(values[name]) : match);
 }
 
-function templateValues(order, audience) {
-  const status = String(order?.status || "");
-  return {
-    orderId: orderReference(order),
-    status,
-    statusLabel: ORDER_STATUS_LABEL[status] || status || "updated",
-    item: order?.listingTitle || order?.listingName || "your item",
-    total: formatNaira(order?.total),
-    buyer: order?.buyerEmail || "the buyer",
-    seller: order?.sellerEmail || "the seller",
-    audience: AUDIENCE_LABEL[audience] || audience
-  };
+const TRANSACTION_TYPE_LABEL = {
+  deposit: "Deposit",
+  withdrawal: "Withdrawal",
+  order_payment: "Order payment",
+  order_payout: "Order payout",
+  order_refund: "Order refund",
+  email_payout: "Email sale payout",
+  listing_fee: "Listing fee",
+  listing_promotion: "Listing promotion",
+  admin_credit: "Wallet credit",
+  rental_payment: "Email code payment",
+  rental_refund: "Email code refund",
+  social_purchase: "Social account purchase",
+  affiliate_commission: "Affiliate commission",
+  lifetime_commission: "Lifetime commission",
+  purchase_referral: "Referral reward",
+  purchase_welcome: "Welcome reward",
+  email_referral: "Email referral reward"
+};
+
+/** Status label for whichever kind of record this is. */
+export function statusLabelFor(kind, status) {
+  const labels = {
+    order: ORDER_STATUS_LABEL,
+    transaction: TRANSACTION_STATUS_LABEL,
+    socialRequests: SERVICE_STATUS_LABEL,
+    rentals: SERVICE_STATUS_LABEL,
+    kyc: KYC_STATUS_LABEL
+  }[kind] || {};
+  return labels[status] || status || "updated";
 }
 
-function audienceMatches(event, { order, uid, isAdmin }) {
-  if (event.audience === "buyer") return !!uid && order.buyerUid === uid;
-  if (event.audience === "seller") return !!uid && order.sellerUid === uid;
-  return isAdmin === true;
+function templateValues(kind, record) {
+  const status = String(record?.status || "");
+  const values = {
+    status,
+    statusLabel: statusLabelFor(kind, status),
+    orderId: orderReference(record),
+    item: record?.listingTitle || record?.listingName || record?.title || record?.categoryName ||
+      record?.fullName || TRANSACTION_TYPE_LABEL[record?.type] || "your request",
+    total: formatNaira(record?.total),
+    amount: formatNaira(record?.amount),
+    reference: record?.reference || record?.id || "",
+    typeLabel: TRANSACTION_TYPE_LABEL[record?.type] || record?.type || "",
+    buyer: record?.buyerEmail || "the buyer",
+    seller: record?.sellerEmail || "the seller"
+  };
+  values.recipient = values.item;
+  return values;
+}
+
+/* ------------------------------------------------------------------ */
+/* matching                                                            */
+/* ------------------------------------------------------------------ */
+
+const KIND_FOR_SOURCE = {
+  order: "order",
+  transaction: "transaction",
+  kyc: "kyc"
+};
+
+function normalize(input = {}) {
+  const records = [];
+  const push = (kind, row) => {
+    if (row && typeof row === "object" && row.id) records.push({ kind, record: row });
+  };
+  for (const row of input.orders || []) push("order", row);
+  for (const row of input.transactions || []) push("transaction", row);
+  for (const row of input.services || []) push(row._kind || "socialRequests", row);
+  for (const row of input.verifications || []) push("kyc", row);
+  return records;
+}
+
+function eventMatches(event, kind, record) {
+  if (event.source === "order") {
+    if (kind !== "order") return false;
+  } else if (event.source === "transaction") {
+    if (kind !== "transaction") return false;
+    if (event.types && !event.types.includes(record.type)) return false;
+  } else if (event.source === "service") {
+    if (kind !== (event.collection || "socialRequests")) return false;
+  } else if (event.source === "kyc") {
+    if (kind !== KIND_FOR_SOURCE.kyc) return false;
+  } else {
+    return false;
+  }
+  return event.statuses.includes(String(record.status || ""));
+}
+
+/** Who receives this event for this record. */
+export function recipientUidsFor(event, record, adminUids = []) {
+  if (event.audience === "admin") return [...adminUids];
+  if (event.audience === "buyer") return record?.buyerUid ? [record.buyerUid] : [];
+  if (event.audience === "seller") return record?.sellerUid ? [record.sellerUid] : (record?.uid ? [record.uid] : []);
+  if (event.audience === "account") return record?.uid ? [record.uid] : [];
+  return [];
+}
+
+/** Stable key: one notification per event per record, ever. */
+export function notificationKey(eventId, kind, recordId) {
+  return `${eventId}:${kind}:${recordId}`;
 }
 
 /**
- * Build the notification feed a signed-in person should see from the orders
- * their security rules already allow them to read.
- *
- * Returns items newest-first:
- *   { key, eventId, audience, orderId, orderStatus, title, body, at, item }
- *
- * The same order can appear several times (one entry per milestone), which is
- * what makes the feed readable instead of a single status that keeps changing.
+ * Every alert the policy currently allows, across all audiences. This is the
+ * single matching engine: the bell filters it by uid, the scheduled sender
+ * iterates it and delivers each alert to its recipients.
  */
-export function buildNotificationItems({ orders = [], uid = "", isAdmin = false, policy } = {}) {
+export function collectAlerts({
+  orders = [],
+  transactions = [],
+  services = [],
+  verifications = [],
+  adminUids = [],
+  policy
+} = {}) {
   const resolved = policy?.events ? policy : resolvePolicy(policy);
-  const items = new Map();
+  const alerts = [];
+  const seen = new Set();
 
-  for (const order of Array.isArray(orders) ? orders : []) {
-    if (!order || !order.id) continue;
-    const status = String(order.status || "");
-
+  for (const { kind, record } of normalize({ orders, transactions, services, verifications })) {
     for (const event of EVENT_CATALOG) {
-      if (!event.statuses.includes(status)) continue;
       const settings = resolved.events[event.id];
       if (!settings || !settings.enabled) continue;
       if (resolved.audiences?.[event.audience] === false) continue;
-      if (!audienceMatches(event, { order, uid, isAdmin })) continue;
+      if (!eventMatches(event, kind, record)) continue;
 
-      const key = `${event.id}:${order.id}`;
-      if (items.has(key)) continue;
+      const key = notificationKey(event.id, kind, record.id);
+      if (seen.has(key)) continue;
 
-      const values = templateValues(order, event.audience);
-      items.set(key, {
+      const recipients = recipientUidsFor(event, record, adminUids);
+      if (!recipients.length) continue;
+      seen.add(key);
+
+      const values = templateValues(kind, record);
+      alerts.push({
         key,
         eventId: event.id,
+        source: event.source,
         audience: event.audience,
-        orderId: order.id,
-        orderStatus: status,
-        item: values.item,
+        kind,
+        recordId: record.id,
+        status: String(record.status || ""),
+        recipientUids: recipients,
         title: renderTemplate(settings.title, values),
         body: renderTemplate(settings.body, values),
-        at: timestampMs(order.updatedAt) || timestampMs(order.paidAt) ||
-          timestampMs(order.createdAt) || Date.now()
+        at: timestampMs(record.updatedAt) || timestampMs(record.createdAt) || Date.now()
       });
     }
   }
 
-  return [...items.values()].sort((a, b) => b.at - a.at);
+  return alerts.sort((a, b) => b.at - a.at);
+}
+
+/**
+ * The feed for one signed-in person, from the records their rules already let
+ * them read. Newest first; one entry per event per record.
+ */
+export function buildNotificationItems({
+  orders = [],
+  transactions = [],
+  services = [],
+  verifications = [],
+  uid = "",
+  isAdmin = false,
+  policy
+} = {}) {
+  const adminUids = isAdmin && uid ? [uid] : [];
+  return collectAlerts({ orders, transactions, services, verifications, adminUids, policy })
+    .filter((alert) => alert.recipientUids.includes(uid))
+    .map((alert) => ({
+      key: alert.key,
+      eventId: alert.eventId,
+      audience: alert.audience,
+      kind: alert.kind,
+      recordId: alert.recordId,
+      orderId: alert.kind === "order" ? alert.recordId : "",
+      item: alert.title,
+      title: alert.title,
+      body: alert.body,
+      at: alert.at
+    }));
 }
 
 /** Items the reader has not seen yet. `readKeys` is an array or a Set. */
 export function unreadItems(items, readKeys) {
   const seen = readKeys instanceof Set ? readKeys : new Set(readKeys || []);
   return (items || []).filter((item) => !seen.has(item.key));
+}
+
+/** A short, unguessable ntfy topic for one account. */
+export function topicForUid(uid, salt = "") {
+  const clean = String(uid || "").replace(/[^A-Za-z0-9]/g, "");
+  const mix = String(salt || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 12);
+  if (clean.length < 8) throw new Error("A topic needs a real account id.");
+  return "mailmart-" + clean.slice(0, 20).toLowerCase() + (mix ? "-" + mix.toLowerCase() : "");
 }
