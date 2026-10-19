@@ -10,6 +10,7 @@ import {
   CATEGORIES, watchActiveListings, placeOrder, quoteFor, hasDiscount,
   unitPriceOf, deliveryFeeFor
 } from "./marketplace.js";
+import { mountNotificationBell } from "./notifications.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) =>
@@ -87,6 +88,7 @@ onAuthStateChanged(auth, (user) => {
   }
   currentUser = user;
   boot();
+  mountNotificationBell(user, { isAdmin: false });
 });
 
 async function boot() {

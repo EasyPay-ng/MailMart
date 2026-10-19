@@ -150,6 +150,7 @@ import { STATUS_LABEL, watchBuyerOrders, watchSellerOrders, advanceOrder, reques
     watchOrderMessages, sendOrderMessage, getOrderDeliveryProof, saveOrderDeliveryProof } from "./js/marketplace.js";
 
 import { installmentSchedule, mayShip, isFullyPaid } from "./js/installments.js";
+import { mountNotificationBell } from "./js/notifications.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -176,6 +177,9 @@ onAuthStateChanged(auth, (user) => {
     }
     currentUser = user;
     start();
+    /* Order status changes raised by the administrator or the seller arrive
+       here as they happen; the bell is the permanent record of them. */
+    mountNotificationBell(user, { isAdmin: false });
 });
 
 function start() {

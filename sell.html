@@ -236,6 +236,7 @@ import {
     unitPriceOf,
     deliveryFeeFor
 } from "./js/marketplace.js";
+import { mountNotificationBell } from "./js/notifications.js";
 
 const $ = (id) => document.getElementById(id);
 const esc = (v) =>
@@ -259,6 +260,7 @@ onAuthStateChanged(auth, (user) => {
     }
     currentUser = user;
     start();
+    mountNotificationBell(user, { isAdmin: false });
 });
 
 function start() {

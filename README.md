@@ -151,6 +151,84 @@ can notify only the real seller for an order, while admins can notify only the
 buyer for an approved cancellation or fulfillment refund. This prevents
 arbitrary client-generated mail.
 
+## Notifications
+
+MailMart has a notification centre: a bell (top bar on the dashboard, a floating
+button elsewhere) with a feed of order events, plus system notifications in the
+phone's notification shade. The administrator decides which events exist and
+what they say, at **Admin → Notifications** (`admin-notifications.html`).
+
+The switchboard is a single Firestore document, `settings/notifications`:
+
+```json
+{
+  "version": 1,
+  "channels": { "inApp": true, "browser": true, "sound": true },
+  "audiences": { "buyer": true, "seller": true, "admin": true },
+  "events": {
+    "buyer_shipped": {
+      "enabled": true,
+      "title": "Order Update",
+      "body": "Your order {orderId} has been dispatched! Track your order in your dashboard."
+    }
+  }
+}
+```
+
+There is one entry per event, so “buyer: order received”, “buyer: payment
+confirmed”, “buyer: order dispatched”, “buyer: completed”, “buyer: cancelled or
+refunded”, “buyer: balance due”, “seller: new order”, “seller: payment
+confirmed”, “seller: delivery confirmed” and “admin: new order awaiting payment”
+can each be turned off or reworded independently. The three `audiences` switches
+are master switches: turning “Buyer” off silences every buyer event everywhere
+without discarding the wording saved for it. `{orderId}`, `{item}`,
+`{total}`, `{statusLabel}`, `{buyer}` and `{seller}` are filled in per order.
+Saving takes effect on every open page immediately (the client watches the
+document); a missing or half-saved document falls back to the catalogue
+defaults in `js/notification-policy.js` rather than breaking the bell.
+
+No rules change is needed: `settings/*` is already readable by every signed-in
+user and writable only by an administrator, so the browser cannot re-enable an
+event or edit its own wording.
+
+### What actually delivers an alert
+
+There is no server here, so notifications are derived from the orders a person
+is already allowed to read — as buyer, as seller, and (for administrators)
+platform-wide. A page that mounts the bell keeps a live Firestore listener on
+those orders and notices the status change itself.
+
+- **While a MailMart tab is open** — including in the background, which is how
+  most users will see an order update — the page raises the alert through the
+  Notification API. `sw.js` supplies the notification-click handler and the
+  `ServiceWorkerRegistration.showNotification` path that Android Chrome
+  requires; without it Android refuses `new Notification(...)`.
+- **With every MailMart tab closed nothing fires.** Nothing is running, and
+  there is no Cloud Function writing to a push service. Real closed-app push
+  needs Firebase Cloud Messaging: an FCM token per device, a
+  `Cloud Function` triggered on `orders/{id}` updates, and a place to keep the
+  tokens (a `deviceTokens/{uid}` subcollection with owner-only rules). That is
+  a backend change, not a frontend tweak — do not promise users “notifications
+  even when the app is closed” until that exists.
+
+Read state is per browser (`localStorage`), not per account. A second device
+therefore shows the same events as unread, which is the safer mistake of the
+two. The bell seeds silently on first use so a new visitor is not blasted with
+every historical order.
+
+### Trying it quickly
+
+1. Sign in as an administrator, open **Admin → Notifications**, and leave
+   “Order dispatched” enabled.
+2. On a phone, sign in as the buyer, tap the bell and choose **Enable device
+   alerts**.
+3. As the seller or an administrator, mark that order shipped. The buyer's open
+   page shows a “Order Update · Your order #… has been dispatched!” alert in
+   the shade, and the bell badge increments.
+
+`tests/notifications.test.mjs` covers the policy merge, audience separation,
+templates, ordering and de-duplication offline; it needs no Firebase.
+
 ## Referrals and affiliates
 
 Open **Dashboard → Referrals & Affiliates** (`referrals.html`). The program has
@@ -703,6 +781,11 @@ Google button on the register page no longer rewrites an existing profile
 | `subadmin-desk.html` | The mail desk: claim, verify, complete |
 | `admin-team.html` | Promote sub-admins, see who handled what |
 | `js/emaildesk.js` | Queue, atomic claim, presence, notifications |
+| `js/notifications.js` | Bell, device alerts, live order feed, policy watcher |
+| `js/notification-policy.js` | Event catalogue, admin policy merge, feed assembly |
+| `admin-notifications.html` | Administrator switches and wording for notifications |
+| `js/admin-notifications-page.js` | Notification admin form and save/reset/test |
+| `sw.js` | Notification click handling for Android/desktop |
 
 ## Security notes
 
